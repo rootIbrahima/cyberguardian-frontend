@@ -1,0 +1,82 @@
+import {
+  LayoutDashboard,
+  Search,
+  FileText,
+  Users,
+  MessageSquare,
+  ShieldCheck,
+  UserPlus,
+  Shield,
+  Globe,
+  Server,
+  Link2,
+  GitBranch,
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  X,
+  Clock,
+  Download,
+  Send,
+  LogOut,
+  Bell,
+  Settings,
+  Star,
+  Lock,
+  Mail,
+  Eye,
+  Upload,
+  Filter,
+  Sparkles,
+  Plus,
+  ArrowLeft,
+  Award,
+  ScanLine,
+} from 'lucide-react'
+
+export const Icons = {
+  dashboard:   LayoutDashboard,
+  scan:        ScanLine,
+  results:     FileText,
+  experts:     Users,
+  message:     MessageSquare,
+  admin:       ShieldCheck,
+  apply:       UserPlus,
+  shield:      Shield,
+  domain:      Globe,
+  ip:          Server,
+  url:         Link2,
+  github:      GitBranch,
+  alert:       AlertTriangle,
+  check:       Check,
+  checkCircle: CheckCircle2,
+  x:           X,
+  clock:       Clock,
+  download:    Download,
+  send:        Send,
+  logout:      LogOut,
+  bell:        Bell,
+  settings:    Settings,
+  star:        Star,
+  lock:        Lock,
+  mail:        Mail,
+  eye:         Eye,
+  upload:      Upload,
+  filter:      Filter,
+  search:      Search,
+  sparkles:    Sparkles,
+  plus:        Plus,
+  arrowLeft:   ArrowLeft,
+  badge:       Award,
+}
+
+export function cloneIcon(IconComponent, { size = 20, color = 'currentColor', ...rest } = {}) {
+  if (!IconComponent) return null
+  return <IconComponent size={size} color={color} strokeWidth={2} {...rest} />
+}
+
+export default function Icon({ name, size = 20, color = 'currentColor' }) {
+  const Component = Icons[name]
+  if (!Component) return null
+  return <Component size={size} color={color} strokeWidth={2} />
+}

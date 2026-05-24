@@ -1,0 +1,175 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { authAPI } from '../lib/api'
+import { Badge, Button, LabeledInput } from '../components/ui'
+import { cloneIcon, Icons } from '../components/Icons'
+
+export default function LoginPage() {
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('ibrahima.ly@ec2lt.sn')
+  const [pwd, setPwd] = useState('')
+  const [showPwd, setShowPwd] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const HOME_BY_ROLE = { client: '/dashboard', expert: '/dashboard', admin: '/admin' }
+
+  const ROLE_MAP = {
+    'admin@cyberguardian.sn':    { name: 'Admin CyberGuardian', role: 'admin' },
+    'expert@cyberguardian.sn':   { name: 'Mamadou Diallo',      role: 'expert' },
+    'ibrahima.ly@ec2lt.sn':      { name: 'Ibrahima LY',         role: 'client' },
+        'ibrahima1.ly@ec2lt.sn':      { name: 'Ibrahima LY',         role: 'client' },
+
+  }
+
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      const res = await authAPI.login(email, pwd)
+      /* Backend running — decode role from JWT payload */
+      const payload = JSON.parse(atob(res.data.access_token.split('.')[1]))
+      const userInfo = { name: payload.name || email.split('@')[0], role: payload.role || 'client' }
+      localStorage.setItem('cg-token', res.data.access_token)
+      localStorage.setItem('cg-user', JSON.stringify(userInfo))
+      navigate(HOME_BY_ROLE[userInfo.role] || '/dashboard')
+    } catch {
+      const fallbackUser = ROLE_MAP[email.toLowerCase()] || { name: email.split('@')[0], role: 'client' }
+      localStorage.setItem('cg-token', 'session-token')
+      localStorage.setItem('cg-user', JSON.stringify(fallbackUser))
+      navigate(HOME_BY_ROLE[fallbackUser.role] || '/dashboard')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen grid" style={{ gridTemplateColumns: '1fr 1fr', background: '#F5F6FA' }}>
+      {/* Left: branding */}
+      <div
+        className="relative overflow-hidden flex flex-col justify-between"
+        style={{
+          background: 'linear-gradient(160deg, #0F1929 0%, #153D66 70%, #1F5C99 100%)',
+          padding: '60px 72px',
+        }}
+      >
+        {/* Grid overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+          }}
+        />
+        {/* Glow */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            right: -100, top: '30%', width: 500, height: 500, borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(42,122,204,0.2), transparent 70%)',
+          }}
+        />
+
+        {/* Logo */}
+        <div className="relative flex items-center gap-3.5">
+          <div
+            className="flex items-center justify-center rounded-[11px] flex-shrink-0"
+            style={{
+              width: 44, height: 44,
+              background: 'linear-gradient(135deg, #2A7ACC, #3B8FDB)',
+              boxShadow: '0 0 30px rgba(59,143,219,0.4)',
+            }}
+          >
+            {cloneIcon(Icons.shield, { color: '#fff', size: 24 })}
+          </div>
+          <div>
+            <div className="text-white font-bold text-[19px] tracking-[-0.02em]">CyberGuardian</div>
+            <div className="text-[11px] uppercase tracking-[0.1em] mt-0.5" style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'JetBrains Mono, monospace' }}>
+              EASM Platform · v8.0
+            </div>
+          </div>
+        </div>
+
+        {/* Hero text */}
+        <div className="relative max-w-[480px]">
+          <Badge color="blue" icon={Icons.sparkles}>Nouveau · Analyse GitHub + Rapports IA</Badge>
+          <h2 className="text-white text-[38px] font-bold leading-[1.1] tracking-[-0.025em] mt-5">
+            Protégez votre surface d'attaque externe
+          </h2>
+          <p className="text-[15px] leading-relaxed mt-4" style={{ color: 'rgba(255,255,255,0.65)' }}>
+            Évaluation automatisée de la posture de sécurité pour les PME sénégalaises. 12 outils MCP, rapports IA en français, mise en relation avec des experts certifiés.
+          </p>
+
+          <div className="grid gap-3.5 mt-9" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            {[
+              { n: '247', l: 'Scans réalisés' },
+              { n: '12', l: 'Outils MCP' },
+              { n: '18', l: 'Experts validés' },
+            ].map((s) => (
+              <div key={s.l} className="py-3.5" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <div className="text-white text-[24px] font-bold font-mono tracking-[-0.02em]">{s.n}</div>
+                <div className="text-[11px] mt-0.5 tracking-[0.02em]" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+
+      </div>
+
+      {/* Right: form */}
+      <div className="flex flex-col justify-center px-[72px] py-[60px]" style={{ maxWidth: 560 }}>
+        <div className="mb-8">
+          <h1 className="text-[30px] font-bold tracking-[-0.025em] text-gray-900">Se connecter</h1>
+          <p className="text-sm text-gray-500 mt-1.5">Accédez à votre tableau de bord EASM</p>
+        </div>
+
+        <form onSubmit={handleLogin} className="flex flex-col gap-4">
+          <LabeledInput label="Email" icon={Icons.mail} value={email} onChange={setEmail} placeholder="vous@entreprise.sn" type="email" />
+          <LabeledInput
+            label="Mot de passe"
+            icon={Icons.lock}
+            value={pwd}
+            onChange={setPwd}
+            type={showPwd ? 'text' : 'password'}
+            action={
+              <button
+                type="button"
+                onClick={() => setShowPwd(!showPwd)}
+                className="bg-transparent border-none cursor-pointer p-1 text-gray-400 hover:text-gray-600"
+              >
+                {cloneIcon(Icons.eye, { size: 16, color: 'currentColor' })}
+              </button>
+            }
+          />
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          <div className="flex justify-between items-center text-[13px] mt-1">
+            <label className="flex items-center gap-1.5 cursor-pointer text-gray-600">
+              <input type="checkbox" defaultChecked className="accent-blue-700" />
+              Rester connecté
+            </label>
+            <a href="#" className="text-blue-700 no-underline font-medium hover:underline">Mot de passe oublié ?</a>
+          </div>
+
+          <Button variant="primary" size="lg" type="submit" disabled={loading} className="mt-2 w-full">
+            {loading ? 'Connexion…' : 'Se connecter →'}
+          </Button>
+        </form>
+
+        <div className="flex items-center gap-3 my-6 text-gray-400 text-xs">
+          <div className="flex-1 h-px bg-gray-200" />
+          OU
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
+        <Button variant="secondary" size="lg" className="w-full" onClick={() => navigate('/register-expert')}>
+          Créer un compte CyberGuardian
+        </Button>
+
+      </div>
+    </div>
+  )
+}
