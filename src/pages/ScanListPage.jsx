@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { scanAPI } from '../lib/api'
-import { Card, Badge, PageHeader } from '../components/ui'
+import { Card, PageHeader } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 
 const STATUS_MAP = {
@@ -19,16 +19,59 @@ const TYPE_ICONS = {
 
 export default function ScanListPage() {
   const navigate = useNavigate()
-  const [scans, setScans]     = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch]   = useState('')
+  const [scans, setScans]           = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [search, setSearch]         = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [rerunningId, setRerunningId]         = useState(null)
+  const [deletingId, setDeletingId]           = useState(null)
 
-  useEffect(() => {
+  const loadScans = useCallback(() => {
     scanAPI.list()
       .then((res) => setScans(res.data || []))
       .catch(() => setScans([]))
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => { loadScans() }, [loadScans])
+
+  // Click outside cancels pending delete confirmation
+  useEffect(() => {
+    if (!confirmDeleteId) return
+    const handler = () => setConfirmDeleteId(null)
+    window.addEventListener('click', handler)
+    return () => window.removeEventListener('click', handler)
+  }, [confirmDeleteId])
+
+  const handleDelete = async (e, scanId) => {
+    e.stopPropagation()
+    if (confirmDeleteId !== scanId) {
+      setConfirmDeleteId(scanId)
+      return
+    }
+    setConfirmDeleteId(null)
+    setDeletingId(scanId)
+    try {
+      await scanAPI.delete(scanId)
+      setScans((prev) => prev.filter((s) => s.id !== scanId))
+    } catch {
+      // keep scan in list on error
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleRerun = async (e, scan) => {
+    e.stopPropagation()
+    setRerunningId(scan.id)
+    try {
+      const res = await scanAPI.rerun(scan.id)
+      const newScan = res.data
+      navigate(`/scan-results/${newScan.id}`)
+    } catch {
+      setRerunningId(null)
+    }
+  }
 
   const filtered = scans.filter((s) =>
     s.target?.toLowerCase().includes(search.toLowerCase()) ||
@@ -77,11 +120,11 @@ export default function ScanListPage() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-gray-200">
-                {['Cible', 'Score', 'CVE', 'Statut', 'Date'].map((h, i) => (
+                {['Cible', 'Score', 'CVE', 'Statut', 'Date', ''].map((h, i) => (
                   <th
-                    key={h}
+                    key={i}
                     className="pb-3 text-[10.5px] font-bold text-gray-400 uppercase tracking-[0.08em]"
-                    style={{ textAlign: i === 0 ? 'left' : i === 4 ? 'right' : 'center' }}
+                    style={{ textAlign: i === 0 ? 'left' : i === 5 ? 'right' : 'center' }}
                   >
                     {h}
                   </th>
@@ -90,15 +133,22 @@ export default function ScanListPage() {
             </thead>
             <tbody>
               {filtered.map((scan) => {
-                const s = STATUS_MAP[scan.status] || STATUS_MAP.completed
-                const typeIcon = TYPE_ICONS[scan.typeLabel] || Icons.domain
-                const scoreColor = scan.score >= 80 ? '#10B981' : scan.score >= 50 ? '#F59E0B' : '#EF4444'
+                const s         = STATUS_MAP[scan.status] || STATUS_MAP.completed
+                const typeIcon  = TYPE_ICONS[scan.typeLabel] || Icons.domain
+                const isGithub  = scan.type === 'github'
+                const scoreMax  = isGithub ? (scan.results?.score_max ?? 30) : 100
+                const scoreColor = scan.score >= (scoreMax * 0.8) ? '#10B981' : scan.score >= (scoreMax * 0.5) ? '#F59E0B' : '#EF4444'
+                const isDeleting  = deletingId === scan.id
+                const isRerunning = rerunningId === scan.id
+                const isPendingDelete = confirmDeleteId === scan.id
+
                 return (
                   <tr
                     key={scan.id}
                     onClick={() => navigate(`/scan-results/${scan.id}`)}
                     className="border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors"
                   >
+                    {/* Cible */}
                     <td className="py-3.5">
                       <div className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
@@ -110,15 +160,19 @@ export default function ScanListPage() {
                         </div>
                       </div>
                     </td>
+
+                    {/* Score */}
                     <td className="py-3.5 text-center">
                       {scan.score !== null ? (
                         <span className="text-[13px] font-bold font-mono" style={{ color: scoreColor }}>
-                          {scan.score}/100
+                          {scan.score}/{scoreMax}
                         </span>
                       ) : (
                         <span className="text-xs text-gray-400">—</span>
                       )}
                     </td>
+
+                    {/* CVE */}
                     <td className="py-3.5 text-center">
                       <span
                         className="text-[12px] font-bold font-mono"
@@ -127,6 +181,8 @@ export default function ScanListPage() {
                         {scan.cve ?? 0}
                       </span>
                     </td>
+
+                    {/* Statut */}
                     <td className="py-3.5 text-center">
                       <span
                         className="text-xs font-semibold px-2.5 py-1 rounded-md inline-block"
@@ -135,7 +191,58 @@ export default function ScanListPage() {
                         {s.label}
                       </span>
                     </td>
-                    <td className="py-3.5 text-right text-xs text-gray-500">{scan.date}</td>
+
+                    {/* Date */}
+                    <td className="py-3.5 text-center text-xs text-gray-500">{scan.date}</td>
+
+                    {/* Actions */}
+                    <td className="py-3.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1">
+                        {/* Relancer */}
+                        <button
+                          onClick={(e) => handleRerun(e, scan)}
+                          disabled={isRerunning || isDeleting}
+                          title="Relancer le scan"
+                          className="w-7 h-7 rounded-md flex items-center justify-center transition-colors hover:bg-blue-50 disabled:opacity-40"
+                        >
+                          {isRerunning ? (
+                            <span
+                              className="spinner"
+                              style={{ width: 13, height: 13, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }}
+                            />
+                          ) : (
+                            cloneIcon(Icons.refresh, { size: 14, color: '#1F5C99' })
+                          )}
+                        </button>
+
+                        {/* Supprimer */}
+                        {isPendingDelete ? (
+                          <button
+                            onClick={(e) => handleDelete(e, scan.id)}
+                            className="text-[11px] font-semibold px-2 py-1 rounded-md transition-colors"
+                            style={{ background: '#FEE2E2', color: '#DC2626' }}
+                          >
+                            Confirmer
+                          </button>
+                        ) : (
+                          <button
+                            onClick={(e) => handleDelete(e, scan.id)}
+                            disabled={isDeleting || isRerunning}
+                            title="Supprimer le scan"
+                            className="w-7 h-7 rounded-md flex items-center justify-center transition-colors hover:bg-red-50 disabled:opacity-40"
+                          >
+                            {isDeleting ? (
+                              <span
+                                className="spinner"
+                                style={{ width: 13, height: 13, borderTopColor: '#EF4444', borderColor: 'rgba(239,68,68,0.2)' }}
+                              />
+                            ) : (
+                              cloneIcon(Icons.trash, { size: 14, color: '#EF4444' })
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 )
               })}

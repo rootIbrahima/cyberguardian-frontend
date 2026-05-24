@@ -41,6 +41,8 @@ export const scanAPI = {
   askAI:       (id, question) => api.post(`/scans/${id}/ask`, { question }),
   downloadPDF: (id)  => api.get(`/scans/${id}/pdf`, { responseType: 'blob' }),
   quota:       ()    => api.get('/scans/quota'),
+  delete:      (id)  => api.delete(`/scans/${id}`),
+  rerun:       (id)  => api.post(`/scans/${id}/rerun`),
 }
 
 export const expertAPI = {
