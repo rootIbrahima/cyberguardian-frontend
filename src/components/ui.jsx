@@ -1,50 +1,88 @@
-import { Bell, Settings } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Bell, Settings, AlertCircle, AlertTriangle, Info, Minus,
+         CheckCircle2, XCircle, Copy, Check } from 'lucide-react'
 import { cloneIcon } from './Icons'
 
+/* ══════════════════════════════════════════════════════════
+   AVATAR
+══════════════════════════════════════════════════════════ */
 export function Avatar({ name, color, size = 36, initials }) {
-  const i = initials || name.split(' ').map((w) => w[0]).slice(0, 2).join('')
+  const i = initials || (name || '?').split(' ').map((w) => w[0]).slice(0, 2).join('')
   return (
     <div
       className="flex items-center justify-center rounded-full font-bold text-white flex-shrink-0"
-      style={{
-        width: size,
-        height: size,
-        background: color || '#1F5C99',
-        fontSize: size * 0.38,
-      }}
+      style={{ width: size, height: size, background: color || 'var(--cg-primary)', fontSize: size * 0.38 }}
     >
       {i}
     </div>
   )
 }
 
+/* ══════════════════════════════════════════════════════════
+   BADGE — teinte légère, radius 6px, jamais trop coloré
+══════════════════════════════════════════════════════════ */
 const BADGE_COLORS = {
-  blue:   { bg: '#E8F1FA', fg: '#1F5C99' },
-  green:  { bg: '#D1FAE5', fg: '#059669' },
-  orange: { bg: '#FED7AA', fg: '#C2691A' },
-  red:    { bg: '#FEE2E2', fg: '#DC2626' },
-  gray:   { bg: '#F3F4F6', fg: '#374151' },
-  yellow: { bg: '#FEF3C7', fg: '#A16207' },
+  blue:   { bg: '#EFF6FF', fg: '#1D4ED8' },
+  green:  { bg: '#F0FDF4', fg: '#1A7A4A' },
+  orange: { bg: '#FFF7ED', fg: '#854F0B' },
+  red:    { bg: '#FEF2F2', fg: '#991B1B' },
+  gray:   { bg: '#F8FAFC', fg: '#64748B' },
+  yellow: { bg: '#FEFCE8', fg: '#713F12' },
+  purple: { bg: '#F5F3FF', fg: '#5B21B6' },
 }
 
 export function Badge({ children, color = 'blue', icon }) {
   const c = BADGE_COLORS[color] || BADGE_COLORS.blue
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-md font-semibold whitespace-nowrap text-[11px]"
-      style={{ background: c.bg, color: c.fg, padding: '4px 10px' }}
+      className="inline-flex items-center gap-1 rounded-md font-medium whitespace-nowrap text-[11.5px] leading-none"
+      style={{ background: c.bg, color: c.fg, padding: '3px 8px', border: `1px solid ${c.bg}` }}
     >
-      {icon && cloneIcon(icon, { size: 12, color: c.fg })}
+      {icon && cloneIcon(icon, { size: 11, color: c.fg })}
       {children}
     </span>
   )
 }
 
+/* ══════════════════════════════════════════════════════════
+   SEVERITY BADGE — icône + couleur sémantique
+   Usage : <SeverityBadge level="HIGH" /> ou "CRITIQUE"
+══════════════════════════════════════════════════════════ */
+const SEV_MAP = {
+  CRITICAL: { label: 'Critique', bg: '#FEF2F2', fg: '#991B1B', Icon: AlertCircle },
+  CRITIQUE: { label: 'Critique', bg: '#FEF2F2', fg: '#991B1B', Icon: AlertCircle },
+  HIGH:     { label: 'Haut',     bg: '#FFF7ED', fg: '#854F0B', Icon: AlertTriangle },
+  HAUT:     { label: 'Haut',     bg: '#FFF7ED', fg: '#854F0B', Icon: AlertTriangle },
+  MEDIUM:   { label: 'Moyen',    bg: '#FEFCE8', fg: '#713F12', Icon: Info },
+  MEDIUM_:  { label: 'Moyen',    bg: '#FEFCE8', fg: '#713F12', Icon: Info },
+  MOYEN:    { label: 'Moyen',    bg: '#FEFCE8', fg: '#713F12', Icon: Info },
+  LOW:      { label: 'Bas',      bg: '#F8FAFC', fg: '#64748B', Icon: Minus },
+  BAS:      { label: 'Bas',      bg: '#F8FAFC', fg: '#64748B', Icon: Minus },
+  INFO:     { label: 'Info',     bg: '#EFF6FF', fg: '#1D4ED8', Icon: Info },
+}
+
+export function SeverityBadge({ level = 'LOW', showLabel = true }) {
+  const key = (level || 'LOW').toUpperCase().replace(/-/g, '_')
+  const s   = SEV_MAP[key] || SEV_MAP.LOW
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-md font-semibold whitespace-nowrap text-[11px] leading-none"
+      style={{ background: s.bg, color: s.fg, padding: '3px 7px' }}
+    >
+      <s.Icon size={11} strokeWidth={2.5} />
+      {showLabel && s.label}
+    </span>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   CARD — radius 8px, ombre légère, bordure subtile
+══════════════════════════════════════════════════════════ */
 export function Card({ children, className = '', style, ...props }) {
   return (
     <div
-      className={`bg-white rounded-[14px] border border-gray-200 ${className}`}
-      style={style}
+      className={`bg-white border border-slate-200 ${className}`}
+      style={{ borderRadius: 'var(--cg-radius)', boxShadow: 'var(--cg-shadow)', ...style }}
       {...props}
     >
       {children}
@@ -52,18 +90,21 @@ export function Card({ children, className = '', style, ...props }) {
   )
 }
 
+/* ══════════════════════════════════════════════════════════
+   BUTTON — variantes alignées sur la palette brief
+══════════════════════════════════════════════════════════ */
 const BTN_VARIANTS = {
-  primary:   'bg-blue-700 text-white border-transparent hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed',
-  secondary: 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50',
-  ghost:     'bg-transparent text-blue-700 border-transparent hover:bg-blue-50',
-  danger:    'bg-white text-red-500 border-red-100 hover:bg-red-50',
-  success:   'bg-green-500 text-white border-transparent hover:bg-green-600',
+  primary:   'bg-[#1F5C99] text-white border-transparent hover:bg-[#1a4f87] disabled:bg-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed',
+  secondary: 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed',
+  ghost:     'bg-transparent text-[#1F5C99] border-transparent hover:bg-blue-50 disabled:opacity-50',
+  danger:    'bg-white text-[#991B1B] border-red-200 hover:bg-red-50 disabled:opacity-50',
+  success:   'bg-[#1A7A4A] text-white border-transparent hover:bg-[#165f3b] disabled:opacity-50',
 }
 
 const BTN_SIZES = {
-  sm: 'px-[14px] py-[7px] text-xs gap-1.5 rounded-[7px]',
-  md: 'px-[18px] py-[10px] text-sm gap-2 rounded-[9px]',
-  lg: 'px-[26px] py-[13px] text-[15px] gap-2 rounded-[9px]',
+  sm: 'px-3 py-1.5 text-xs gap-1.5 rounded-[6px]',
+  md: 'px-4 py-2 text-sm gap-2 rounded-[var(--cg-radius)]',
+  lg: 'px-5 py-2.5 text-[15px] gap-2 rounded-[var(--cg-radius)]',
 }
 
 export function Button({ children, variant = 'primary', icon, size = 'md', onClick, disabled, className = '', type = 'button', style }) {
@@ -75,12 +116,15 @@ export function Button({ children, variant = 'primary', icon, size = 'md', onCli
       style={style}
       className={`inline-flex items-center justify-center font-semibold border transition-all duration-150 active:scale-[0.98] ${BTN_VARIANTS[variant]} ${BTN_SIZES[size]} ${className}`}
     >
-      {icon && cloneIcon(icon, { size: size === 'sm' ? 14 : 16, color: 'currentColor' })}
+      {icon && cloneIcon(icon, { size: size === 'sm' ? 13 : 15, color: 'currentColor' })}
       {children}
     </button>
   )
 }
 
+/* ══════════════════════════════════════════════════════════
+   INPUT / LABELED INPUT
+══════════════════════════════════════════════════════════ */
 export function Input({ value, onChange, placeholder, type = 'text', className = '', style, ...props }) {
   return (
     <input
@@ -88,7 +132,7 @@ export function Input({ value, onChange, placeholder, type = 'text', className =
       value={value}
       onChange={onChange}
       placeholder={placeholder}
-      className={`w-full px-4 py-3 rounded-[10px] border border-gray-300 text-sm font-mono outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10 bg-white text-gray-900 placeholder-gray-400 ${className}`}
+      className={`w-full px-3.5 py-2.5 rounded-[var(--cg-radius)] border border-slate-300 text-sm outline-none transition-all focus:border-[#1F5C99] focus:ring-2 focus:ring-[#1F5C99]/10 bg-white text-slate-900 placeholder-slate-400 ${className}`}
       style={style}
       {...props}
     />
@@ -98,13 +142,13 @@ export function Input({ value, onChange, placeholder, type = 'text', className =
 export function LabeledInput({ label, icon, value, onChange, placeholder, type = 'text', action }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-gray-700 mb-1.5 tracking-[0.01em]">
+      <label className="block text-xs font-semibold text-slate-600 mb-1.5 tracking-[0.01em]">
         {label}
       </label>
       <div className="relative flex items-center">
         {icon && (
-          <div className="absolute left-3.5 text-gray-400">
-            {cloneIcon(icon, { size: 17, color: 'currentColor' })}
+          <div className="absolute left-3.5 text-slate-400">
+            {cloneIcon(icon, { size: 16, color: 'currentColor' })}
           </div>
         )}
         <input
@@ -112,7 +156,7 @@ export function LabeledInput({ label, icon, value, onChange, placeholder, type =
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full py-3 rounded-[10px] border border-gray-300 text-sm font-sans outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10 bg-white text-gray-900 placeholder-gray-400 ${icon ? 'pl-11 pr-11' : 'px-4'}`}
+          className={`w-full py-2.5 rounded-[var(--cg-radius)] border border-slate-300 text-sm outline-none transition-all focus:border-[#1F5C99] focus:ring-2 focus:ring-[#1F5C99]/10 bg-white text-slate-900 placeholder-slate-400 ${icon ? 'pl-10 pr-10' : 'px-3.5'}`}
         />
         {action && <div className="absolute right-2.5">{action}</div>}
       </div>
@@ -120,23 +164,226 @@ export function LabeledInput({ label, icon, value, onChange, placeholder, type =
   )
 }
 
+/* ══════════════════════════════════════════════════════════
+   PAGE HEADER
+══════════════════════════════════════════════════════════ */
 export function PageHeader({ title, subtitle, actions }) {
   return (
-    <div className="flex justify-between items-start mb-7 gap-4">
+    <div className="flex justify-between items-start mb-6 gap-4">
       <div>
-        <h1 className="text-[24px] font-bold tracking-[-0.02em] text-gray-900">{title}</h1>
-        {subtitle && <p className="text-[13.5px] text-gray-500 mt-1">{subtitle}</p>}
+        <h1 className="text-[22px] font-bold tracking-[-0.02em] text-slate-900 leading-tight">{title}</h1>
+        {subtitle && <p className="text-[13px] text-slate-500 mt-0.5">{subtitle}</p>}
       </div>
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center flex-shrink-0">
         {actions}
-        <button className="w-[38px] h-[38px] rounded-[10px] border border-gray-200 bg-white flex items-center justify-center text-gray-700 relative hover:bg-gray-50 transition-colors">
-          <Bell size={18} strokeWidth={2} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 border-2 border-white" />
+        <button className="w-9 h-9 rounded-[var(--cg-radius)] border border-slate-200 bg-white flex items-center justify-center text-slate-500 relative hover:bg-slate-50 transition-colors">
+          <Bell size={16} strokeWidth={2} />
+          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500 border border-white" />
         </button>
-        <button className="w-[38px] h-[38px] rounded-[10px] border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50 transition-colors">
-          <Settings size={18} strokeWidth={2} />
+        <button className="w-9 h-9 rounded-[var(--cg-radius)] border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors">
+          <Settings size={16} strokeWidth={2} />
         </button>
       </div>
     </div>
   )
+}
+
+/* ══════════════════════════════════════════════════════════
+   SKELETON — placeholder animé pendant le chargement
+   Usage : <Skeleton w="100%" h={16} /> ou <Skeleton className="w-32 h-4" />
+══════════════════════════════════════════════════════════ */
+export function Skeleton({ w, h, className = '', rounded = false }) {
+  return (
+    <div
+      className={`skeleton ${rounded ? 'rounded-full' : ''} ${className}`}
+      style={{ width: w, height: h || 14 }}
+    />
+  )
+}
+
+export function SkeletonCard({ lines = 3 }) {
+  return (
+    <Card className="p-5 space-y-3">
+      <Skeleton w="40%" h={16} />
+      {Array.from({ length: lines }).map((_, i) => (
+        <Skeleton key={i} w={i === lines - 1 ? '60%' : '100%'} h={12} />
+      ))}
+    </Card>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   TOOLTIP — survol pour expliquer métriques ou valeurs
+   Usage : <Tooltip tip="Score basé sur TLS + CVE">42/100</Tooltip>
+══════════════════════════════════════════════════════════ */
+export function Tooltip({ tip, children, side = 'top' }) {
+  const posClass = side === 'bottom'
+    ? 'top-full mt-2 bottom-auto'
+    : 'bottom-full mb-2 top-auto'
+  return (
+    <span className="relative group inline-flex items-center">
+      {children}
+      <span
+        className={`absolute left-1/2 -translate-x-1/2 ${posClass} px-2 py-1 text-[11px] bg-slate-900 text-white rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50 font-normal tracking-normal`}
+      >
+        {tip}
+        <span
+          className={`absolute left-1/2 -translate-x-1/2 w-0 h-0 ${side === 'bottom' ? 'bottom-full border-b-[4px] border-b-slate-900 border-x-[4px] border-x-transparent' : 'top-full border-t-[4px] border-t-slate-900 border-x-[4px] border-x-transparent'}`}
+        />
+      </span>
+    </span>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   RELATIVE TIME — "il y a 2 h", absolu au survol
+   Usage : <RelativeTime date="2026-05-24T14:32:00" />
+           <RelativeTime date="24 mai 2026, 14:32" />
+══════════════════════════════════════════════════════════ */
+function parseDate(dateStr) {
+  if (!dateStr) return null
+  // Try ISO first
+  const d = new Date(dateStr)
+  if (!isNaN(d)) return d
+  // Try "24 mai 2026, 14:32" French format
+  const months = { jan:0,fév:1,feb:1,mar:2,avr:3,apr:3,mai:4,may:4,jun:5,jul:6,aoû:7,aug:7,sep:8,oct:9,nov:10,déc:11,dec:11 }
+  const m = dateStr.match(/(\d{1,2})\s+(\w+)\s+(\d{4})(?:,?\s+(\d{1,2}):(\d{2}))?/)
+  if (m) {
+    const mon = months[(m[2] || '').toLowerCase().slice(0,3)]
+    if (mon !== undefined)
+      return new Date(+m[3], mon, +m[1], +(m[4]||0), +(m[5]||0))
+  }
+  return null
+}
+
+function formatRelative(date) {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000)
+  if (diff < 60)    return 'à l\'instant'
+  if (diff < 3600)  return `il y a ${Math.floor(diff / 60)} min`
+  if (diff < 86400) return `il y a ${Math.floor(diff / 3600)} h`
+  if (diff < 604800) return `il y a ${Math.floor(diff / 86400)} j`
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function formatAbsolute(date) {
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric', month: 'long', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  })
+}
+
+export function RelativeTime({ date, className = '' }) {
+  const parsed = parseDate(date)
+  if (!parsed) return <span className={className}>{date}</span>
+  return (
+    <Tooltip tip={formatAbsolute(parsed)} side="top">
+      <time className={`cursor-default ${className}`} dateTime={parsed.toISOString()}>
+        {formatRelative(parsed)}
+      </time>
+    </Tooltip>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   COPY VALUE — copie au presse-papier avec feedback ✓
+   Usage : <CopyValue value="192.168.1.1" />
+══════════════════════════════════════════════════════════ */
+export function CopyValue({ value, label, className = '' }) {
+  const [copied, setCopied] = useState(false)
+  const copy = (e) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+  return (
+    <span className={`inline-flex items-center gap-1.5 group ${className}`}>
+      <span className="font-mono text-sm text-slate-700">{label || value}</span>
+      <button
+        onClick={copy}
+        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-slate-100"
+        title="Copier"
+      >
+        {copied
+          ? <Check size={12} strokeWidth={2.5} className="text-green-600" />
+          : <Copy size={12} strokeWidth={2} className="text-slate-400" />
+        }
+      </button>
+    </span>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   TOAST — notifications légères (success/error/info/warning)
+   Usage depuis n'importe où : toast.success('Scan supprimé')
+                                toast.error('Échec du serveur')
+══════════════════════════════════════════════════════════ */
+let _dispatch = null
+
+const TOAST_ICONS = {
+  success: <CheckCircle2 size={15} strokeWidth={2} />,
+  error:   <XCircle     size={15} strokeWidth={2} />,
+  info:    <Info        size={15} strokeWidth={2} />,
+  warning: <AlertTriangle size={15} strokeWidth={2} />,
+}
+
+const TOAST_STYLES = {
+  success: { border: '#BBF7D0', icon: '#1A7A4A', bg: '#F0FDF4' },
+  error:   { border: '#FCA5A5', icon: '#991B1B', bg: '#FEF2F2' },
+  info:    { border: '#BFDBFE', icon: '#1D4ED8', bg: '#EFF6FF' },
+  warning: { border: '#FDE68A', icon: '#854F0B', bg: '#FFFBEB' },
+}
+
+function emit(type, message) {
+  if (_dispatch) _dispatch({ id: Date.now() + Math.random(), type, message })
+}
+
+export const toast = {
+  success: (msg) => emit('success', msg),
+  error:   (msg) => emit('error',   msg),
+  info:    (msg) => emit('info',    msg),
+  warning: (msg) => emit('warning', msg),
+}
+
+export function Toaster() {
+  const [toasts, setToasts] = useState([])
+  const timers = useRef({})
+
+  useEffect(() => {
+    _dispatch = (t) => {
+      setToasts((prev) => [...prev.slice(-4), t])
+      timers.current[t.id] = setTimeout(() => {
+        setToasts((prev) => prev.filter((x) => x.id !== t.id))
+      }, 3500)
+    }
+    return () => { _dispatch = null }
+  }, [])
+
+  if (toasts.length === 0) return null
+
+  return (
+    <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 items-end pointer-events-none">
+      {toasts.map((t) => {
+        const st = TOAST_STYLES[t.type] || TOAST_STYLES.info
+        return (
+          <div
+            key={t.id}
+            className="toast-enter pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-[var(--cg-radius)] border shadow-md text-[13px] font-medium max-w-[320px]"
+            style={{ background: st.bg, borderColor: st.border, color: '#1E293B' }}
+          >
+            <span style={{ color: st.icon, flexShrink: 0 }}>{TOAST_ICONS[t.type]}</span>
+            {t.message}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   DIVIDER
+══════════════════════════════════════════════════════════ */
+export function Divider({ className = '' }) {
+  return <hr className={`border-slate-200 ${className}`} />
 }

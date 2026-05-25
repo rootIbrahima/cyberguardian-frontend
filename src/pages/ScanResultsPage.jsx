@@ -1,21 +1,21 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
-import { Card, Badge, Button, PageHeader } from '../components/ui'
+import { Card, Badge, Button, PageHeader, SeverityBadge, Skeleton, RelativeTime, CopyValue, toast } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 import { scanAPI } from '../lib/api'
 
 /* ─── Score Ring ─── */
 function ScoreRing({ score, size = 110, stroke = 9 }) {
-  const r = (size - stroke) / 2
-  const circ = 2 * Math.PI * r
+  const r      = (size - stroke) / 2
+  const circ   = 2 * Math.PI * r
   const offset = circ - (score / 100) * circ
-  const color = score >= 80 ? '#10B981' : score >= 50 ? '#F59E0B' : '#EF4444'
+  const color  = score >= 80 ? '#1A7A4A' : score >= 50 ? '#854F0B' : '#991B1B'
   return (
     <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#E5E7EB" strokeWidth={stroke} />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke}
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#E2E8F0" strokeWidth={stroke} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={stroke}
         strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 1s ease' }} />
+        style={{ transition: 'stroke-dashoffset 1.2s ease' }} />
     </svg>
   )
 }
@@ -27,7 +27,6 @@ const ISSUE_STYLES = {
   yellow: { border: '#FEF3C7', bg: '#FEFCE8' },
 }
 
-const SEVERITY_BADGE = { HIGH: 'red', CRITICAL: 'red', MEDIUM: 'orange', LOW: 'yellow' }
 
 /* ─── GitHub Findings Section ─── */
 function GitHubSection({ scan }) {
@@ -66,13 +65,13 @@ function GitHubSection({ scan }) {
   ].filter((t) => t.show !== false)
 
   const EmptyState = ({ msg }) => (
-    <div className="flex flex-col items-center justify-center py-10 gap-2 text-gray-400">
+    <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-400">
       {cloneIcon(Icons.checkCircle, { size: 28, color: '#10B981' })}
       <span className="text-sm">{msg}</span>
     </div>
   )
   const ErrState = ({ err }) => (
-    <div className="text-xs text-gray-400 bg-gray-50 rounded-lg p-4 font-mono">{err}</div>
+    <div className="text-xs text-slate-400 bg-slate-50 rounded-[var(--cg-radius)] p-4 font-mono">{err}</div>
   )
   const NaState = ({ note }) => {
     const detectedLang = (results.langage || info.language || '').trim()
@@ -98,7 +97,7 @@ function GitHubSection({ scan }) {
         </div>
         <div className="flex-1">
           <div className="text-[14px] font-semibold">Résultats GitHub Scan</div>
-          <div className="text-xs text-gray-500 font-mono mt-0.5">
+          <div className="text-xs text-slate-500 font-mono mt-0.5">
             {scan?.target} · {results.langage || info.language || 'N/A'} · {scan?.score ?? 0}/{scoreMax}
           </div>
         </div>
@@ -106,7 +105,7 @@ function GitHubSection({ scan }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 mb-5 border-b border-gray-100 pb-3">
+      <div className="flex gap-1.5 mb-5 border-b border-slate-100 pb-3">
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -138,18 +137,18 @@ function GitHubSection({ scan }) {
         banditNote ? <NaState note={banditNote} /> :
         bandit.length === 0 ? <EmptyState msg={`Aucune vulnérabilité détectée${banditLoc ? ` — ${banditLoc} lignes analysées` : ''}`} /> :
         <div className="flex flex-col gap-3">
-          {banditLoc > 0 && <div className="text-[11px] text-gray-400 mb-1">{banditLoc} lignes de code analysées</div>}
+          {banditLoc > 0 && <div className="text-[11px] text-slate-400 mb-1">{banditLoc} lignes de code analysées</div>}
           {bandit.map((f, i) => (
             <div key={i} className="p-3.5 rounded-[9px]"
               style={{ background: '#FEF2F2', border: '1px solid #FEE2E2' }}>
               <div className="flex justify-between items-start gap-2 mb-1.5">
-                <span className="text-[13px] font-semibold text-gray-900">{f.issue}</span>
+                <span className="text-[13px] font-semibold text-slate-900">{f.issue}</span>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <Badge color={SEVERITY_BADGE[f.severity] || 'gray'}>{f.severity}</Badge>
-                  {f.cwe && <span className="text-[10px] text-gray-400 font-mono">{f.cwe}</span>}
+                  <SeverityBadge level={f.severity} />
+                  {f.cwe && <span className="text-[10px] text-slate-400 font-mono">{f.cwe}</span>}
                 </div>
               </div>
-              <div className="font-mono text-[11px] text-gray-500 mb-1.5">
+              <div className="font-mono text-[11px] text-slate-500 mb-1.5">
                 {f.file} · ligne {f.line}
               </div>
               {f.code && (
@@ -175,22 +174,22 @@ function GitHubSection({ scan }) {
           } />
         ) : (
           <div className="flex flex-col gap-3">
-            {safetyFile && <div className="text-[11px] text-gray-400 mb-1">{safetyFile} · {safetyPkg} dépendances</div>}
+            {safetyFile && <div className="text-[11px] text-slate-400 mb-1">{safetyFile} · {safetyPkg} dépendances</div>}
             {safety.map((f, i) => (
               <div key={i} className="p-3.5 rounded-[9px]"
                 style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }}>
                 <div className="flex justify-between items-start gap-2 mb-1.5">
                   <div>
-                    <span className="font-mono text-[13px] font-bold text-gray-900">{f.package}</span>
-                    <span className="font-mono text-[12px] text-gray-500 ml-2">v{f.version}</span>
+                    <span className="font-mono text-[13px] font-bold text-slate-900">{f.package}</span>
+                    <span className="font-mono text-[12px] text-slate-500 ml-2">v{f.version}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Badge color={SEVERITY_BADGE[f.severity] || 'gray'}>{f.severity}</Badge>
+                    <SeverityBadge level={f.severity} />
                     <span className="text-[10px] font-mono text-red-600 font-semibold">{f.cve}</span>
                   </div>
                 </div>
-                <div className="text-xs text-gray-600">{f.desc}</div>
-                <div className="mt-2 text-[11px] text-gray-400">
+                <div className="text-xs text-slate-600">{f.desc}</div>
+                <div className="mt-2 text-[11px] text-slate-400">
                   → <span className="font-mono">pip install {f.package} --upgrade</span>
                 </div>
               </div>
@@ -218,21 +217,19 @@ function GitHubSection({ scan }) {
               </div>
             )}
             {npm.map((f, i) => {
-              const sevColor = { critical: '#EF4444', high: '#F97316', moderate: '#F59E0B', low: '#6B7280' }
-              const sevBg    = { critical: '#FEF2F2', high: '#FFF7ED', moderate: '#FEFCE8', low: '#F9FAFB' }
-              const sevBorder= { critical: '#FEE2E2', high: '#FED7AA', moderate: '#FEF3C7', low: '#E5E7EB' }
-              const s = f.severity?.toLowerCase() || 'low'
+              const s      = f.severity?.toLowerCase() || 'low'
+              const sevBg  = { critical: '#FEF2F2', high: '#FFF7ED', moderate: '#FEFCE8', low: '#F9FAFB' }
+              const sevBdr = { critical: '#FEE2E2', high: '#FED7AA', moderate: '#FEF3C7', low: '#E5E7EB' }
+              const lvl    = s === 'moderate' ? 'MEDIUM' : s.toUpperCase()
               return (
                 <div key={i} className="p-3.5 rounded-[9px]"
-                  style={{ background: sevBg[s] || '#F9FAFB', border: `1px solid ${sevBorder[s] || '#E5E7EB'}` }}>
+                  style={{ background: sevBg[s] || '#F9FAFB', border: `1px solid ${sevBdr[s] || '#E5E7EB'}` }}>
                   <div className="flex justify-between items-start gap-2 mb-1">
-                    <span className="font-mono text-[13px] font-bold text-gray-900">{f.package}</span>
-                    <Badge color={s === 'critical' || s === 'high' ? 'red' : s === 'moderate' ? 'orange' : 'gray'}>
-                      {f.severity}
-                    </Badge>
+                    <span className="font-mono text-[13px] font-bold text-slate-900">{f.package}</span>
+                    <SeverityBadge level={lvl} />
                   </div>
-                  <div className="text-xs text-gray-700 mb-1">{f.issue}</div>
-                  {f.range && <div className="text-[11px] text-gray-400 font-mono">Versions affectées : {f.range}</div>}
+                  <div className="text-xs text-slate-700 mb-1">{f.issue}</div>
+                  {f.range && <div className="text-[11px] text-slate-400 font-mono">Versions affectées : {f.range}</div>}
                   {f.fix && <div className="text-[11px] text-green-600 mt-1 font-semibold">→ Correctif disponible : npm audit fix</div>}
                 </div>
               )
@@ -255,7 +252,7 @@ function GitHubSection({ scan }) {
                   {f.verified ? 'Secret vérifié actif' : 'Possible secret'}
                 </Badge>
               </div>
-              <div className="font-mono text-[11px] text-gray-500 mb-1.5">
+              <div className="font-mono text-[11px] text-slate-500 mb-1.5">
                 {f.file} · ligne {f.line}
               </div>
               <div className="font-mono text-[11.5px] px-3 py-2 rounded-md"
@@ -290,13 +287,13 @@ function GitHubSection({ scan }) {
               { label: 'Créé le',         value: info.created_at ?? '—' },
               { label: 'Mis à jour',      value: info.updated_at ?? '—' },
             ].map(({ label, value }) => (
-              <div key={label} className="flex justify-between items-center py-1.5 border-b border-gray-50 text-[12.5px]">
-                <span className="text-gray-500">{label}</span>
-                <span className="font-mono font-semibold text-gray-800">{String(value)}</span>
+              <div key={label} className="flex justify-between items-center py-1.5 border-b border-slate-100 text-[12.5px]">
+                <span className="text-slate-500">{label}</span>
+                <span className="font-mono font-semibold text-slate-800">{String(value)}</span>
               </div>
             ))}
             {info.description && (
-              <div className="col-span-2 pt-2 text-[12px] text-gray-600 italic">"{info.description}"</div>
+              <div className="col-span-2 pt-2 text-[12px] text-slate-600 italic">"{info.description}"</div>
             )}
           </div>
         )
@@ -419,7 +416,7 @@ export default function ScanResultsPage() {
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      alert('Rapport PDF non disponible — backend hors ligne.')
+      toast.error('Rapport PDF non disponible — backend hors ligne.')
     } finally {
       timers.forEach(clearTimeout)
       setPdfLoading(false)
@@ -429,30 +426,39 @@ export default function ScanResultsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <span className="spinner" style={{ width: 24, height: 24, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }} />
-        <span className="ml-3 text-gray-500 text-sm">Chargement du rapport…</span>
+      <div className="space-y-4">
+        <Skeleton w="30%" h={14} />
+        <Card className="p-7 flex items-center gap-6">
+          <Skeleton w={110} h={110} rounded className="flex-shrink-0" />
+          <div className="flex-1 space-y-3">
+            <div className="flex gap-2"><Skeleton w={80} h={22} className="rounded-md" /><Skeleton w={120} h={22} className="rounded-md" /></div>
+            <Skeleton w="50%" h={24} />
+            <Skeleton w="70%" h={14} />
+            <div className="flex gap-6"><Skeleton w={60} h={12} /><Skeleton w={60} h={12} /><Skeleton w={60} h={12} /></div>
+          </div>
+          <div className="flex flex-col gap-2 flex-shrink-0"><Skeleton w={148} h={36} className="rounded-[var(--cg-radius)]" /><Skeleton w={148} h={36} className="rounded-[var(--cg-radius)]" /></div>
+        </Card>
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="p-6 space-y-3"><Skeleton w="40%" h={14} /><Skeleton h={8} className="rounded-full" /><Skeleton w="80%" h={12} /><Skeleton w="60%" h={12} /></Card>
+          <Card className="p-6 space-y-3"><Skeleton w="40%" h={14} /><Skeleton h={48} /><Skeleton h={48} /></Card>
+        </div>
       </div>
     )
   }
 
   if (!scan) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-1" style={{ background: '#EFF6FF' }}>
-          {cloneIcon(Icons.scan, { size: 28, color: '#1F5C99' })}
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="w-12 h-12 rounded-[var(--cg-radius)] flex items-center justify-center" style={{ background: '#EFF6FF' }}>
+          {cloneIcon(Icons.scan, { size: 24, color: '#1F5C99' })}
         </div>
-        <div className="text-gray-700 font-semibold text-[15px]">Aucun scan disponible</div>
-        <div className="text-sm text-gray-400 text-center max-w-xs">
+        <div className="text-slate-700 font-semibold">Aucun scan disponible</div>
+        <div className="text-[13px] text-slate-400 text-center max-w-xs">
           Lancez votre premier scan depuis le dashboard pour voir les résultats ici.
         </div>
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="mt-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white cursor-pointer border-none"
-          style={{ background: '#1F5C99' }}
-        >
+        <Button variant="primary" onClick={() => navigate('/dashboard')} className="mt-1">
           Aller au dashboard
-        </button>
+        </Button>
       </div>
     )
   }
@@ -461,14 +467,14 @@ export default function ScanResultsPage() {
   const scoreMax   = isGithub ? (scan?.results?.score_max ?? 30) : 100
   const score      = scan?.score ?? 0
   const scorePct   = Math.round((score / scoreMax) * 100)
-  const scoreColor = scorePct >= 80 ? '#10B981' : scorePct >= 50 ? '#F59E0B' : '#EF4444'
+  const scoreColor = scorePct >= 80 ? '#1A7A4A' : scorePct >= 50 ? '#854F0B' : '#991B1B'
 
   return (
     <div>
       {/* Back */}
       <button
         onClick={() => navigate('/scan-results')}
-        className="flex items-center gap-1.5 text-gray-500 text-[12.5px] mb-2 bg-transparent border-none cursor-pointer p-0 hover:text-gray-700 transition-colors"
+        className="flex items-center gap-1.5 text-slate-500 text-[12.5px] mb-2 bg-transparent border-none cursor-pointer p-0 hover:text-slate-700 transition-colors"
       >
         {cloneIcon(Icons.arrowLeft, { size: 14, color: 'currentColor' })}
         Tous les scans
@@ -484,7 +490,7 @@ export default function ScanResultsPage() {
             <span className="text-[30px] font-bold font-mono tracking-[-0.03em]" style={{ color: scoreColor }}>
               {score}
             </span>
-            <span className="text-[10px] text-gray-400">/ {scoreMax}</span>
+            <span className="text-[10px] text-slate-400">/ {scoreMax}</span>
           </div>
         </div>
 
@@ -497,23 +503,23 @@ export default function ScanResultsPage() {
               {scorePct >= 80 ? 'Bon · Surveillance recommandée' : scorePct >= 50 ? 'Niveau moyen · Action requise' : 'Critique · Action urgente'}
             </Badge>
           </div>
-          <div className="text-[26px] font-bold font-mono tracking-[-0.02em]">{scan?.target}</div>
-          <div className="text-[13px] text-gray-500 mt-1">
-            Analysé le {scan?.date} · {isGithub ? 'Analyse GitHub complète — Bandit · Safety · TruffleHog' : 'Analyse SSL/TLS complète'}
+          <CopyValue value={scan?.target} className="text-[24px] font-bold font-mono tracking-[-0.02em] text-slate-900" />
+          <div className="text-[13px] text-slate-500 mt-1 flex items-center gap-1.5">
+            Analysé <RelativeTime date={scan?.date} /> · {isGithub ? 'Bandit · Safety · TruffleHog' : 'Analyse SSL/TLS complète'}
           </div>
           <div className="flex gap-6 mt-3.5 text-xs flex-wrap">
             {!isGithub && (
               <>
-                <div><span className="text-gray-400">Problèmes</span> <strong className="font-mono ml-1" style={{ color: '#EF4444' }}>{scan?.vulns ?? 0}</strong></div>
-                <div><span className="text-gray-400">CVE</span> <strong className="font-mono ml-1" style={{ color: '#F59E0B' }}>{scan?.cve ?? 0}</strong></div>
+                <div><span className="text-slate-400">Problèmes</span> <strong className="font-mono ml-1" style={{ color: '#EF4444' }}>{scan?.vulns ?? 0}</strong></div>
+                <div><span className="text-slate-400">CVE</span> <strong className="font-mono ml-1" style={{ color: '#F59E0B' }}>{scan?.cve ?? 0}</strong></div>
               </>
             )}
             {isGithub && (
               <>
-                <div><span className="text-gray-400">Bandit</span> <strong className="font-mono ml-1 text-red-500">{scan?.results?.bandit?.findings?.length ?? 0}</strong></div>
-                <div><span className="text-gray-400">Safety CVE</span> <strong className="font-mono ml-1 text-orange-500">{scan?.results?.safety?.findings?.length ?? 0}</strong></div>
-                <div><span className="text-gray-400">Secrets</span> <strong className="font-mono ml-1" style={{ color: '#8B5CF6' }}>{scan?.results?.trufflehog?.findings?.length ?? 0}</strong></div>
-                <div><span className="text-gray-400">Langue</span> <strong className="font-mono ml-1 text-blue-600">{scan?.results?.langage || scan?.results?.github_info?.language || '—'}</strong></div>
+                <div><span className="text-slate-400">Bandit</span> <strong className="font-mono ml-1 text-red-500">{scan?.results?.bandit?.findings?.length ?? 0}</strong></div>
+                <div><span className="text-slate-400">Safety CVE</span> <strong className="font-mono ml-1 text-orange-500">{scan?.results?.safety?.findings?.length ?? 0}</strong></div>
+                <div><span className="text-slate-400">Secrets</span> <strong className="font-mono ml-1" style={{ color: '#8B5CF6' }}>{scan?.results?.trufflehog?.findings?.length ?? 0}</strong></div>
+                <div><span className="text-slate-400">Langue</span> <strong className="font-mono ml-1 text-blue-600">{scan?.results?.langage || scan?.results?.github_info?.language || '—'}</strong></div>
               </>
             )}
           </div>
@@ -542,7 +548,7 @@ export default function ScanResultsPage() {
             <div className="text-sm font-semibold mb-4">Résultats SSL/TLS</div>
             {(() => {
               const ssl = scan?.results?.ssl
-              if (!ssl) return <div className="text-sm text-gray-400">Données SSL non disponibles.</div>
+              if (!ssl) return <div className="text-sm text-slate-400">Données SSL non disponibles.</div>
               const pts = ssl.score ?? 0
               const max = 25
               const pct = (pts / max) * 100
@@ -561,18 +567,18 @@ export default function ScanResultsPage() {
                       <span className="text-[13px] font-medium">Score SSL/TLS</span>
                       <span className="text-[13px] font-bold font-mono" style={{ color }}>{pts}/{max}</span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, background: color }} />
                     </div>
-                    <div className="text-[11.5px] text-gray-500 mt-1.5">Grade {ssl.grade} · {ssl.cipher_suite || '—'}</div>
+                    <div className="text-[11.5px] text-slate-500 mt-1.5">Grade {ssl.grade} · {ssl.cipher_suite || '—'}</div>
                   </div>
-                  <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+                  <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
                     {rows.slice(1).map((r) => (
                       <div key={r.label} className="flex justify-between items-center text-[12px]">
-                        <span className="text-gray-500 font-medium">{r.label}</span>
+                        <span className="text-slate-500 font-medium">{r.label}</span>
                         <div className="text-right">
-                          <span className="font-mono font-semibold text-gray-800">{r.value}</span>
-                          <span className="text-gray-400 ml-2 text-[11px]">{r.detail}</span>
+                          <span className="font-mono font-semibold text-slate-800">{r.value}</span>
+                          <span className="text-slate-400 ml-2 text-[11px]">{r.detail}</span>
                         </div>
                       </div>
                     ))}
@@ -597,7 +603,7 @@ export default function ScanResultsPage() {
                   {issues.length === 0 ? (
                     <div className="flex flex-col items-center justify-center flex-1 gap-3 py-8">
                       {cloneIcon(Icons.checkCircle, { size: 36, color: '#10B981' })}
-                      <div className="text-sm text-gray-500">Aucun problème SSL détecté</div>
+                      <div className="text-sm text-slate-500">Aucun problème SSL détecté</div>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2.5 overflow-auto">
@@ -607,11 +613,11 @@ export default function ScanResultsPage() {
                           <div key={idx} className="p-3 rounded-[9px]"
                             style={{ border: `1px solid ${st.border}`, background: st.bg }}>
                             <div className="flex justify-between items-start gap-2.5 mb-1">
-                              <div className="text-[13px] font-semibold text-gray-900">{iss.title}</div>
-                              <Badge color={iss.color}>{iss.severity}</Badge>
+                              <div className="text-[13px] font-semibold text-slate-900">{iss.title}</div>
+                              <SeverityBadge level={iss.severity} />
                             </div>
-                            <div className="text-xs text-gray-600 leading-relaxed">{iss.desc}</div>
-                            <div className="text-[10.5px] text-gray-500 mt-1.5 font-mono">{iss.tool}</div>
+                            <div className="text-xs text-slate-600 leading-relaxed">{iss.desc}</div>
+                            <div className="text-[10.5px] text-slate-400 mt-1.5 font-mono">{iss.tool}</div>
                           </div>
                         )
                       })}
@@ -629,9 +635,9 @@ export default function ScanResultsPage() {
         const cves   = scan?.results?.cves ?? []
         const banner = scan?.results?.server_banner ?? ''
         if (cves.length === 0) return null
-        const SEV_COLOR = { CRITICAL: '#EF4444', HIGH: '#EF4444', MEDIUM: '#F59E0B', LOW: '#6B7280' }
-        const SEV_BG    = { CRITICAL: '#FEF2F2', HIGH: '#FEF2F2', MEDIUM: '#FFF7ED', LOW: '#F9FAFB' }
-        const SEV_BORDER= { CRITICAL: '#FEE2E2', HIGH: '#FEE2E2', MEDIUM: '#FED7AA', LOW: '#E5E7EB' }
+        const SEV_BG  = { CRITICAL: '#FEF2F2', HIGH: '#FFF7ED', MEDIUM: '#FEFCE8', LOW: '#F9FAFB' }
+        const SEV_BDR = { CRITICAL: '#FEE2E2', HIGH: '#FED7AA', MEDIUM: '#FEF3C7', LOW: '#E5E7EB' }
+        const SEV_CHI = { CRITICAL: '#EF4444', HIGH: '#F97316', MEDIUM: '#F59E0B', LOW: '#6B7280' }
         return (
           <Card className="p-[22px_24px] mb-5">
             <div className="flex items-center gap-3 mb-4">
@@ -642,7 +648,7 @@ export default function ScanResultsPage() {
               <div className="flex-1">
                 <div className="text-[14px] font-semibold">CVE identifiées</div>
                 {banner && (
-                  <div className="text-xs text-gray-500 font-mono mt-0.5">Serveur détecté : {banner}</div>
+                  <div className="text-xs text-slate-500 font-mono mt-0.5">Serveur détecté : {banner}</div>
                 )}
               </div>
               <Badge color="red">{cves.length} CVE</Badge>
@@ -650,24 +656,22 @@ export default function ScanResultsPage() {
             <div className="flex flex-col gap-2.5">
               {cves.map((cve, i) => (
                 <div key={i} className="p-3 rounded-[9px]"
-                  style={{ background: SEV_BG[cve.severity] || '#F9FAFB', border: `1px solid ${SEV_BORDER[cve.severity] || '#E5E7EB'}` }}>
+                  style={{ background: SEV_BG[cve.severity] || '#F9FAFB', border: `1px solid ${SEV_BDR[cve.severity] || '#E5E7EB'}` }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <div className="text-[12.5px] font-medium text-gray-800 leading-snug">{cve.title}</div>
+                      <div className="text-[12.5px] font-medium text-slate-800 leading-snug">{cve.title}</div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {cve.cvss && (
                         <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded"
-                          style={{ background: (SEV_COLOR[cve.severity] || '#6B7280') + '18', color: SEV_COLOR[cve.severity] || '#6B7280' }}>
+                          style={{ background: (SEV_CHI[cve.severity] || '#6B7280') + '18', color: SEV_CHI[cve.severity] || '#6B7280' }}>
                           CVSS {cve.cvss}
                         </span>
                       )}
-                      <Badge color={cve.severity === 'HIGH' || cve.severity === 'CRITICAL' ? 'red' : cve.severity === 'MEDIUM' ? 'orange' : 'gray'}>
-                        {cve.severity}
-                      </Badge>
+                      <SeverityBadge level={cve.severity} />
                     </div>
                   </div>
-                  <div className="mt-1.5 font-mono text-[11px] text-gray-400">{cve.id}</div>
+                  <div className="mt-1.5 font-mono text-[11px] text-slate-400">{cve.id}</div>
                 </div>
               ))}
             </div>
@@ -684,12 +688,12 @@ export default function ScanResultsPage() {
           </div>
           <div className="flex-1">
             <div className="text-[15px] font-semibold">Analyse par intelligence artificielle</div>
-            <div className="text-xs text-gray-500 mt-0.5">Posez vos questions sur les résultats de ce scan</div>
+            <div className="text-xs text-slate-500 mt-0.5">Posez vos questions sur les résultats de ce scan</div>
           </div>
         </div>
 
-        <div className="text-[13.5px] text-gray-700 leading-[1.7] p-[18px_20px] bg-gray-50 rounded-[10px] border border-gray-100 mb-4">
-          <strong className="text-gray-900">Rapport automatique</strong>
+        <div className="text-[13.5px] text-slate-700 leading-[1.7] p-[18px_20px] bg-slate-50 rounded-[var(--cg-radius)] border border-slate-100 mb-4">
+          <strong className="text-slate-900">Rapport automatique</strong>
           <br />
           Le scan de{' '}
           <code className="bg-white px-1.5 py-px rounded border border-gray-200 text-[12px] font-mono">{scan?.target}</code>{' '}
@@ -786,10 +790,10 @@ export default function ScanResultsPage() {
             {conversations.map((c, i) => (
               <div key={i} className="flex flex-col gap-1.5">
                 <div className="flex items-start gap-2.5">
-                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold text-gray-600">
+                  <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold text-slate-600">
                     Q
                   </div>
-                  <div className="flex-1 px-3 py-2 rounded-[9px] bg-gray-100 text-[13px] text-gray-800">
+                  <div className="flex-1 px-3 py-2 rounded-[var(--cg-radius)] bg-slate-100 text-[13px] text-slate-800">
                     {c.question}
                   </div>
                 </div>
@@ -798,13 +802,13 @@ export default function ScanResultsPage() {
                     style={{ background: 'linear-gradient(135deg, #8B5CF6, #EC4899)' }}>
                     IA
                   </div>
-                  <div className="flex-1 px-3 py-2 rounded-[9px] text-[13px] text-gray-700 leading-relaxed"
+                  <div className="flex-1 px-3 py-2 rounded-[var(--cg-radius)] text-[13px] text-slate-700 leading-relaxed"
                     style={{ background: '#F3F8FD', border: '1px solid #E8F1FA' }}>
                     {c.answer
                       ? <>{c.answer}{askingAI && i === conversations.length - 1 && <span className="inline-block w-[2px] h-[13px] bg-purple-400 ml-0.5 animate-pulse" />}</>
-                      : <span className="flex items-center gap-1.5 text-gray-400"><span className="spinner" style={{ width: 12, height: 12, borderTopColor: '#8B5CF6', borderColor: 'rgba(139,92,246,0.2)' }} />En train de réfléchir…</span>
+                      : <span className="flex items-center gap-1.5 text-slate-400"><span className="spinner" style={{ width: 12, height: 12, borderTopColor: '#8B5CF6', borderColor: 'rgba(139,92,246,0.2)' }} />En train de réfléchir…</span>
                     }
-                    {c.date && <div className="text-[10px] text-gray-400 mt-1.5">{c.date}</div>}
+                    {c.date && <div className="text-[10px] text-slate-400 mt-1.5">{c.date}</div>}
                   </div>
                 </div>
               </div>
@@ -818,7 +822,7 @@ export default function ScanResultsPage() {
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
             placeholder="Poser une question à l'IA sur votre rapport…"
-            className="flex-1 px-4 py-[11px] rounded-[10px] border border-gray-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
+            className="flex-1 px-4 py-[11px] rounded-[var(--cg-radius)] border border-slate-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
           />
           <Button variant="primary" icon={askingAI ? null : Icons.send} onClick={handleAskAI} disabled={askingAI}>
             {askingAI ? <><span className="spinner mr-2" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />En cours…</> : 'Envoyer'}
@@ -848,7 +852,7 @@ export default function ScanResultsPage() {
             return suggestions.slice(0, 3)
           })().map((q) => (
             <button key={q} onClick={() => setQuestion(q)}
-              className="px-3 py-1 rounded-[16px] border border-gray-200 bg-white text-[11.5px] text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+              className="px-3 py-1 rounded-[16px] border border-slate-200 bg-white text-[11.5px] text-slate-600 cursor-pointer hover:bg-slate-50 transition-colors">
               {q}
             </button>
           ))}

@@ -34,6 +34,11 @@ import {
   ScanLine,
   Trash2,
   RefreshCw,
+  AlertCircle,
+  Info,
+  Minus,
+  Copy,
+  CheckCheck,
 } from 'lucide-react'
 
 export const Icons = {
@@ -69,9 +74,14 @@ export const Icons = {
   sparkles:    Sparkles,
   plus:        Plus,
   arrowLeft:   ArrowLeft,
-  badge:       Award,
-  trash:       Trash2,
-  refresh:     RefreshCw,
+  badge:        Award,
+  trash:        Trash2,
+  refresh:      RefreshCw,
+  alertCircle:  AlertCircle,
+  info:         Info,
+  minus:        Minus,
+  copy:         Copy,
+  checkCheck:   CheckCheck,
 }
 
 export function cloneIcon(IconComponent, { size = 20, color = 'currentColor', ...rest } = {}) {

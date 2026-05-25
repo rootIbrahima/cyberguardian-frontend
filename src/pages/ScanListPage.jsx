@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { scanAPI } from '../lib/api'
-import { Card, PageHeader } from '../components/ui'
+import { Card, PageHeader, RelativeTime, toast, SkeletonCard } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 
 const STATUS_MAP = {
@@ -27,6 +27,7 @@ export default function ScanListPage() {
   const [deletingId, setDeletingId]           = useState(null)
 
   const loadScans = useCallback(() => {
+    setLoading(true)
     scanAPI.list()
       .then((res) => setScans(res.data || []))
       .catch(() => setScans([]))
@@ -54,8 +55,9 @@ export default function ScanListPage() {
     try {
       await scanAPI.delete(scanId)
       setScans((prev) => prev.filter((s) => s.id !== scanId))
+      toast.success('Scan supprimé')
     } catch {
-      // keep scan in list on error
+      toast.error('Impossible de supprimer le scan')
     } finally {
       setDeletingId(null)
     }
@@ -65,10 +67,12 @@ export default function ScanListPage() {
     e.stopPropagation()
     setRerunningId(scan.id)
     try {
+      toast.info('Relancement en cours…')
       const res = await scanAPI.rerun(scan.id)
       const newScan = res.data
       navigate(`/scan-results/${newScan.id}`)
     } catch {
+      toast.error('Impossible de relancer le scan')
       setRerunningId(null)
     }
   }
@@ -100,9 +104,8 @@ export default function ScanListPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-16 gap-3">
-            <span className="spinner" style={{ width: 20, height: 20, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }} />
-            <span className="text-sm text-gray-400">Chargement…</span>
+          <div className="space-y-3">
+            {[1,2,3].map(i => <SkeletonCard key={i} lines={1} />)}
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -193,7 +196,9 @@ export default function ScanListPage() {
                     </td>
 
                     {/* Date */}
-                    <td className="py-3.5 text-center text-xs text-gray-500">{scan.date}</td>
+                    <td className="py-3.5 text-center text-xs text-slate-400">
+                      <RelativeTime date={scan.date} />
+                    </td>
 
                     {/* Actions */}
                     <td className="py-3.5" onClick={(e) => e.stopPropagation()}>

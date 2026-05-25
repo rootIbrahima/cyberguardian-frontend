@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ScanForm from '../components/ScanForm'
 import ScoreCard from '../components/ScoreCard'
-import { Card, Badge, Button, PageHeader, Avatar } from '../components/ui'
+import { Card, Badge, Button, PageHeader, Avatar, Skeleton, RelativeTime } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 import { MOCK_CONVERSATIONS } from '../lib/constants'
 import { scanAPI } from '../lib/api'
@@ -46,48 +46,51 @@ function MetricCard({ label, value, sub, color, icon, trend, trendBad }) {
 }
 
 function ScanRow({ scan }) {
-  const navigate = useNavigate()
-  const s = STATUS_MAP[scan.status] || STATUS_MAP.completed
-  const typeIcon = TYPE_ICONS[scan.typeLabel] || TYPE_ICONS[scan.type] || Icons.domain
+  const navigate  = useNavigate()
+  const s         = STATUS_MAP[scan.status] || STATUS_MAP.completed
+  const typeIcon  = TYPE_ICONS[scan.typeLabel] || TYPE_ICONS[scan.type] || Icons.domain
+  const isGithub  = scan.type === 'github'
+  const scoreMax  = isGithub ? (scan.results?.score_max ?? 30) : 100
+  const scorePct  = scan.score != null ? Math.round((scan.score / scoreMax) * 100) : null
+  const scoreColor = scorePct >= 80 ? '#1A7A4A' : scorePct >= 50 ? '#854F0B' : '#991B1B'
 
   return (
     <tr
-      className="border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors"
+      className="border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors"
       onClick={() => navigate(`/scan-results/${scan.id}`)}
     >
       <td className="py-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-[var(--cg-radius)] bg-blue-50 flex items-center justify-center flex-shrink-0">
             {cloneIcon(typeIcon, { size: 16, color: '#1F5C99' })}
           </div>
           <div>
-            <div className="text-[13.5px] font-medium font-mono">{scan.target}</div>
-            <div className="text-[11px] text-gray-400">{scan.type}</div>
+            <div className="text-[13px] font-medium font-mono text-slate-800">{scan.target}</div>
+            <div className="text-[11px] text-slate-400">{scan.typeLabel || scan.type}</div>
           </div>
         </div>
       </td>
       <td className="py-3 text-center">
-        {scan.score !== null ? (
-          <span
-            className="text-[13px] font-bold font-mono"
-            style={{ color: scan.score >= 80 ? '#10B981' : scan.score >= 50 ? '#F59E0B' : '#EF4444' }}
-          >
-            {scan.score}/100
+        {scan.score != null ? (
+          <span className="text-[13px] font-bold font-mono" style={{ color: scoreColor }}>
+            {scan.score}/{scoreMax}
           </span>
         ) : (
-          <span className="text-xs text-gray-400">—</span>
+          <span className="text-xs text-slate-400">—</span>
         )}
       </td>
       <td className="py-3 text-center">
         <span
-          className="text-xs font-semibold px-2.5 py-1 rounded-md inline-flex items-center gap-1"
+          className="text-xs font-semibold px-2 py-1 rounded-md inline-flex items-center gap-1"
           style={{ background: s.bg, color: s.color }}
         >
           {s.label}
           {scan.status === 'running' && <span className="pulse-dot ml-1" />}
         </span>
       </td>
-      <td className="py-3 text-right text-xs text-gray-500">{scan.date}</td>
+      <td className="py-3 text-right">
+        <RelativeTime date={scan.date} className="text-xs text-slate-400" />
+      </td>
     </tr>
   )
 }
@@ -150,20 +153,24 @@ export default function DashboardPage() {
 
   useEffect(() => {
     scanAPI.list()
-      .then((res) => setScans(res.data))
-      .catch(() => setScans(MOCK_SCANS))
+      .then((res) => setScans(res.data || []))
+      .catch(() => setScans([]))
       .finally(() => setLoading(false))
   }, [])
 
-  // Métriques calculées depuis les vrais scans (SSL uniquement)
-  const completedScans = scans.filter((s) => s.score !== null)
-  const avgSslScore = completedScans.length
-    ? Math.round(completedScans.reduce((sum, s) => sum + s.score, 0) / completedScans.length)
+  const easmScans   = scans.filter((s) => s.type !== 'github' && s.score !== null)
+  const githubScans = scans.filter((s) => s.type === 'github' && s.score !== null)
+
+  const avgSslScore = easmScans.length
+    ? Math.round(easmScans.reduce((sum, s) => sum + s.score, 0) / easmScans.length)
     : 0
-  const lastScan    = completedScans[0]
-  const lastGrade   = lastScan?.results?.ssl?.grade ?? null
-  const totalVulns  = scans.reduce((sum, s) => sum + (s.vulns || 0), 0)
-  const totalCVE    = scans.reduce((sum, s) => sum + (s.cve   || 0), 0)
+  const avgGhScore  = githubScans.length
+    ? Math.round(githubScans.reduce((sum, s) => sum + s.score, 0) / githubScans.length)
+    : 0
+
+  const lastScan  = easmScans[0]
+  const lastGrade = lastScan?.results?.ssl?.grade ?? null
+  const totalVulns = scans.reduce((sum, s) => sum + (s.vulns || 0), 0)
 
   const PAGE_TITLE = { client: 'Dashboard', expert: 'Mes missions', admin: 'Tableau de bord' }
   const PAGE_SUB   = {
@@ -173,10 +180,20 @@ export default function DashboardPage() {
   }
 
   const clientMetrics = [
-    { label: 'Score SSL moyen',    value: scans.length ? `${avgSslScore}/25` : '—', sub: `Sur ${scans.length} actif(s) scanné(s)`, color: '#1F5C99', icon: Icons.shield },
-    { label: 'Failles détectées', value: String(totalVulns), sub: 'Issues SSL détectées',   color: '#EF4444', icon: Icons.alert },
-    { label: 'CVE identifiées',   value: String(totalCVE),   sub: 'Toutes sources confondues', color: '#F59E0B', icon: Icons.lock },
-    { label: 'Scans effectués',   value: String(scans.length), sub: 'Total historique',      color: '#8B5CF6', icon: Icons.scan },
+    {
+      label: 'Score SSL/TLS moyen',
+      value: easmScans.length ? `${avgSslScore}/25` : '—',
+      sub:   easmScans.length ? `Sur ${easmScans.length} scan(s) EASM` : 'Aucun scan EASM',
+      color: '#1F5C99', icon: Icons.shield,
+    },
+    {
+      label: 'Score GitHub moyen',
+      value: githubScans.length ? `${avgGhScore}/30` : '—',
+      sub:   githubScans.length ? `Sur ${githubScans.length} dépôt(s) analysé(s)` : 'Aucun scan GitHub',
+      color: '#374151', icon: Icons.github,
+    },
+    { label: 'Failles détectées', value: String(totalVulns), sub: 'Issues SSL détectées',      color: '#EF4444', icon: Icons.alert },
+    { label: 'Scans effectués',   value: String(scans.length), sub: 'Total tous types confondus', color: '#8B5CF6', icon: Icons.scan },
   ]
 
   const expertMetrics = [
@@ -234,9 +251,19 @@ export default function DashboardPage() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-10 gap-3">
-              <span className="spinner" style={{ width: 18, height: 18, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }} />
-              <span className="text-sm text-gray-400">Chargement…</span>
+            <div className="space-y-2.5 py-2">
+              {[1,2,3].map(i => (
+                <div key={i} className="flex items-center gap-3 py-1">
+                  <Skeleton w={32} h={32} className="rounded-[var(--cg-radius)] flex-shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton w="55%" h={12} />
+                    <Skeleton w="30%" h={10} />
+                  </div>
+                  <Skeleton w={48} h={12} />
+                  <Skeleton w={56} h={20} className="rounded-md" />
+                  <Skeleton w={64} h={10} />
+                </div>
+              ))}
             </div>
           ) : displayScans.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-2">

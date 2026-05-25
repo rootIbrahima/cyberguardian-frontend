@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
+import { Toaster } from './components/ui'
 
 import LoginPage          from './pages/LoginPage'
 import DashboardPage      from './pages/DashboardPage'
@@ -84,6 +85,7 @@ function HomeRedirect() {
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster />
       <Routes>
         {/* Public */}
         <Route path="/login" element={<LoginPage />} />

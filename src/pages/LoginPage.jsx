@@ -18,8 +18,6 @@ export default function LoginPage() {
     'admin@cyberguardian.sn':    { name: 'Admin CyberGuardian', role: 'admin' },
     'expert@cyberguardian.sn':   { name: 'Mamadou Diallo',      role: 'expert' },
     'ibrahima.ly@ec2lt.sn':      { name: 'Ibrahima LY',         role: 'client' },
-        'ibrahima1.ly@ec2lt.sn':      { name: 'Ibrahima LY',         role: 'client' },
-
   }
 
   const handleLogin = async (e) => {
@@ -169,6 +167,12 @@ export default function LoginPage() {
           Créer un compte CyberGuardian
         </Button>
 
+        <div className="mt-5 p-3.5 rounded-[10px] flex gap-3 items-start" style={{ background: '#F3F8FD', border: '1px solid #E8F1FA' }}>
+          {cloneIcon(Icons.shield, { size: 18, color: '#1F5C99' })}
+          <div className="text-xs text-blue-700 leading-relaxed">
+            <strong>Accès protégé.</strong> Vos identifiants sont transmis de façon sécurisée et votre session est gérée par jeton d'authentification.
+          </div>
+        </div>
       </div>
     </div>
   )
