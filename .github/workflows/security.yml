@@ -1,0 +1,34 @@
+name: Pipeline de sécurité — frontend
+
+# DevSecOps (shift-left) : à chaque push et pull request, on vérifie les
+# dépendances JavaScript et l'absence de secrets exposés dans le code frontend.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  dependencies:
+    name: Dépendances vulnérables (npm audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - name: npm audit — CVE des dépendances
+        run: npm audit --audit-level=high
+
+  secrets:
+    name: Secrets exposés (TruffleHog)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # historique complet : détecte aussi les secrets des anciens commits
+      - name: TruffleHog — clés et mots de passe exposés
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/repo" \
+            trufflesecurity/trufflehog:latest \
+            filesystem /repo --only-verified --fail
