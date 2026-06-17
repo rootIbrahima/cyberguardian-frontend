@@ -4,8 +4,7 @@ import ScanForm from '../components/ScanForm'
 import ScoreCard from '../components/ScoreCard'
 import { Card, Badge, Button, PageHeader, Avatar, Skeleton, RelativeTime } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
-import { MOCK_CONVERSATIONS } from '../lib/constants'
-import { scanAPI } from '../lib/api'
+import { scanAPI, adminAPI, messageAPI } from '../lib/api'
 
 const STATUS_MAP = {
   completed: { label: 'Terminé',  bg: '#D1FAE5', color: '#059669' },
@@ -98,9 +97,9 @@ function ScanRow({ scan }) {
 const LEVEL_COLORS = { 1: '#9CA3AF', 2: '#F59E0B', 3: '#10B981' }
 const LEVEL_LABELS = { 1: 'Demande reçue', 2: 'Mission acceptée', 3: 'Contrat signé' }
 
-function ExpertMissions() {
+function ExpertMissions({ conversations }) {
   const navigate = useNavigate()
-  const missions = MOCK_CONVERSATIONS.filter((c) => c.level >= 2)
+  const missions = conversations.filter((c) => c.level >= 2)
 
   return (
     <Card className="p-[22px_26px] mb-[22px]">
@@ -150,18 +149,29 @@ export default function DashboardPage() {
 
   const [scans, setScans]     = useState([])
   const [loading, setLoading] = useState(true)
+  const [stats, setStats]     = useState(null)         // admin uniquement
+  const [convs, setConvs]     = useState([])           // expert uniquement
 
   useEffect(() => {
     scanAPI.list()
       .then((res) => setScans(res.data || []))
       .catch(() => setScans([]))
       .finally(() => setLoading(false))
-  }, [])
+
+    if (role === 'admin') {
+      adminAPI.stats().then((res) => setStats(res.data)).catch(() => {})
+    }
+    if (role === 'expert') {
+      messageAPI.conversations()
+        .then((res) => { if (Array.isArray(res.data)) setConvs(res.data) })
+        .catch(() => {})
+    }
+  }, [role])
 
   const easmScans   = scans.filter((s) => s.type !== 'github' && s.score !== null)
   const githubScans = scans.filter((s) => s.type === 'github' && s.score !== null)
 
-  const avgSslScore = easmScans.length
+  const avgEasmScore = easmScans.length
     ? Math.round(easmScans.reduce((sum, s) => sum + s.score, 0) / easmScans.length)
     : 0
   const avgGhScore  = githubScans.length
@@ -181,8 +191,8 @@ export default function DashboardPage() {
 
   const clientMetrics = [
     {
-      label: 'Score SSL/TLS moyen',
-      value: easmScans.length ? `${avgSslScore}/25` : '—',
+      label: 'Score sécurité moyen',
+      value: easmScans.length ? `${avgEasmScore}/100` : '—',
       sub:   easmScans.length ? `Sur ${easmScans.length} scan(s) EASM` : 'Aucun scan EASM',
       color: '#1F5C99', icon: Icons.shield,
     },
@@ -192,22 +202,28 @@ export default function DashboardPage() {
       sub:   githubScans.length ? `Sur ${githubScans.length} dépôt(s) analysé(s)` : 'Aucun scan GitHub',
       color: '#374151', icon: Icons.github,
     },
-    { label: 'Failles détectées', value: String(totalVulns), sub: 'Issues SSL détectées',      color: '#EF4444', icon: Icons.alert },
+    { label: 'Failles détectées', value: String(totalVulns), sub: 'DNS, SSL, headers et code',  color: '#EF4444', icon: Icons.alert },
     { label: 'Scans effectués',   value: String(scans.length), sub: 'Total tous types confondus', color: '#8B5CF6', icon: Icons.scan },
   ]
 
+  const missionsActives = convs.filter((c) => c.level >= 2).length
+  const contratsSignes  = convs.filter((c) => c.level === 3).length
+  const totalUnread     = convs.reduce((sum, c) => sum + (c.unread || 0), 0)
+
   const expertMetrics = [
-    { label: 'Missions actives',   value: '3',      sub: '2 en attente de contrat', color: '#10B981', icon: Icons.experts },
-    { label: 'Rapports remis',     value: '12',     sub: 'Ce trimestre',             color: '#1F5C99', icon: Icons.results },
-    { label: 'Score moyen client', value: '61/100', sub: 'Portefeuille actuel',      color: '#F59E0B', icon: Icons.shield },
-    { label: 'Messages non lus',   value: '5',      sub: 'Sur 3 conversations',      color: '#EF4444', icon: Icons.message },
+    { label: 'Missions actives',  value: String(missionsActives), sub: `${convs.filter((c) => c.level === 2).length} en attente de contrat`, color: '#10B981', icon: Icons.experts },
+    { label: 'Demandes reçues',   value: String(convs.length),    sub: 'Toutes conversations',     color: '#1F5C99', icon: Icons.results },
+    { label: 'Contrats signés',   value: String(contratsSignes),  sub: 'Accès rapport complet 48h', color: '#F59E0B', icon: Icons.shield },
+    { label: 'Messages non lus',  value: String(totalUnread),     sub: `Sur ${convs.length} conversation(s)`, color: '#EF4444', icon: Icons.message },
   ]
 
   const adminMetrics = [
-    { label: 'Utilisateurs actifs', value: '47',  sub: '38 clients · 9 experts', color: '#1F5C99', icon: Icons.experts },
+    { label: 'Utilisateurs inscrits', value: String(stats?.users ?? '—'),
+      sub: stats ? `${stats.clients} client(s) · ${stats.experts} expert(s)` : 'Chargement…',
+      color: '#1F5C99', icon: Icons.experts },
     { label: 'Scans totaux',        value: String(scans.length), sub: 'Tous clients',   color: '#10B981', icon: Icons.shield },
     { label: 'Failles détectées',   value: String(totalVulns),   sub: 'Tous scans',     color: '#EF4444', icon: Icons.alert },
-    { label: 'Experts en attente',  value: '2',   sub: 'Validation requise',      color: '#F59E0B', icon: Icons.lock },
+    { label: 'Experts en attente',  value: String(stats?.pending ?? '—'), sub: 'Validation requise', color: '#F59E0B', icon: Icons.lock },
   ]
 
   const metrics = role === 'expert' ? expertMetrics : role === 'admin' ? adminMetrics : clientMetrics
@@ -218,7 +234,7 @@ export default function DashboardPage() {
       <PageHeader title={PAGE_TITLE[role]} subtitle={PAGE_SUB[role]} />
 
       {role === 'client' && <ScanForm />}
-      {role === 'expert' && <ExpertMissions />}
+      {role === 'expert' && <ExpertMissions conversations={convs} />}
 
       {/* Metrics */}
       <div className="grid grid-cols-4 gap-3.5 mb-[22px]">
@@ -231,7 +247,12 @@ export default function DashboardPage() {
       <div className="grid gap-[18px]" style={{ gridTemplateColumns: role === 'client' ? '300px 1fr' : '1fr' }}>
         {role === 'client' && (
           <Card className="p-[26px]">
-            <ScoreCard score={avgSslScore || 0} sslScore={avgSslScore || 0} sslGrade={lastGrade} />
+            <ScoreCard
+              score={avgEasmScore || 0}
+              breakdown={lastScan?.results?.score_detail?.breakdown}
+              sslScore={lastScan?.results?.ssl?.score}
+              sslGrade={lastGrade}
+            />
           </Card>
         )}
 

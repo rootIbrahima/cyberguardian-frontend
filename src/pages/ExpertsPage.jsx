@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { PageHeader } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 import ExpertCard from '../components/ExpertCard'
 import { MOCK_EXPERTS } from '../lib/constants'
+import { expertAPI } from '../lib/api'
 
 const FILTERS = [
   { key: 'all', label: 'Tous' },
@@ -15,8 +16,15 @@ const FILTERS = [
 export default function ExpertsPage() {
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [experts, setExperts] = useState(MOCK_EXPERTS)
 
-  const filtered = MOCK_EXPERTS.filter(
+  useEffect(() => {
+    expertAPI.list()
+      .then((res) => { if (Array.isArray(res.data) && res.data.length) setExperts(res.data) })
+      .catch(() => {})   // backend hors ligne — annuaire de démonstration conservé
+  }, [])
+
+  const filtered = experts.filter(
     (e) =>
       (filter === 'all' || e.specialty === filter) &&
       e.name.toLowerCase().includes(search.toLowerCase())
@@ -26,7 +34,7 @@ export default function ExpertsPage() {
     <div>
       <PageHeader
         title="Experts cybersécurité"
-        subtitle="18 experts validés · Expertise locale sénégalaise"
+        subtitle={`${experts.length} expert${experts.length > 1 ? 's' : ''} vérifié${experts.length > 1 ? 's' : ''} — identité et diplôme contrôlés`}
         actions={
           <div className="flex items-center gap-2.5 bg-white border border-gray-200 rounded-[10px] px-3.5">
             {cloneIcon(Icons.search, { size: 16, color: '#9CA3AF' })}

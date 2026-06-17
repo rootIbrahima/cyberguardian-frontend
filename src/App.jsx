@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
 import { Toaster } from './components/ui'
 
 import LoginPage          from './pages/LoginPage'
+import RegisterPage       from './pages/RegisterPage'
 import DashboardPage      from './pages/DashboardPage'
 import ScanProgressPage   from './pages/ScanProgressPage'
 import ScanResultsPage    from './pages/ScanResultsPage'
@@ -11,6 +13,7 @@ import ExpertsPage        from './pages/ExpertsPage'
 import MessagesPage       from './pages/MessagesPage'
 import RegisterExpertPage from './pages/RegisterExpertPage'
 import AdminPage          from './pages/AdminPage'
+import SettingsPage       from './pages/SettingsPage'
 
 /* ─── Helpers ─── */
 function getUser() {
@@ -61,12 +64,28 @@ function ProgressLayout() {
 
 /* ─── Main layout with sidebar ─── */
 function AppLayout() {
+  const location = useLocation()
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('cg-sidebar') === 'min')
+  const toggleSidebar = () => setCollapsed((c) => {
+    localStorage.setItem('cg-sidebar', c ? 'max' : 'min')
+    return !c
+  })
+
+  // La messagerie occupe tout l'espace disponible, sans bride de largeur
+  const isMessages = location.pathname === '/messages'
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
       <main
         className="flex-1 min-h-screen"
-        style={{ marginLeft: 240, padding: '28px 36px 60px', maxWidth: 1440, width: '100%' }}
+        style={{
+          marginLeft: collapsed ? 68 : 240,
+          padding: isMessages ? '20px 24px 20px' : '28px 36px 60px',
+          maxWidth: isMessages ? 'none' : 1440,
+          width: '100%',
+          transition: 'margin-left 0.2s ease',
+        }}
       >
         <div className="page-anim">
           <Outlet />
@@ -88,7 +107,8 @@ export default function App() {
       <Toaster />
       <Routes>
         {/* Public */}
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login"    element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
         {/* Authenticated */}
         <Route element={<RequireAuth />}>
@@ -106,8 +126,12 @@ export default function App() {
 
             {/* ── CLIENT + ADMIN only ── */}
             <Route element={<RequireRole roles={['client', 'admin']} />}>
-              <Route path="/experts"          element={<ExpertsPage />} />
-              <Route path="/register-expert"  element={<RegisterExpertPage />} />
+              <Route path="/experts" element={<ExpertsPage />} />
+            </Route>
+
+            {/* ── CLIENT only — un admin ou un expert ne candidate pas ── */}
+            <Route element={<RequireRole roles={['client']} />}>
+              <Route path="/register-expert" element={<RegisterExpertPage />} />
             </Route>
 
             {/* ── All authenticated roles ── */}
@@ -115,6 +139,7 @@ export default function App() {
               <Route path="/scan-results"     element={<ScanListPage />} />
               <Route path="/scan-results/:id" element={<ScanResultsPage />} />
               <Route path="/messages"         element={<MessagesPage />} />
+              <Route path="/settings"         element={<SettingsPage />} />
             </Route>
 
             {/* ── ADMIN only ── */}

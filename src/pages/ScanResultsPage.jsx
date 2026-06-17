@@ -4,6 +4,73 @@ import { Card, Badge, Button, PageHeader, SeverityBadge, Skeleton, RelativeTime,
 import { cloneIcon, Icons } from '../components/Icons'
 import { scanAPI } from '../lib/api'
 
+/* ─── Markdown renderer (LLM responses) ─── */
+function parseBold(text) {
+  const parts = text.split(/\*\*(.*?)\*\*/g)
+  return parts.map((p, i) => i % 2 === 1 ? <strong key={i}>{p}</strong> : p)
+}
+
+function renderMd(text) {
+  if (!text) return null
+  const lines  = text.split('\n')
+  const result = []
+  let listBuf  = []
+
+  const flushList = () => {
+    if (!listBuf.length) return
+    result.push(
+      <ul key={`ul-${result.length}`} className="mt-1 mb-2 flex flex-col gap-[3px]">
+        {listBuf.map((item, j) => (
+          <li key={j} className="flex gap-2 items-start text-slate-700">
+            <span className="text-blue-500 mt-[2px] flex-shrink-0">•</span>
+            <span>{parseBold(item)}</span>
+          </li>
+        ))}
+      </ul>
+    )
+    listBuf = []
+  }
+
+  lines.forEach((raw, i) => {
+    const line = raw.trimEnd()
+
+    // Heading: ## Title or **Title** alone on a line
+    if (/^#{1,3}\s/.test(line)) {
+      flushList()
+      const txt = line.replace(/^#{1,3}\s+/, '')
+      result.push(<div key={i} className="font-semibold text-slate-800 text-[13.5px] mt-3 mb-0.5">{parseBold(txt)}</div>)
+      return
+    }
+    if (/^\*\*[^*]+\*\*[:：]?\s*$/.test(line.trim())) {
+      flushList()
+      result.push(<div key={i} className="font-semibold text-slate-800 text-[13.5px] mt-3 mb-0.5">{line.replace(/\*\*/g, '')}</div>)
+      return
+    }
+
+    // List item: * item or - item
+    if (/^[\*\-]\s/.test(line.trim())) {
+      listBuf.push(line.replace(/^[\s\*\-]+/, ''))
+      return
+    }
+
+    // Empty line — paragraph break
+    if (!line.trim()) {
+      flushList()
+      if (result.length && result[result.length - 1]?.type !== 'br') {
+        result.push(<br key={`br-${i}`} />)
+      }
+      return
+    }
+
+    // Normal line
+    flushList()
+    result.push(<span key={i} className="block leading-relaxed">{parseBold(line)}</span>)
+  })
+
+  flushList()
+  return <div className="flex flex-col gap-0.5">{result}</div>
+}
+
 /* ─── Score Ring ─── */
 function ScoreRing({ score, size = 110, stroke = 9 }) {
   const r      = (size - stroke) / 2
@@ -25,6 +92,7 @@ const ISSUE_STYLES = {
   red:    { border: '#FEE2E2', bg: '#FEF2F2' },
   orange: { border: '#FED7AA', bg: '#FFF7ED' },
   yellow: { border: '#FEF3C7', bg: '#FEFCE8' },
+  blue:   { border: '#BFDBFE', bg: '#EFF6FF' },
 }
 
 
@@ -175,25 +243,44 @@ function GitHubSection({ scan }) {
         ) : (
           <div className="flex flex-col gap-3">
             {safetyFile && <div className="text-[11px] text-slate-400 mb-1">{safetyFile} · {safetyPkg} dépendances</div>}
-            {safety.map((f, i) => (
-              <div key={i} className="p-3.5 rounded-[9px]"
-                style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }}>
-                <div className="flex justify-between items-start gap-2 mb-1.5">
-                  <div>
-                    <span className="font-mono text-[13px] font-bold text-slate-900">{f.package}</span>
-                    <span className="font-mono text-[12px] text-slate-500 ml-2">v{f.version}</span>
+            {(() => {
+              const PRIO_COLOR = { 'URGENTE': '#DC2626', 'ÉLEVÉE': '#EA580C', 'À SURVEILLER': '#CA8A04', 'FAIBLE': '#6B7280' }
+              const PRIO_RANK  = { 'URGENTE': 0, 'ÉLEVÉE': 1, 'À SURVEILLER': 2, 'FAIBLE': 3 }
+              return [...safety].sort((a, b) => (PRIO_RANK[a.priority] ?? 4) - (PRIO_RANK[b.priority] ?? 4)).map((f, i) => (
+                <div key={i} className="p-3.5 rounded-[9px]"
+                  style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }}>
+                  <div className="flex justify-between items-start gap-2 mb-1.5">
+                    <div>
+                      <span className="font-mono text-[13px] font-bold text-slate-900">{f.package}</span>
+                      <span className="font-mono text-[12px] text-slate-500 ml-2">v{f.version}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {f.priority && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded"
+                          style={{ background: (PRIO_COLOR[f.priority] || '#6B7280') + '18', color: PRIO_COLOR[f.priority] || '#6B7280' }}
+                          title="Priorité combinée gravité (CVSS) × probabilité d'exploitation (EPSS)">
+                          {f.priority}
+                        </span>
+                      )}
+                      <SeverityBadge level={f.severity} />
+                      <span className="text-[10px] font-mono text-red-600 font-semibold">{f.cve}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <SeverityBadge level={f.severity} />
-                    <span className="text-[10px] font-mono text-red-600 font-semibold">{f.cve}</span>
+                  <div className="text-xs text-slate-600">{f.desc}</div>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-slate-400">
+                      → <span className="font-mono">pip install {f.package} --upgrade</span>
+                    </span>
+                    {f.epss != null && (
+                      <span className="text-[10.5px] text-slate-400 font-mono"
+                        title="Probabilité d'exploitation dans les 30 jours (EPSS, FIRST.org)">
+                        EPSS {(f.epss * 100).toFixed(1)}%
+                      </span>
+                    )}
                   </div>
                 </div>
-                <div className="text-xs text-slate-600">{f.desc}</div>
-                <div className="mt-2 text-[11px] text-slate-400">
-                  → <span className="font-mono">pip install {f.package} --upgrade</span>
-                </div>
-              </div>
-            ))}
+              ))
+            })()}
           </div>
         )
       )}
@@ -505,7 +592,7 @@ export default function ScanResultsPage() {
           </div>
           <CopyValue value={scan?.target} className="text-[24px] font-bold font-mono tracking-[-0.02em] text-slate-900" />
           <div className="text-[13px] text-slate-500 mt-1 flex items-center gap-1.5">
-            Analysé <RelativeTime date={scan?.date} /> · {isGithub ? 'Bandit · Safety · TruffleHog' : 'Analyse SSL/TLS complète'}
+            Analysé <RelativeTime date={scan?.date} /> · {isGithub ? 'Bandit · Safety · TruffleHog' : scan?.results?.dns ? 'Analyse DNS · SSL/TLS · Headers' : 'Analyse SSL/TLS · Headers'}
           </div>
           <div className="flex gap-6 mt-3.5 text-xs flex-wrap">
             {!isGithub && (
@@ -543,46 +630,66 @@ export default function ScanResultsPage() {
       {/* Breakdown + Issues (EASM only) */}
       {!isGithub && (
         <div className="grid grid-cols-2 gap-[18px] mb-5">
-          {/* SSL breakdown — données réelles du backend */}
+          {/* Détail du score pondéré + SSL — données réelles du backend */}
           <Card className="p-[22px_24px]">
-            <div className="text-sm font-semibold mb-4">Résultats SSL/TLS</div>
+            <div className="text-sm font-semibold mb-4">Détail du score</div>
             {(() => {
-              const ssl = scan?.results?.ssl
-              if (!ssl) return <div className="text-sm text-slate-400">Données SSL non disponibles.</div>
-              const pts = ssl.score ?? 0
-              const max = 25
-              const pct = (pts / max) * 100
-              const color = pct >= 80 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444'
-              const rows = [
-                { label: 'Score SSL',       value: `${pts} / ${max} pts`,                   detail: `Grade ${ssl.grade}` },
+              const ssl       = scan?.results?.ssl
+              const breakdown = scan?.results?.score_detail?.breakdown ?? []
+              if (!ssl && breakdown.length === 0) return <div className="text-sm text-slate-400">Données non disponibles.</div>
+
+              const barColor = (pct) => pct >= 80 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444'
+
+              const rows = ssl ? [
                 { label: 'Version TLS',     value: ssl.tls_version  || '—',                 detail: ssl.tls_version === 'TLSv1.3' ? 'Optimal' : 'Mettre à jour recommandé' },
                 { label: 'Certificat',      value: ssl.valid ? 'Valide' : 'Invalide',        detail: ssl.issued_by || '—' },
                 { label: 'Expiration',      value: ssl.expiry_date  || '—',                  detail: ssl.expired ? 'Expiré !' : `${ssl.days_until_expiry} jours restants` },
                 { label: 'Auto-signé',      value: ssl.self_signed  ? 'Oui' : 'Non',         detail: ssl.self_signed ? 'Non approuvé par les navigateurs' : 'CA reconnue' },
-              ]
+              ] : []
+
               return (
                 <div className="flex flex-col gap-4">
-                  <div>
-                    <div className="flex justify-between mb-1.5">
-                      <span className="text-[13px] font-medium">Score SSL/TLS</span>
-                      <span className="text-[13px] font-bold font-mono" style={{ color }}>{pts}/{max}</span>
-                    </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, background: color }} />
-                    </div>
-                    <div className="text-[11.5px] text-slate-500 mt-1.5">Grade {ssl.grade} · {ssl.cipher_suite || '—'}</div>
-                  </div>
-                  <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
-                    {rows.slice(1).map((r) => (
-                      <div key={r.label} className="flex justify-between items-center text-[12px]">
-                        <span className="text-slate-500 font-medium">{r.label}</span>
-                        <div className="text-right">
-                          <span className="font-mono font-semibold text-slate-800">{r.value}</span>
-                          <span className="text-slate-400 ml-2 text-[11px]">{r.detail}</span>
+                  {/* Une barre par critère pondéré (DNS 25 · SSL 25 · Headers 20) */}
+                  {breakdown.length > 0 ? breakdown.map((b) => {
+                    const pct = (b.points / b.max) * 100
+                    return (
+                      <div key={b.criterion}>
+                        <div className="flex justify-between mb-1.5">
+                          <span className="text-[13px] font-medium">{b.label}</span>
+                          <span className="text-[13px] font-bold font-mono" style={{ color: barColor(pct) }}>{b.points}/{b.max}</span>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, background: barColor(pct) }} />
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    )
+                  }) : ssl && (
+                    <div>
+                      <div className="flex justify-between mb-1.5">
+                        <span className="text-[13px] font-medium">Score SSL/TLS</span>
+                        <span className="text-[13px] font-bold font-mono" style={{ color: barColor((ssl.score ?? 0) / 25 * 100) }}>{ssl.score ?? 0}/25</span>
+                      </div>
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${(ssl.score ?? 0) / 25 * 100}%`, background: barColor((ssl.score ?? 0) / 25 * 100) }} />
+                      </div>
+                    </div>
+                  )}
+                  {ssl && (
+                    <>
+                      <div className="text-[11.5px] text-slate-500 -mt-1">Grade SSL {ssl.grade} · {ssl.cipher_suite || '—'}</div>
+                      <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+                        {rows.map((r) => (
+                          <div key={r.label} className="flex justify-between items-center text-[12px]">
+                            <span className="text-slate-500 font-medium">{r.label}</span>
+                            <div className="text-right">
+                              <span className="font-mono font-semibold text-slate-800">{r.value}</span>
+                              <span className="text-slate-400 ml-2 text-[11px]">{r.detail}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )
             })()}
@@ -603,7 +710,7 @@ export default function ScanResultsPage() {
                   {issues.length === 0 ? (
                     <div className="flex flex-col items-center justify-center flex-1 gap-3 py-8">
                       {cloneIcon(Icons.checkCircle, { size: 36, color: '#10B981' })}
-                      <div className="text-sm text-slate-500">Aucun problème SSL détecté</div>
+                      <div className="text-sm text-slate-500">Aucun problème détecté sur les critères évalués</div>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2.5 overflow-auto">
@@ -638,6 +745,9 @@ export default function ScanResultsPage() {
         const SEV_BG  = { CRITICAL: '#FEF2F2', HIGH: '#FFF7ED', MEDIUM: '#FEFCE8', LOW: '#F9FAFB' }
         const SEV_BDR = { CRITICAL: '#FEE2E2', HIGH: '#FED7AA', MEDIUM: '#FEF3C7', LOW: '#E5E7EB' }
         const SEV_CHI = { CRITICAL: '#EF4444', HIGH: '#F97316', MEDIUM: '#F59E0B', LOW: '#6B7280' }
+        const PRIO_COLOR = { 'URGENTE': '#DC2626', 'ÉLEVÉE': '#EA580C', 'À SURVEILLER': '#CA8A04', 'FAIBLE': '#6B7280' }
+        const PRIO_RANK  = { 'URGENTE': 0, 'ÉLEVÉE': 1, 'À SURVEILLER': 2, 'FAIBLE': 3 }
+        const sortedCves = [...cves].sort((a, b) => (PRIO_RANK[a.priority] ?? 4) - (PRIO_RANK[b.priority] ?? 4))
         return (
           <Card className="p-[22px_24px] mb-5">
             <div className="flex items-center gap-3 mb-4">
@@ -654,7 +764,7 @@ export default function ScanResultsPage() {
               <Badge color="red">{cves.length} CVE</Badge>
             </div>
             <div className="flex flex-col gap-2.5">
-              {cves.map((cve, i) => (
+              {sortedCves.map((cve, i) => (
                 <div key={i} className="p-3 rounded-[9px]"
                   style={{ background: SEV_BG[cve.severity] || '#F9FAFB', border: `1px solid ${SEV_BDR[cve.severity] || '#E5E7EB'}` }}>
                   <div className="flex items-start justify-between gap-3">
@@ -662,6 +772,13 @@ export default function ScanResultsPage() {
                       <div className="text-[12.5px] font-medium text-slate-800 leading-snug">{cve.title}</div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      {cve.priority && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded"
+                          style={{ background: (PRIO_COLOR[cve.priority] || '#6B7280') + '18', color: PRIO_COLOR[cve.priority] || '#6B7280' }}
+                          title="Priorité combinée gravité (CVSS) × probabilité d'exploitation (EPSS)">
+                          {cve.priority}
+                        </span>
+                      )}
                       {cve.cvss && (
                         <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded"
                           style={{ background: (SEV_CHI[cve.severity] || '#6B7280') + '18', color: SEV_CHI[cve.severity] || '#6B7280' }}>
@@ -671,7 +788,14 @@ export default function ScanResultsPage() {
                       <SeverityBadge level={cve.severity} />
                     </div>
                   </div>
-                  <div className="mt-1.5 font-mono text-[11px] text-slate-400">{cve.id}</div>
+                  <div className="mt-1.5 flex items-center gap-2.5 font-mono text-[11px] text-slate-400">
+                    <span>{cve.id}</span>
+                    {cve.epss != null && (
+                      <span title="Probabilité d'exploitation dans les 30 jours (EPSS, FIRST.org)">
+                        · EPSS {(cve.epss * 100).toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -683,11 +807,11 @@ export default function ScanResultsPage() {
       <Card className="p-7 mb-5">
         <div className="flex items-center gap-3 mb-[18px]">
           <div className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #8B5CF6, #EC4899)' }}>
-            {cloneIcon(Icons.sparkles, { color: '#fff', size: 20 })}
+            style={{ background: '#1F5C99' }}>
+            {cloneIcon(Icons.results, { color: '#fff', size: 20 })}
           </div>
           <div className="flex-1">
-            <div className="text-[15px] font-semibold">Analyse par intelligence artificielle</div>
+            <div className="text-[15px] font-semibold">Analyse du rapport</div>
             <div className="text-xs text-slate-500 mt-0.5">Posez vos questions sur les résultats de ce scan</div>
           </div>
         </div>
@@ -730,7 +854,13 @@ export default function ScanResultsPage() {
 
                 if (cveCount > 0) {
                   const pkgManager = npmF.length > 0 ? 'npm audit fix' : 'pip install --upgrade'
+                  const urgent = safetyF.filter((f) => f.priority === 'URGENTE').length
                   lines.push(<><strong>{cveCount} CVE</strong> détectée{cveCount > 1 ? 's' : ''} dans les dépendances. Exécutez <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono">{pkgManager}</code> pour corriger les vulnérabilités automatiquement corrigeables.</>)
+                  if (urgent > 0) {
+                    lines.push(<><strong style={{ color: '#DC2626' }}>{urgent} CVE en priorité URGENTE</strong> — gravité élevée ET forte probabilité d'exploitation (croisement CVSS × EPSS). À corriger en premier, avant les autres.</>)
+                  } else {
+                    lines.push(<>Les CVE sont classées par priorité combinée <strong>CVSS × EPSS</strong> (gravité croisée avec la probabilité d'exploitation réelle) dans l'onglet Safety — traitez d'abord celles marquées « ÉLEVÉE ».</>)
+                  }
                 }
 
                 if (banditHigh > 0) {
@@ -747,14 +877,99 @@ export default function ScanResultsPage() {
               ))
             }
 
-            /* ── EASM (SSL) report ─────────────────────────────── */
-            const ssl    = scan?.results?.ssl
-            const issues = scan?.issues ?? []
+            /* ── EASM (DNS + SSL + Headers + CVE) report ───────── */
+            const ssl     = scan?.results?.ssl
+            const dns     = scan?.results?.dns
+            const whois   = scan?.results?.whois
+            const headers = scan?.results?.headers
+            const issues  = scan?.issues ?? []
+            const cves    = scan?.results?.cves ?? []
+            const server  = scan?.results?.server_banner || ''
 
-            if (!ssl) return 'Aucune donnée SSL disponible pour ce scan.'
+            if (!ssl) return 'Aucune donnée disponible pour ce scan.'
 
             const lines = []
 
+            // DNS anti-phishing — le critère le plus lourd du score (25 pts)
+            if (dns) {
+              if (!dns.dmarc_present) {
+                lines.push(<><strong style={{ color: '#DC2626' }}>DMARC absent</strong> — n'importe qui peut envoyer un email en se faisant passer pour <strong>@{scan?.target}</strong>. Ajoutez un enregistrement TXT <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono">v=DMARC1; p=quarantine;</code> sur <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono">_dmarc.{scan?.target}</code>.</>)
+              } else if (dns.dmarc_policy === 'none') {
+                lines.push(<>DMARC est présent mais en mode surveillance seule (<strong>p=none</strong>) : les emails usurpés sont quand même livrés. Passez à p=quarantine puis p=reject.</>)
+              }
+              if (!dns.spf_present) {
+                lines.push(<><strong style={{ color: '#DC2626' }}>SPF absent</strong> — aucun contrôle sur les serveurs autorisés à envoyer des emails pour votre domaine.</>)
+              }
+              if (dns.spf_present && dns.dmarc_present && dns.dmarc_policy !== 'none') {
+                lines.push(<>La protection anti-phishing DNS est bien configurée (SPF + DMARC{dns.dkim_present ? ' + DKIM' : ''}{dns.dnssec_enabled ? ' + DNSSEC' : ''}) — score DNS <strong>{dns.score}/25</strong>.</>)
+              }
+              if (!dns.dnssec_enabled) {
+                lines.push(<><strong>DNSSEC non activé</strong> — vos réponses DNS ne sont pas signées et restent exposées à l'empoisonnement de cache. Activez DNSSEC chez votre hébergeur DNS.</>)
+              }
+            }
+
+            // WHOIS — expiration du domaine (priorité absolue si expiré/proche)
+            if (whois?.found && whois.days_until_expiry != null) {
+              if (whois.days_until_expiry < 0) {
+                lines.push(<><strong style={{ color: '#DC2626' }}>Domaine expiré</strong> depuis {Math.abs(whois.days_until_expiry)} jours — il peut être racheté par un tiers qui prendrait le contrôle du site et des emails. Renouvelez-le immédiatement.</>)
+              } else if (whois.days_until_expiry <= 30) {
+                lines.push(<><strong>Le domaine expire dans {whois.days_until_expiry} jours</strong> (registrar {whois.registrar || 'N/A'}). Renouvelez-le sans tarder pour éviter une interruption de service et un risque de détournement.</>)
+              }
+            }
+
+            // En-têtes de sécurité HTTP (20 pts)
+            if (headers) {
+              const missing = headers.headers_missing ?? []
+              if (missing.length > 0) {
+                lines.push(<><strong>{missing.length} en-tête{missing.length > 1 ? 's' : ''} de sécurité HTTP manquant{missing.length > 1 ? 's' : ''}</strong> ({missing.slice(0, 3).join(', ')}{missing.length > 3 ? '…' : ''}) — protection incomplète contre le XSS, le clickjacking et le SSL stripping. Score headers : <strong>{headers.score}/20</strong>.</>)
+              } else if (headers.reachable) {
+                lines.push(<>Tous les en-têtes de sécurité HTTP sont en place — score headers <strong>{headers.score}/20</strong>.</>)
+              }
+            }
+
+            // Serveur détecté
+            if (server) {
+              lines.push(<>Serveur détecté : <strong>{server}</strong>.</>)
+            }
+
+            // CVE — priorité croisée CVSS × EPSS
+            const cveUrgent   = cves.filter((c) => c.priority === 'URGENTE')
+            const cveCritical = cves.filter((c) => ['CRITICAL','CRITIQUE'].includes((c.severity || '').toUpperCase()))
+            const cveHigh     = cves.filter((c) => ['HIGH','HAUT'].includes((c.severity || '').toUpperCase()))
+            const epssTxt = (c) => c.epss != null ? `, EPSS ${(c.epss * 100).toFixed(1)}%` : ''
+
+            if (cveUrgent.length > 0) {
+              lines.push(
+                <><strong style={{ color: '#DC2626' }}>⚠ {cveUrgent.length} CVE en priorité URGENTE</strong> — gravité élevée croisée avec une forte probabilité d'exploitation réelle (CVSS × EPSS). À corriger en premier.{' '}
+                {cveUrgent.slice(0, 3).map((c, i) => (
+                  <span key={i}><br />• <strong>{c.id}</strong> (CVSS {c.cvss}{epssTxt(c)}) : {(c.title || '').slice(0, 90)}{(c.title || '').length > 90 ? '…' : ''}</span>
+                ))}</>
+              )
+            }
+
+            if (cveCritical.length > 0) {
+              lines.push(
+                <><strong style={{ color: '#DC2626' }}>{cveCritical.length} CVE CRITIQUE{cveCritical.length > 1 ? 'S' : ''}</strong> (gravité) détectée{cveCritical.length > 1 ? 's' : ''} sur {server || 'ce serveur'}.{' '}
+                {cveCritical.slice(0, 3).map((c, i) => (
+                  <span key={i}><br />• <strong>{c.id}</strong> (CVSS {c.cvss}{epssTxt(c)}) : {(c.title || '').slice(0, 90)}{(c.title || '').length > 90 ? '…' : ''}</span>
+                ))}</>
+              )
+            }
+
+            if (cveHigh.length > 0) {
+              lines.push(
+                <><strong style={{ color: '#EA580C' }}>{cveHigh.length} CVE HAUTE{cveHigh.length > 1 ? 'S' : ''}</strong> identifiée{cveHigh.length > 1 ? 's' : ''}.{' '}
+                {cveHigh.slice(0, 2).map((c, i) => (
+                  <span key={i}><br />• <strong>{c.id}</strong> (CVSS {c.cvss}{epssTxt(c)}) : {(c.title || '').slice(0, 90)}{(c.title || '').length > 90 ? '…' : ''}</span>
+                ))}</>
+              )
+            }
+
+            if (cves.length === 0) {
+              lines.push(<>Aucune CVE connue détectée pour ce serveur.</>)
+            }
+
+            // SSL
             if (!ssl.valid) {
               lines.push(<>Le certificat SSL est <strong>invalide</strong> — les navigateurs bloqueront l'accès au site. Installez un certificat signé par une autorité reconnue (Let's Encrypt est gratuit).</>)
             } else if (ssl.expired) {
@@ -775,8 +990,8 @@ export default function ScanResultsPage() {
               lines.push(<>La version <strong>{ssl.tls_version}</strong> est utilisée — {ssl.tls_version === 'TLSv1.3' ? 'configuration optimale.' : 'TLS 1.3 serait préférable pour une sécurité maximale.'}</>)
             }
 
-            if (issues.length === 0) {
-              lines.push(<>Aucun problème SSL détecté. La configuration est correcte. Maintenez le renouvellement automatique du certificat actif.</>)
+            if (issues.length === 0 && cves.length === 0) {
+              lines.push(<>Aucun problème détecté. La configuration est correcte. Maintenez le renouvellement automatique du certificat actif.</>)
             }
 
             return lines.map((line, i) => (
@@ -799,14 +1014,14 @@ export default function ScanResultsPage() {
                 </div>
                 <div className="flex items-start gap-2.5 pl-1">
                   <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold text-white"
-                    style={{ background: 'linear-gradient(135deg, #8B5CF6, #EC4899)' }}>
-                    IA
+                    style={{ background: '#1F5C99' }}>
+                    CG
                   </div>
                   <div className="flex-1 px-3 py-2 rounded-[var(--cg-radius)] text-[13px] text-slate-700 leading-relaxed"
                     style={{ background: '#F3F8FD', border: '1px solid #E8F1FA' }}>
                     {c.answer
-                      ? <>{c.answer}{askingAI && i === conversations.length - 1 && <span className="inline-block w-[2px] h-[13px] bg-purple-400 ml-0.5 animate-pulse" />}</>
-                      : <span className="flex items-center gap-1.5 text-slate-400"><span className="spinner" style={{ width: 12, height: 12, borderTopColor: '#8B5CF6', borderColor: 'rgba(139,92,246,0.2)' }} />En train de réfléchir…</span>
+                      ? <>{renderMd(c.answer)}{askingAI && i === conversations.length - 1 && <span className="inline-block w-[2px] h-[13px] bg-blue-400 ml-0.5 animate-pulse" />}</>
+                      : <span className="flex items-center gap-1.5 text-slate-400"><span className="spinner" style={{ width: 12, height: 12, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }} />Analyse en cours…</span>
                     }
                     {c.date && <div className="text-[10px] text-slate-400 mt-1.5">{c.date}</div>}
                   </div>
@@ -821,7 +1036,7 @@ export default function ScanResultsPage() {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
-            placeholder="Poser une question à l'IA sur votre rapport…"
+            placeholder="Poser une question sur votre rapport…"
             className="flex-1 px-4 py-[11px] rounded-[var(--cg-radius)] border border-slate-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
           />
           <Button variant="primary" icon={askingAI ? null : Icons.send} onClick={handleAskAI} disabled={askingAI}>
@@ -843,12 +1058,24 @@ export default function ScanResultsPage() {
               if (ghSugg.length === 0) ghSugg.push('Comment maintenir un score de sécurité GitHub parfait ?', 'Quels outils de CI/CD recommandes-tu pour la sécurité ?')
               return ghSugg.slice(0, 3)
             }
-            const suggestions = [`Comment améliorer le score SSL de ${scan?.target} ?`]
+            const dns     = scan?.results?.dns
+            const whois   = scan?.results?.whois
+            const headers = scan?.results?.headers
+            const cves    = scan?.results?.cves ?? []
+            const suggestions = []
+            if (whois?.found && whois.days_until_expiry != null && whois.days_until_expiry <= 30)
+                                                            suggestions.push('Que se passe-t-il si mon domaine expire ?')
+            if (dns && !dns.dmarc_present)                  suggestions.push('C\'est grave le DMARC absent ?')
+            if (dns && !dns.spf_present)                    suggestions.push('Comment configurer SPF sur mon DNS ?')
+            if (dns && !dns.dnssec_enabled)                 suggestions.push('À quoi sert DNSSEC et comment l\'activer ?')
+            if (headers?.headers_missing?.length > 0)       suggestions.push('Comment ajouter les en-têtes de sécurité manquants ?')
+            if (cves.some((c) => c.priority === 'URGENTE'))  suggestions.push('Quelle CVE urgente dois-je corriger en premier ?')
+            else if (cves.length > 0)                       suggestions.push('Quelles CVE dois-je corriger en priorité ?')
             if (ssl && !ssl.valid)                          suggestions.push('Comment obtenir un certificat SSL gratuit ?')
-            if (ssl && ssl.tls_version === 'TLSv1.1')      suggestions.push('Comment désactiver TLS 1.1 ?')
             if (ssl && ssl.self_signed)                     suggestions.push('Comment remplacer un certificat auto-signé ?')
             if (ssl && ssl.days_until_expiry <= 30)         suggestions.push('Comment renouveler un certificat SSL ?')
-            if (issues.length === 0)                        suggestions.push('Comment maintenir une bonne posture SSL ?')
+            suggestions.push(`Comment améliorer le score de ${scan?.target} ?`)
+            if (issues.length === 0)                        suggestions.push('Comment maintenir cette posture de sécurité ?')
             return suggestions.slice(0, 3)
           })().map((q) => (
             <button key={q} onClick={() => setQuestion(q)}

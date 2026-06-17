@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Bell, Settings, AlertCircle, AlertTriangle, Info, Minus,
          CheckCircle2, XCircle, Copy, Check } from 'lucide-react'
 import { cloneIcon } from './Icons'
+import { messageAPI, adminAPI } from '../lib/api'
 
 /* ══════════════════════════════════════════════════════════
    AVATAR
@@ -167,7 +169,121 @@ export function LabeledInput({ label, icon, value, onChange, placeholder, type =
 /* ══════════════════════════════════════════════════════════
    PAGE HEADER
 ══════════════════════════════════════════════════════════ */
+function NotificationBell() {
+  const navigate = useNavigate()
+  const [open, setOpen]   = useState(false)
+  const [items, setItems] = useState([])
+  const role = (JSON.parse(localStorage.getItem('cg-user') || '{}').role || 'client').toLowerCase()
+  const isAdmin = role === 'admin'
+
+  const fetchItems = useCallback(() => {
+    if (isAdmin) {
+      adminAPI.pendingExperts()
+        .then((res) => {
+          if (Array.isArray(res.data)) {
+            setItems(res.data.map((e) => ({
+              id: `exp-${e.id}`,
+              label: `Candidature expert — ${e.name}`,
+              sub: e.specialty || 'En attente de validation',
+              to: '/admin',
+            })))
+          }
+        })
+        .catch(() => {})
+    } else {
+      messageAPI.conversations()
+        .then((res) => {
+          if (Array.isArray(res.data)) {
+            setItems(
+              res.data
+                .filter((c) => (c.unread || 0) > 0)
+                .map((c) => ({
+                  id: `conv-${c.id}`,
+                  label: `${c.unread} nouveau${c.unread > 1 ? 'x' : ''} message${c.unread > 1 ? 's' : ''} — ${c.expert.name}`,
+                  sub: c.subject,
+                  to: '/messages',
+                }))
+            )
+          }
+        })
+        .catch(() => {})
+    }
+  }, [isAdmin])
+
+  useEffect(() => {
+    fetchItems()
+    const t = setInterval(fetchItems, 6000)
+    // Rafraîchit aussi au retour sur l'onglet
+    const onFocus = () => fetchItems()
+    window.addEventListener('focus', onFocus)
+    return () => { clearInterval(t); window.removeEventListener('focus', onFocus) }
+  }, [fetchItems])
+
+  const count = items.length
+  const go = (to) => { setOpen(false); navigate(to) }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => { setOpen((o) => !o); if (!open) fetchItems() }}
+        title="Notifications"
+        className="w-9 h-9 rounded-[var(--cg-radius)] border border-slate-200 bg-white flex items-center justify-center text-slate-500 relative hover:bg-slate-50 transition-colors cursor-pointer"
+      >
+        <Bell size={16} strokeWidth={2} />
+        {count > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center border border-white">
+            {count > 9 ? '9+' : count}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <>
+          {/* clic à l'extérieur pour fermer */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 mt-2 w-[320px] bg-white border border-slate-200 rounded-[10px] shadow-lg z-50 overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-slate-100 text-[12px] font-semibold text-slate-700">
+              Notifications
+            </div>
+            <div className="max-h-[320px] overflow-auto">
+              {count === 0 ? (
+                <div className="px-4 py-8 text-center text-[12.5px] text-slate-400">
+                  Aucune notification
+                </div>
+              ) : (
+                items.map((n) => (
+                  <button
+                    key={n.id}
+                    onClick={() => go(n.to)}
+                    className="w-full text-left px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer flex gap-2.5 items-start"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-[12.5px] font-medium text-slate-800 truncate">{n.label}</span>
+                      <span className="block text-[11px] text-slate-400 font-mono truncate">{n.sub}</span>
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+            {count > 0 && (
+              <button
+                onClick={() => go(isAdmin ? '/admin' : '/messages')}
+                className="w-full px-4 py-2.5 text-[12px] font-semibold text-blue-700 hover:bg-slate-50 transition-colors cursor-pointer border-t border-slate-100"
+              >
+                {isAdmin ? 'Voir les candidatures' : 'Ouvrir la messagerie'}
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 export function PageHeader({ title, subtitle, actions }) {
+  const navigate = useNavigate()
+
   return (
     <div className="flex justify-between items-start mb-6 gap-4">
       <div>
@@ -176,11 +292,12 @@ export function PageHeader({ title, subtitle, actions }) {
       </div>
       <div className="flex gap-2 items-center flex-shrink-0">
         {actions}
-        <button className="w-9 h-9 rounded-[var(--cg-radius)] border border-slate-200 bg-white flex items-center justify-center text-slate-500 relative hover:bg-slate-50 transition-colors">
-          <Bell size={16} strokeWidth={2} />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500 border border-white" />
-        </button>
-        <button className="w-9 h-9 rounded-[var(--cg-radius)] border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors">
+        <NotificationBell />
+        <button
+          onClick={() => navigate('/settings')}
+          title="Paramètres du compte"
+          className="w-9 h-9 rounded-[var(--cg-radius)] border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
+        >
           <Settings size={16} strokeWidth={2} />
         </button>
       </div>

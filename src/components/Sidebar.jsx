@@ -1,6 +1,9 @@
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { Menu } from 'lucide-react'
 import { cloneIcon, Icons } from './Icons'
 import { Avatar } from './ui'
+import { messageAPI, adminAPI } from '../lib/api'
 
 /* ─── Nav definitions per role ─── */
 const NAV_BY_ROLE = {
@@ -8,14 +11,18 @@ const NAV_BY_ROLE = {
     principal: [
       { path: '/dashboard',       label: 'Dashboard',       icon: Icons.dashboard },
       { path: '/scan-results',    label: 'Résultats scan',  icon: Icons.results },
+      { path: '/experts',         label: 'Experts',         icon: Icons.experts },
+      { path: '/messages',        label: 'Messagerie',      icon: Icons.message },
     ],
-    compte: [],
+    compte: [
+      { path: '/register-expert', label: 'Devenir expert',  icon: Icons.apply },
+    ],
   },
   expert: {
     principal: [
       { path: '/dashboard',       label: 'Mes missions',    icon: Icons.dashboard },
       { path: '/scan-results',    label: 'Rapports clients',icon: Icons.results },
-      { path: '/messages',        label: 'Messagerie',      icon: Icons.message, badge: 2 },
+      { path: '/messages',        label: 'Messagerie',      icon: Icons.message },
     ],
     compte: [],
   },
@@ -34,11 +41,14 @@ const NAV_BY_ROLE = {
 const ROLE_COLORS = { client: '#2A7ACC', expert: '#10B981', admin: '#F59E0B' }
 const ROLE_LABELS = { client: 'Client', expert: 'Expert validé', admin: 'Administrateur' }
 
-function NavButton({ item, isActive, onClick }) {
+function NavButton({ item, isActive, onClick, collapsed }) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-[11px] px-[14px] py-[10px] rounded-lg border-none cursor-pointer mb-0.5 text-left transition-all duration-150 relative"
+      title={collapsed ? item.label : undefined}
+      className={`w-full flex items-center rounded-lg border-none cursor-pointer mb-0.5 transition-all duration-150 relative ${
+        collapsed ? 'justify-center px-0 py-[11px]' : 'gap-[11px] px-[14px] py-[10px] text-left'
+      }`}
       style={{
         background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
         color: isActive ? '#fff' : 'rgba(255,255,255,0.55)',
@@ -51,9 +61,14 @@ function NavButton({ item, isActive, onClick }) {
       {isActive && (
         <span className="absolute left-[-12px] top-2 bottom-2 w-[3px] bg-blue-500 rounded-r-[3px]" />
       )}
-      {cloneIcon(item.icon, { color: isActive ? '#fff' : 'rgba(255,255,255,0.55)', size: 18 })}
-      <span className="flex-1">{item.label}</span>
-      {item.badge && (
+      <span className="relative flex-shrink-0">
+        {cloneIcon(item.icon, { color: isActive ? '#fff' : 'rgba(255,255,255,0.55)', size: 18 })}
+        {collapsed && item.badge > 0 && (
+          <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 border border-[#0F1929]" />
+        )}
+      </span>
+      {!collapsed && <span className="flex-1">{item.label}</span>}
+      {!collapsed && item.badge > 0 && (
         <span className="bg-red-500 text-white text-[10px] font-bold rounded-[10px] px-[7px] py-[2px] min-w-[20px] text-center leading-[1.2]">
           {item.badge}
         </span>
@@ -62,13 +77,38 @@ function NavButton({ item, isActive, onClick }) {
   )
 }
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed = false, onToggle }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const [unread, setUnread] = useState(0)
 
   const user = JSON.parse(localStorage.getItem('cg-user') || '{"name":"Ibrahima LY","role":"client"}')
   const role = (user.role || 'client').toLowerCase()
   const nav  = NAV_BY_ROLE[role] || NAV_BY_ROLE.client
+
+  /* Badge : candidatures en attente (admin) ou messages non lus — rafraîchi toutes les 15s */
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        if (role === 'admin') {
+          const res = await adminAPI.pendingExperts()
+          if (Array.isArray(res.data)) setUnread(res.data.length)
+        } else {
+          const res = await messageAPI.conversations()
+          if (Array.isArray(res.data)) {
+            setUnread(res.data.reduce((total, c) => total + (c.unread || 0), 0))
+          }
+        }
+      } catch { /* backend hors ligne — pas de badge */ }
+    }
+    fetchUnread()
+    const t = setInterval(fetchUnread, 15000)
+    return () => clearInterval(t)
+  }, [role])
+
+  const badgePath = role === 'admin' ? '/admin' : '/messages'
+  const withBadge = (item) =>
+    item.path === badgePath && unread > 0 ? { ...item, badge: unread } : item
 
   const handleLogout = () => {
     localStorage.removeItem('cg-token')
@@ -80,27 +120,31 @@ export default function Sidebar() {
     location.pathname === path ||
     (path === '/scan-results' && location.pathname.startsWith('/scan-results'))
 
-  const handleNav = (path) => {
-    if (path === '/scan-results') {
-      const lastId = localStorage.getItem('cg-last-scan')
-      navigate(lastId ? `/scan-results/${lastId}` : '/scan-results')
-    } else {
-      navigate(path)
-    }
-  }
+  const handleNav = (path) => navigate(path)
 
   return (
     <nav
       className="flex flex-col fixed left-0 top-0 z-10 h-screen"
       style={{
-        width: 240,
+        width: collapsed ? 68 : 240,
         background: '#0F1929',
-        padding: '24px 0',
+        padding: '16px 0 24px',
         borderRight: '1px solid rgba(255,255,255,0.04)',
+        transition: 'width 0.2s ease',
       }}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-6 pb-7">
+      {/* Hamburger + logo */}
+      <div className={`flex items-center pb-5 ${collapsed ? 'flex-col gap-3 px-0' : 'gap-2 px-4'}`}>
+        <button
+          onClick={onToggle}
+          title={collapsed ? 'Déplier le menu' : 'Replier le menu'}
+          className="flex items-center justify-center rounded-lg border-none cursor-pointer flex-shrink-0 transition-colors"
+          style={{ width: 36, height: 36, background: 'transparent', color: 'rgba(255,255,255,0.6)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+        >
+          <Menu size={19} strokeWidth={2} />
+        </button>
         <div
           className="flex items-center justify-center rounded-[9px] flex-shrink-0"
           style={{
@@ -111,45 +155,51 @@ export default function Sidebar() {
         >
           {cloneIcon(Icons.shield, { color: '#fff', size: 20 })}
         </div>
-        <div>
-          <div className="text-white font-bold text-[15px] tracking-[-0.02em]"></div>
-          <div className="text-[10px] uppercase tracking-[0.08em] mt-0.5"
-            style={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'JetBrains Mono, monospace' }}>
-            EASM Platform
+        {!collapsed && (
+          <div className="min-w-0">
+            <div className="text-[10px] uppercase tracking-[0.08em]"
+              style={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'JetBrains Mono, monospace' }}>
+              EASM Platform
+            </div>
           </div>
-        </div>
+        )}
       </div>
-
 
       {/* Principal nav */}
       <div className="px-3 pb-2">
-        <div className="px-[14px] pb-2 text-[10px] uppercase tracking-[0.1em] font-semibold"
-          style={{ color: 'rgba(255,255,255,0.3)' }}>
-          Principal
-        </div>
+        {!collapsed && (
+          <div className="px-[14px] pb-2 text-[10px] uppercase tracking-[0.1em] font-semibold"
+            style={{ color: 'rgba(255,255,255,0.3)' }}>
+            Principal
+          </div>
+        )}
         {nav.principal.map((item) => (
           <NavButton
             key={item.path}
-            item={item}
+            item={withBadge(item)}
             isActive={isActive(item.path)}
             onClick={() => handleNav(item.path)}
+            collapsed={collapsed}
           />
         ))}
       </div>
 
       {/* Compte nav (only if non-empty) */}
       {nav.compte.length > 0 && (
-        <div className="px-3 py-3">
-          <div className="px-[14px] pb-2 text-[10px] uppercase tracking-[0.1em] font-semibold"
-            style={{ color: 'rgba(255,255,255,0.3)' }}>
-            Compte
-          </div>
+        <div className="px-3 py-3" style={collapsed ? { borderTop: '1px solid rgba(255,255,255,0.06)' } : undefined}>
+          {!collapsed && (
+            <div className="px-[14px] pb-2 text-[10px] uppercase tracking-[0.1em] font-semibold"
+              style={{ color: 'rgba(255,255,255,0.3)' }}>
+              Compte
+            </div>
+          )}
           {nav.compte.map((item) => (
             <NavButton
               key={item.path}
               item={item}
               isActive={isActive(item.path)}
               onClick={() => navigate(item.path)}
+              collapsed={collapsed}
             />
           ))}
         </div>
@@ -158,28 +208,45 @@ export default function Sidebar() {
       <div className="flex-1" />
 
       {/* User footer */}
-      <div className="px-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="flex items-center gap-2.5 py-1.5 px-1">
-          <Avatar
-            name={user.name}
-            color={ROLE_COLORS[role] || '#2A7ACC'}
-            size={34}
-          />
-          <div className="flex-1 min-w-0">
-            <div className="text-white text-[13px] font-medium truncate">{user.name}</div>
-            <div className="text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              {ROLE_LABELS[role] || role}
+      <div className={collapsed ? 'pt-3 flex flex-col items-center gap-2' : 'px-4 pt-3'}
+        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        {collapsed ? (
+          <>
+            <span title={`${user.name} — ${ROLE_LABELS[role] || role}`}>
+              <Avatar name={user.name} color={ROLE_COLORS[role] || '#2A7ACC'} size={32} />
+            </span>
+            <button
+              onClick={handleLogout}
+              className="bg-transparent border-none cursor-pointer p-1 transition-opacity hover:opacity-70"
+              style={{ opacity: 0.45, color: '#fff' }}
+              title="Déconnexion"
+            >
+              {cloneIcon(Icons.logout, { size: 17, color: '#fff' })}
+            </button>
+          </>
+        ) : (
+          <div className="flex items-center gap-2.5 py-1.5 px-1">
+            <Avatar
+              name={user.name}
+              color={ROLE_COLORS[role] || '#2A7ACC'}
+              size={34}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="text-white text-[13px] font-medium truncate">{user.name}</div>
+              <div className="text-[11px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                {ROLE_LABELS[role] || role}
+              </div>
             </div>
+            <button
+              onClick={handleLogout}
+              className="bg-transparent border-none cursor-pointer p-1 transition-opacity hover:opacity-70"
+              style={{ opacity: 0.45, color: '#fff' }}
+              title="Déconnexion"
+            >
+              {cloneIcon(Icons.logout, { size: 18, color: '#fff' })}
+            </button>
           </div>
-          <button
-            onClick={handleLogout}
-            className="bg-transparent border-none cursor-pointer p-1 transition-opacity hover:opacity-70"
-            style={{ opacity: 0.45, color: '#fff' }}
-            title="Déconnexion"
-          >
-            {cloneIcon(Icons.logout, { size: 18, color: '#fff' })}
-          </button>
-        </div>
+        )}
       </div>
     </nav>
   )

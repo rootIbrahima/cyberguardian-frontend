@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
-import { Avatar, Badge, Button, Card } from './ui'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Avatar, Badge, Button, toast } from './ui'
 import { cloneIcon, Icons } from './Icons'
 import { messageAPI } from '../lib/api'
-import { MOCK_MESSAGES, SCORE_CATEGORIES } from '../lib/constants'
 
-/* ─── 48h countdown from missionStart ─── */
+/* ─── Compte à rebours 48h depuis la signature du contrat ─── */
 function useCountdown(isoStart) {
   const [remaining, setRemaining] = useState(null)
 
@@ -16,7 +16,7 @@ function useCountdown(isoStart) {
       if (diff <= 0) { setRemaining('Expiré'); return }
       const h = Math.floor(diff / 3600000)
       const m = Math.floor((diff % 3600000) / 60000)
-      setRemaining(`${h}h ${m.toString().padStart(2, '0')}min`)
+      setRemaining(`${h}h ${m.toString().padStart(2, '0')}`)
     }
     calc()
     const t = setInterval(calc, 60000)
@@ -26,62 +26,50 @@ function useCountdown(isoStart) {
   return remaining
 }
 
-/* ─── Level banners ─── */
-function LevelBanner({ level, subject, onSignContract, missionStart }) {
-  const countdown = useCountdown(level === 3 ? missionStart : null)
+/* ─── Barre contextuelle unique — une seule ligne, jamais d'empilement ─── */
+function ContextBar({ conversation, preview, isClient, isAdmin, signing, onSign, onOpenReport }) {
+  const countdown = useCountdown(conversation.level === 3 ? conversation.missionStart : null)
 
-  if (level === 1) {
+  if (preview?.access === 'expired') {
     return (
-      <div className="px-[22px] py-3 flex items-center gap-2 text-xs"
-        style={{ background: '#F5F6FA', borderBottom: '1px solid #E5E7EB' }}>
-        {cloneIcon(Icons.lock, { size: 13, color: '#6B7280' })}
-        <span className="text-gray-500">
-          <strong className="text-gray-700">Niveau 1</strong> — L'expert voit le score global et le nombre de failles pour{' '}
-          <span className="font-mono text-gray-700">{subject}</span>.
-          Acceptez la mission pour lui donner accès au détail.
-        </span>
+      <div className="px-[22px] py-2 flex items-center gap-2 border-b text-xs"
+        style={{ background: '#FEF2F2', borderColor: '#FEE2E2', color: '#B91C1C' }}>
+        {cloneIcon(Icons.clock, { size: 13, color: '#EF4444' })}
+        Accès au rapport expiré (48h){isClient && ' — signez un nouveau contrat pour le renouveler'}.
       </div>
     )
   }
 
-  if (level === 2) {
+  if (conversation.level === 2) {
+    const detail = (preview?.breakdown || [])
+      .map((b) => `${b.label.split(' ')[0]} ${b.points}/${b.max}`)
+      .join(' · ')
     return (
-      <div className="px-[22px] py-2.5 flex items-center gap-3"
-        style={{ background: '#F3F8FD', borderBottom: '1px solid #E8F1FA' }}>
-        {cloneIcon(Icons.lock, { size: 13, color: '#1F5C99' })}
-        <span className="text-xs text-blue-700 flex-1">
-          <strong>Niveau 2</strong> — L'expert voit le score détaillé par catégorie.
-          Signez le contrat numérique pour lui donner accès au rapport complet (Niveau 3, 48h).
+      <div className="px-[22px] py-2 flex items-center gap-3 border-b border-gray-100 bg-white text-xs text-gray-500">
+        <span className="flex-1 truncate">
+          {detail ? <>Partagé avec l'expert : <span className="font-mono text-gray-700">{detail}</span></>
+                  : "L'expert voit le score détaillé par catégorie."}
         </span>
-        <button
-          onClick={onSignContract}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11.5px] font-semibold transition-all hover:opacity-90 flex-shrink-0"
-          style={{ background: '#1F5C99', color: '#fff' }}
-        >
-          {cloneIcon(Icons.check, { size: 13, color: '#fff' })}
-          Signer le contrat numérique
-        </button>
+        {isClient && (
+          <Button variant="primary" size="sm" icon={Icons.check} onClick={onSign} disabled={signing}>
+            {signing ? 'Signature…' : 'Signer le contrat'}
+          </Button>
+        )}
       </div>
     )
   }
 
-  if (level === 3) {
+  if (conversation.level === 3 && preview?.access === 'full' && preview.scan_id) {
     return (
-      <div className="px-[22px] py-2.5 flex items-center gap-3"
-        style={{ background: '#F0FDF4', borderBottom: '1px solid #D1FAE5' }}>
-        {cloneIcon(Icons.checkCircle, { size: 13, color: '#059669' })}
-        <span className="text-xs text-green-700 flex-1">
-          <strong>Niveau 3 · Accès complet débloqué</strong> — L'expert a accès à votre rapport complet et peut intervenir.
+      <div className="px-[22px] py-2 flex items-center gap-3 border-b border-gray-100 bg-white text-xs text-gray-500">
+        <span className="flex-1 truncate">
+          Rapport complet partagé — score <span className="font-mono text-gray-700">{preview.scan.score}/100</span>
+          {countdown && countdown !== 'Expiré' && <> · expire dans <span className="font-mono text-gray-700">{countdown}</span></>}
         </span>
-        {countdown && (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg flex-shrink-0"
-            style={{ background: countdown === 'Expiré' ? '#FEE2E2' : '#D1FAE5', border: `1px solid ${countdown === 'Expiré' ? '#FCA5A5' : '#A7F3D0'}` }}>
-            {cloneIcon(Icons.clock, { size: 12, color: countdown === 'Expiré' ? '#EF4444' : '#059669' })}
-            <span className="text-[11px] font-semibold font-mono"
-              style={{ color: countdown === 'Expiré' ? '#EF4444' : '#059669' }}>
-              {countdown === 'Expiré' ? 'Accès expiré' : `Expire dans ${countdown}`}
-            </span>
-          </div>
+        {!isAdmin && (
+          <Button variant="secondary" size="sm" icon={Icons.eye} onClick={onOpenReport}>
+            Ouvrir le rapport
+          </Button>
         )}
       </div>
     )
@@ -90,69 +78,69 @@ function LevelBanner({ level, subject, onSignContract, missionStart }) {
   return null
 }
 
-/* ─── Level 1 restricted preview ─── */
-function Level1Preview({ scan }) {
-  const score = 50
-  const color = score >= 80 ? '#10B981' : score >= 50 ? '#F59E0B' : '#EF4444'
+/* ─── Invitation à noter — dans le fil, comme un message système ─── */
+function RatingPrompt({ onRate }) {
+  const [hover, setHover] = useState(0)
   return (
-    <div className="mx-4 my-3 p-4 rounded-xl" style={{ background: '#F5F6FA', border: '1px solid #E5E7EB' }}>
-      <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-3">
-        Aperçu partagé avec l'expert (Niveau 1)
-      </div>
-      <div className="flex items-center gap-6">
-        <div className="text-center">
-          <div className="text-[32px] font-bold font-mono" style={{ color }}>{score}</div>
-          <div className="text-[10px] text-gray-400">score / 100</div>
-        </div>
-        <div className="flex flex-col gap-1.5 flex-1">
-          <div className="flex gap-4 text-xs">
-            <div><span className="text-gray-400">Secteur</span> <strong className="ml-1">Université / Éducation</strong></div>
-            <div><span className="text-gray-400">Failles</span> <strong className="ml-1 text-red-500">8</strong></div>
-            <div><span className="text-gray-400">CVE</span> <strong className="ml-1 text-orange-500">2</strong></div>
-          </div>
-          <div className="text-[11px] text-gray-500">
-            L'expert ne voit pas encore le détail des failles ni le rapport IA.
-          </div>
+    <div className="text-center mt-1">
+      <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white border border-gray-200">
+        <span className="text-[11.5px] text-gray-500">Mission terminée ? Évaluez votre expert</span>
+        <div className="flex gap-px" onMouseLeave={() => setHover(0)}>
+          {[1, 2, 3, 4, 5].map((n) => (
+            <button
+              key={n}
+              onClick={() => onRate(n)}
+              onMouseEnter={() => setHover(n)}
+              className="p-0.5 bg-transparent border-none cursor-pointer"
+              title={`${n}/5`}
+            >
+              {cloneIcon(Icons.star, {
+                size: 15,
+                fill:  n <= hover ? '#F59E0B' : 'none',
+                color: n <= hover ? '#F59E0B' : '#D1D5DB',
+              })}
+            </button>
+          ))}
         </div>
       </div>
     </div>
   )
 }
 
-/* ─── Level 2 category breakdown ─── */
-function Level2Preview() {
-  return (
-    <div className="mx-4 my-3 p-4 rounded-xl" style={{ background: '#F3F8FD', border: '1px solid #E8F1FA' }}>
-      <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-3">
-        Détail partagé avec l'expert (Niveau 2)
-      </div>
-      <div className="flex flex-col gap-2">
-        {SCORE_CATEGORIES.map((c) => {
-          const pct   = (c.pts / c.max) * 100
-          const color = pct >= 80 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444'
-          return (
-            <div key={c.label} className="flex items-center gap-2 text-xs">
-              <span className="text-gray-600 font-medium" style={{ width: 80 }}>{c.label}</span>
-              <div className="flex-1 h-1.5 bg-white rounded-full overflow-hidden border border-gray-200">
-                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
-              </div>
-              <span className="font-mono font-semibold text-gray-700" style={{ minWidth: 38, textAlign: 'right' }}>
-                {c.pts}/{c.max}
-              </span>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/* ─── Main component ─── */
+/* ─── Composant principal ─── */
 export default function MessageThread({ conversation, onLevelUp }) {
-  const [messages, setMessages]   = useState(MOCK_MESSAGES)
-  const [input, setInput]         = useState('')
-  const [signing, setSigning]     = useState(false)
+  const navigate = useNavigate()
+  const [messages, setMessages] = useState([])
+  const [input, setInput]       = useState('')
+  const [signing, setSigning]   = useState(false)
+  const [rated, setRated]       = useState(0)
   const scrollRef = useRef(null)
+
+  const role     = (JSON.parse(localStorage.getItem('cg-user') || '{}').role || 'client').toLowerCase()
+  const isClient = role === 'client'
+  const isAdmin  = role === 'admin'
+
+  // Vue du scan filtrée par le niveau d'accès — le backend applique les règles N1/N2/N3
+  const [preview, setPreview] = useState(null)
+  useEffect(() => {
+    messageAPI.scanPreview(conversation.id)
+      .then((res) => setPreview(res.data))
+      .catch(() => setPreview(null))
+  }, [conversation.id, conversation.level])
+
+  /* Recharge le fil complet — au montage, toutes les 5s, et après envoi */
+  const fetchMessages = useCallback(async () => {
+    try {
+      const res = await messageAPI.messages(conversation.id)
+      if (Array.isArray(res.data)) setMessages(res.data)
+    } catch { /* backend hors ligne — on conserve l'état courant */ }
+  }, [conversation.id])
+
+  useEffect(() => {
+    fetchMessages()
+    const t = setInterval(fetchMessages, 5000)
+    return () => clearInterval(t)
+  }, [fetchMessages])
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
@@ -160,72 +148,87 @@ export default function MessageThread({ conversation, onLevelUp }) {
 
   const send = async () => {
     if (!input.trim()) return
-    const msg = { from: 'client', time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), text: input }
-    setMessages((prev) => [...prev, msg])
+    const text = input
     setInput('')
-    try { await messageAPI.send(conversation.id, input) } catch {}
+    try {
+      await messageAPI.send(conversation.id, text)
+      await fetchMessages()
+    } catch {
+      setMessages((prev) => [...prev, { from: 'client', time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), text }])
+    }
   }
 
   const signContract = async () => {
+    if (signing) return
     setSigning(true)
-    try { await messageAPI.signContract(conversation.id) } catch {}
-    const contractMsg = {
-      from: 'system',
-      time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-      text: '✅ Contrat numérique signé — L\'expert a désormais accès au rapport complet (Niveau 3) pendant 48h. L\'audit trail est enregistré.',
+    try {
+      await messageAPI.signContract(conversation.id)
+      await fetchMessages()
+      if (onLevelUp) onLevelUp(conversation.id, 3)
+    } catch {
+      toast.error('Signature impossible — seul le client peut signer le contrat.')
     }
-    setMessages((prev) => [...prev, contractMsg])
     setSigning(false)
-    if (onLevelUp) onLevelUp(conversation.id, 3)
   }
+
+  const rateMission = async (stars) => {
+    try {
+      await messageAPI.rate(conversation.id, stars)
+      setRated(stars)
+      toast.success(`Note ${stars}/5 enregistrée — la réputation de l'expert est mise à jour.`)
+      fetchMessages()
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Notation impossible.')
+    }
+  }
+
+  const canRate = isClient && conversation.level === 3 && !conversation.rating && !rated
 
   return (
     <div className="flex flex-col min-h-0 h-full">
-      {/* Header */}
+      {/* En-tête */}
       <div className="flex items-center gap-3 px-[22px] py-3.5 border-b border-gray-200">
         <Avatar name={conversation.expert.name} color={conversation.expert.color} size={40} />
-        <div className="flex-1">
-          <div className="text-[14.5px] font-semibold">{conversation.expert.name}</div>
-          <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            En ligne · {conversation.expert.specialty}
+        <div className="flex-1 min-w-0">
+          <div className="text-[14.5px] font-semibold truncate">{conversation.expert.name}</div>
+          <div className="text-xs text-gray-500 mt-0.5 truncate">
+            {conversation.expert.specialty} · <span className="font-mono">{conversation.subject}</span>
           </div>
         </div>
-        <div className="flex gap-2 items-center flex-wrap justify-end">
-          <Badge color="blue">Sujet · {conversation.subject}</Badge>
-          <Badge color={conversation.level === 3 ? 'green' : conversation.level === 2 ? 'orange' : 'gray'} icon={Icons.lock}>
-            Niveau {conversation.level} · {conversation.level === 1 ? 'Demande reçue' : conversation.level === 2 ? 'Mission acceptée' : 'Contrat signé'}
-          </Badge>
-        </div>
+        <Badge color={conversation.level === 3 ? 'green' : conversation.level === 2 ? 'orange' : 'gray'} icon={Icons.lock}>
+          {conversation.level === 1 ? 'Demande reçue' : conversation.level === 2 ? 'Mission acceptée' : 'Contrat signé'}
+        </Badge>
       </div>
 
-      {/* Level banner */}
-      <LevelBanner
-        level={conversation.level}
-        subject={conversation.subject}
-        onSignContract={signContract}
-        missionStart={conversation.missionStart}
+      {/* Barre contextuelle — une seule, selon l'état */}
+      <ContextBar
+        conversation={conversation}
+        preview={preview}
+        isClient={isClient}
+        isAdmin={isAdmin}
+        signing={signing}
+        onSign={signContract}
+        onOpenReport={() => navigate(`/scan-results/${preview?.scan_id}`)}
       />
 
-      {/* Preview cards based on level */}
-      {conversation.level >= 1 && conversation.level < 3 && (
-        <div className="bg-gray-50 border-b border-gray-100">
-          {conversation.level === 1 && <Level1Preview />}
-          {conversation.level === 2 && <Level2Preview />}
-        </div>
-      )}
-
-      {/* Messages */}
+      {/* Fil de messages */}
       <div ref={scrollRef}
         className="flex-1 overflow-auto p-6 flex flex-col gap-3.5"
         style={{ background: '#F5F6FA' }}>
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center flex-1 gap-2 text-gray-400">
+            {cloneIcon(Icons.message, { size: 28, color: '#D1D5DB' })}
+            <span className="text-[13px]">Aucun message pour le moment</span>
+            <span className="text-[11.5px]">
+              {isClient ? 'Présentez votre besoin à l\'expert pour démarrer.' : 'Répondez au client pour accepter la mission.'}
+            </span>
+          </div>
+        )}
         {messages.map((m, i) => {
-          /* System message (contract signed) */
           if (m.from === 'system') {
             return (
               <div key={i} className="text-center">
-                <span className="text-[11.5px] px-4 py-1.5 rounded-full inline-block"
-                  style={{ background: '#D1FAE5', color: '#059669', border: '1px solid #A7F3D0' }}>
+                <span className="text-[11px] px-3.5 py-1 rounded-full inline-block text-gray-500 bg-white border border-gray-200">
                   {m.text}
                 </span>
               </div>
@@ -259,24 +262,28 @@ export default function MessageThread({ conversation, onLevelUp }) {
             </div>
           )
         })}
+        {canRate && messages.length > 0 && <RatingPrompt onRate={rateMission} />}
       </div>
 
-      {/* Input */}
+      {/* Saisie — l'admin supervise en lecture seule */}
       <div className="px-[22px] py-3.5 border-t border-gray-200 bg-white">
-        <div className="flex gap-2.5 items-center">
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && send()}
-            placeholder="Écrire un message…"
-            className="flex-1 px-4 py-[11px] rounded-[10px] border border-gray-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
-          />
-          <Button variant="primary" icon={Icons.send} onClick={send}>Envoyer</Button>
-        </div>
-        <div className="flex items-center gap-1.5 mt-2 text-[10.5px] text-gray-400">
-          {cloneIcon(Icons.lock, { size: 11, color: '#9CA3AF' })}
-          Messagerie chiffrée · Filigrane PDF actif · Audit trail PostgreSQL · Loi sénégalaise 2008-12
-        </div>
+        {isAdmin ? (
+          <div className="flex items-center gap-2 text-[12px] text-gray-500 py-1.5">
+            {cloneIcon(Icons.eye, { size: 14, color: '#9CA3AF' })}
+            Supervision — lecture seule
+          </div>
+        ) : (
+          <div className="flex gap-2.5 items-center">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && send()}
+              placeholder="Écrire un message…"
+              className="flex-1 px-4 py-[11px] rounded-[10px] border border-gray-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
+            />
+            <Button variant="primary" icon={Icons.send} onClick={send} disabled={!input.trim()}>Envoyer</Button>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -6,7 +6,7 @@ import { cloneIcon, Icons } from '../components/Icons'
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('ibrahima.ly@ec2lt.sn')
+  const [email, setEmail] = useState('')
   const [pwd, setPwd] = useState('')
   const [showPwd, setShowPwd] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -26,17 +26,26 @@ export default function LoginPage() {
     setError('')
     try {
       const res = await authAPI.login(email, pwd)
-      /* Backend running — decode role from JWT payload */
-      const payload = JSON.parse(atob(res.data.access_token.split('.')[1]))
-      const userInfo = { name: payload.name || email.split('@')[0], role: payload.role || 'client' }
-      localStorage.setItem('cg-token', res.data.access_token)
+      const { access_token, user } = res.data
+      const userInfo = user || (() => {
+        const payload = JSON.parse(atob(access_token.split('.')[1]))
+        return { name: payload.name || email.split('@')[0], role: payload.role || 'client' }
+      })()
+      localStorage.setItem('cg-token', access_token)
       localStorage.setItem('cg-user', JSON.stringify(userInfo))
       navigate(HOME_BY_ROLE[userInfo.role] || '/dashboard')
-    } catch {
-      const fallbackUser = ROLE_MAP[email.toLowerCase()] || { name: email.split('@')[0], role: 'client' }
-      localStorage.setItem('cg-token', 'session-token')
-      localStorage.setItem('cg-user', JSON.stringify(fallbackUser))
-      navigate(HOME_BY_ROLE[fallbackUser.role] || '/dashboard')
+    } catch (err) {
+      if (err.response?.status === 401) {
+        setError('Email ou mot de passe incorrect.')
+      } else if (!err.response) {
+        // Backend hors ligne — fallback offline pour la démo
+        const fallbackUser = ROLE_MAP[email.toLowerCase()] || { name: email.split('@')[0], role: 'client' }
+        localStorage.setItem('cg-token', 'offline-token')
+        localStorage.setItem('cg-user', JSON.stringify(fallbackUser))
+        navigate(HOME_BY_ROLE[fallbackUser.role] || '/dashboard')
+      } else {
+        setError('Erreur de connexion. Veuillez réessayer.')
+      }
     } finally {
       setLoading(false)
     }
@@ -91,7 +100,7 @@ export default function LoginPage() {
 
         {/* Hero text */}
         <div className="relative max-w-[480px]">
-          <Badge color="blue" icon={Icons.sparkles}>Nouveau · Analyse GitHub + Rapports IA</Badge>
+          <Badge color="blue" icon={Icons.shield}>Nouveau · Analyse GitHub + Rapports intelligents</Badge>
           <h2 className="text-white text-[38px] font-bold leading-[1.1] tracking-[-0.025em] mt-5">
             Protégez votre surface d'attaque externe
           </h2>
@@ -163,7 +172,7 @@ export default function LoginPage() {
           <div className="flex-1 h-px bg-gray-200" />
         </div>
 
-        <Button variant="secondary" size="lg" className="w-full" onClick={() => navigate('/register-expert')}>
+        <Button variant="secondary" size="lg" className="w-full" onClick={() => navigate('/register')}>
           Créer un compte CyberGuardian
         </Button>
 
