@@ -13,6 +13,7 @@ import ExpertsPage        from './pages/ExpertsPage'
 import MessagesPage       from './pages/MessagesPage'
 import RegisterExpertPage from './pages/RegisterExpertPage'
 import AdminPage          from './pages/AdminPage'
+import RemediationPage    from './pages/RemediationPage'
 import SettingsPage       from './pages/SettingsPage'
 
 /* ─── Helpers ─── */
@@ -144,7 +145,8 @@ export default function App() {
 
             {/* ── ADMIN only ── */}
             <Route element={<RequireRole roles={['admin']} />}>
-              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin"       element={<AdminPage />} />
+              <Route path="/remediation" element={<RemediationPage />} />
             </Route>
 
           </Route>
