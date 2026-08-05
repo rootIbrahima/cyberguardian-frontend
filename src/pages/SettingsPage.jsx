@@ -40,7 +40,7 @@ function TelegramSection() {
       if (pollRef.current) clearInterval(pollRef.current)
       pollRef.current = setInterval(fetchStatut, 3000)
     } catch {
-      toast.error('Impossible de générer un code — réessayez.')
+      toast.error('Impossible de générer un code : réessayez.')
     }
     setLoading(false)
   }
@@ -66,7 +66,7 @@ function TelegramSection() {
         Notifications Telegram
       </div>
 
-      {/* État 2 — lié */}
+      {/* État 2, lié */}
       {statut?.lie ? (
         <div className="rounded-xl p-5" style={{ background: '#F0FDF4', border: '1px solid #D1FAE5' }}>
           <div className="flex items-center gap-3 mb-3">
@@ -88,7 +88,7 @@ function TelegramSection() {
           </Button>
         </div>
       ) : (
-        /* État 1 — non lié */
+        /* État 1, non lié */
         <div className="grid grid-cols-2 gap-5">
           <div>
             <div className="text-[14px] font-semibold mb-1.5">Lier votre compte Telegram</div>
@@ -150,7 +150,7 @@ function GitHubSection() {
     const params = new URLSearchParams(window.location.search)
     const etat = params.get('github')
     if (etat === 'connecte') toast.success('Compte GitHub connecté.')
-    else if (etat === 'erreur') toast.error('La connexion GitHub a échoué — réessayez.')
+    else if (etat === 'erreur') toast.error('La connexion GitHub a échoué : réessayez.')
     if (etat) window.history.replaceState({}, '', window.location.pathname)
     fetchStatut()
   }, [])
@@ -293,7 +293,7 @@ export default function SettingsPage() {
       toast.success('Mot de passe mis à jour.')
       setForm({ current: '', next: '', confirm: '' })
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Changement impossible — backend hors ligne.')
+      toast.error(err.response?.data?.detail || 'Changement impossible : backend hors ligne.')
     }
     setSaving(false)
   }

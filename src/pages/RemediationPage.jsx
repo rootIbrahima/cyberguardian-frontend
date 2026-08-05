@@ -31,7 +31,7 @@ export default function RemediationPage() {
     <div>
       <PageHeader
         title="Correction assistée GitHub"
-        subtitle="Dépôts dont le client a autorisé la correction — la proposition ouvre une Pull Request que le client valide."
+        subtitle="Dépôts dont le client a autorisé la correction, la proposition ouvre une Pull Request que le client valide."
       />
 
       <Card className="p-[22px_26px]">
@@ -71,7 +71,7 @@ export default function RemediationPage() {
                       <span className="text-[10.5px] text-gray-400">
                         {r.corrigeables > 0
                           ? `dont ${r.corrigeables} dépendance${r.corrigeables > 1 ? 's' : ''} auto-corrigeable${r.corrigeables > 1 ? 's' : ''}`
-                          : (r.secrets > 0 ? 'secret — expert / agent requis' : 'expert / agent requis')}
+                          : (r.secrets > 0 ? 'secret, expert / agent requis' : 'expert / agent requis')}
                       </span>
                     </div>
                   ) : (
@@ -96,7 +96,7 @@ export default function RemediationPage() {
             {rows.length === 0 && (
               <tr>
                 <td colSpan={5} className="py-12 text-center text-gray-400 text-[13px]">
-                  Aucun dépôt autorisé pour l'instant — le client autorise la correction depuis ses paramètres.
+                  Aucun dépôt autorisé pour l'instant, le client autorise la correction depuis ses paramètres.
                 </td>
               </tr>
             )}

@@ -5,25 +5,25 @@ export const ASSET_TYPES = [
   { key: 'github', label: 'GitHub', placeholder: 'ex: github.com/user/repo' },
 ]
 
-/* Outils MCP — groupes : easm | github | score | report */
+/* Outils MCP, groupes : easm | github | score | report */
 export const MCP_TOOLS = [
   // EASM (domaine / IP / URL)
-  { name: 'check_ssl()',        label: 'Certificat SSL/TLS — validité, grade, expiration',   types: ['domain', 'url', 'ip'], group: 'easm'   },
-  { name: 'check_dns()',        label: 'DNS — SPF, DMARC, DKIM, MX, enregistrements',        types: ['domain', 'url'],       group: 'easm'   },
-  { name: 'check_whois()',      label: 'WHOIS — registrar, expiration du domaine',            types: ['domain'],              group: 'easm'   },
-  { name: 'scan_headers()',     label: 'En-têtes HTTP — HSTS, CSP, X-Frame-Options',         types: ['domain', 'url'],       group: 'easm'   },
-  { name: 'scan_ports()',       label: 'Ports ouverts — services exposés sur internet',       types: ['domain', 'url', 'ip'], group: 'easm'   },
-  { name: 'scan_virustotal()',  label: 'Réputation — VirusTotal, listes noires',              types: ['domain', 'url', 'ip'], group: 'easm'   },
+  { name: 'check_ssl()',        label: 'Certificat SSL/TLS : validité, grade, expiration',   types: ['domain', 'url', 'ip'], group: 'easm'   },
+  { name: 'check_dns()',        label: 'DNS : SPF, DMARC, DKIM, MX, enregistrements',        types: ['domain', 'url'],       group: 'easm'   },
+  { name: 'check_whois()',      label: 'WHOIS : registrar, expiration du domaine',            types: ['domain'],              group: 'easm'   },
+  { name: 'scan_headers()',     label: 'En-têtes HTTP : HSTS, CSP, X-Frame-Options',         types: ['domain', 'url'],       group: 'easm'   },
+  { name: 'scan_ports()',       label: 'Ports ouverts : services exposés sur internet',       types: ['domain', 'url', 'ip'], group: 'easm'   },
+  { name: 'scan_virustotal()',  label: 'Réputation : VirusTotal, listes noires',              types: ['domain', 'url', 'ip'], group: 'easm'   },
 
   // GitHub
-  { name: 'github_info()',      label: 'Métadonnées — visibilité, branches, contributeurs',  types: ['github'],              group: 'github' },
-  { name: 'scan_bandit()',      label: 'Bandit — vulnérabilités statiques Python',            types: ['github'],              group: 'github' },
-  { name: 'scan_safety()',      label: 'Safety — dépendances avec CVE connues',               types: ['github'],              group: 'github' },
-  { name: 'scan_trufflehog()',  label: 'TruffleHog — secrets et tokens exposés',              types: ['github'],              group: 'github' },
+  { name: 'github_info()',      label: 'Métadonnées : visibilité, branches, contributeurs',  types: ['github'],              group: 'github' },
+  { name: 'scan_bandit()',      label: 'Bandit : vulnérabilités statiques Python',            types: ['github'],              group: 'github' },
+  { name: 'scan_safety()',      label: 'Safety : dépendances avec CVE connues',               types: ['github'],              group: 'github' },
+  { name: 'scan_trufflehog()',  label: 'TruffleHog : secrets et tokens exposés',              types: ['github'],              group: 'github' },
 
   // Score & rapport
   { name: 'calculate_score()', label: 'Score de sécurité pondéré /100',                      types: ['domain', 'url', 'ip', 'github'], group: 'score'  },
-  { name: 'generate_report()', label: 'Rapport PDF — synthèse et recommandations',            types: ['domain', 'url', 'ip', 'github'], group: 'report' },
+  { name: 'generate_report()', label: 'Rapport PDF : synthèse et recommandations',            types: ['domain', 'url', 'ip', 'github'], group: 'report' },
 ]
 
 export const MOCK_SCANS = [
@@ -89,10 +89,10 @@ export const SCAN_ISSUES = [
   { severity: 'HAUT',     color: 'orange', title: 'Content-Security-Policy manquant',     desc: 'Le header CSP n\'est pas défini. Risque d\'injection de scripts malveillants (XSS).', tool: 'scan_headers()', cve: null },
   { severity: 'HAUT',     color: 'orange', title: 'Strict-Transport-Security manquant',   desc: 'Sans HSTS, un attaquant peut forcer la rétrogradation vers HTTP non chiffré.', tool: 'scan_headers()', cve: null },
   { severity: 'MOYEN',    color: 'yellow', title: 'Port 8080 ouvert publiquement',         desc: 'Un service de développement semble exposé. Recommandation : restreindre par firewall.', tool: 'scan_ports()', cve: null },
-  { severity: 'MOYEN',    color: 'yellow', title: 'Librairie obsolète détectée',           desc: 'requests 2.25.0 — vulnérable à CVE-2023-32681.', tool: 'scan_github_repo()', cve: 'CVE-2023-32681' },
+  { severity: 'MOYEN',    color: 'yellow', title: 'Librairie obsolète détectée',           desc: 'requests 2.25.0, vulnérable à CVE-2023-32681.', tool: 'scan_github_repo()', cve: 'CVE-2023-32681' },
 ]
 
-/* GitHub scan findings (mock — réels viennent du backend) */
+/* GitHub scan findings (mock, réels viennent du backend) */
 export const MOCK_GITHUB_FINDINGS = {
   repo: 'github.com/ibraly/api',
   cloneTime: 3.1,
@@ -113,7 +113,7 @@ export const MOCK_GITHUB_FINDINGS = {
   ],
   semgrep: [
     { rule: 'python.django.security.audit.raw-query',        severity: 'HIGH',   file: 'db/queries.py',  line: 23, msg: 'Injection SQL via requête brute (ORM non utilisé)' },
-    { rule: 'python.requests.best-practice.use-timeout',     severity: 'MEDIUM', file: 'utils/http.py',  line: 11, msg: 'Appel requests sans timeout — risque de blocage infini' },
+    { rule: 'python.requests.best-practice.use-timeout',     severity: 'MEDIUM', file: 'utils/http.py',  line: 11, msg: 'Appel requests sans timeout : risque de blocage infini' },
     { rule: 'python.lang.security.insecure-hash-algorithms', severity: 'MEDIUM', file: 'app/crypto.py',  line: 7,  msg: 'Algorithme MD5 utilisé pour hachage de mot de passe' },
   ],
 }

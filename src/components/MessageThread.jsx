@@ -26,7 +26,7 @@ function useCountdown(isoStart) {
   return remaining
 }
 
-/* ─── Barre contextuelle unique — une seule ligne, jamais d'empilement ─── */
+/* ─── Barre contextuelle unique, une seule ligne, jamais d'empilement ─── */
 function ContextBar({ conversation, preview, isClient, isAdmin, signing, onSign, onOpenReport }) {
   const countdown = useCountdown(conversation.level === 3 ? conversation.missionStart : null)
 
@@ -35,7 +35,7 @@ function ContextBar({ conversation, preview, isClient, isAdmin, signing, onSign,
       <div className="px-[22px] py-2 flex items-center gap-2 border-b text-xs"
         style={{ background: '#FEF2F2', borderColor: '#FEE2E2', color: '#B91C1C' }}>
         {cloneIcon(Icons.clock, { size: 13, color: '#EF4444' })}
-        Accès au rapport expiré (48h){isClient && ' — signez un nouveau contrat pour le renouveler'}.
+        Accès au rapport expiré (48h){isClient && ', signez un nouveau contrat pour le renouveler'}.
       </div>
     )
   }
@@ -63,7 +63,7 @@ function ContextBar({ conversation, preview, isClient, isAdmin, signing, onSign,
     return (
       <div className="px-[22px] py-2 flex items-center gap-3 border-b border-gray-100 bg-white text-xs text-gray-500">
         <span className="flex-1 truncate">
-          Rapport complet partagé — score <span className="font-mono text-gray-700">{preview.scan.score}/100</span>
+          Rapport complet partagé : score <span className="font-mono text-gray-700">{preview.scan.score}/100</span>
           {countdown && countdown !== 'Expiré' && <> · expire dans <span className="font-mono text-gray-700">{countdown}</span></>}
         </span>
         {!isAdmin && (
@@ -78,7 +78,7 @@ function ContextBar({ conversation, preview, isClient, isAdmin, signing, onSign,
   return null
 }
 
-/* ─── Invitation à noter — dans le fil, comme un message système ─── */
+/* ─── Invitation à noter, dans le fil, comme un message système ─── */
 function RatingPrompt({ onRate }) {
   const [hover, setHover] = useState(0)
   return (
@@ -120,7 +120,7 @@ export default function MessageThread({ conversation, onLevelUp }) {
   const isClient = role === 'client'
   const isAdmin  = role === 'admin'
 
-  // Vue du scan filtrée par le niveau d'accès — le backend applique les règles N1/N2/N3
+  // Vue du scan filtrée par le niveau d'accès, le backend applique les règles N1/N2/N3
   const [preview, setPreview] = useState(null)
   useEffect(() => {
     messageAPI.scanPreview(conversation.id)
@@ -128,12 +128,12 @@ export default function MessageThread({ conversation, onLevelUp }) {
       .catch(() => setPreview(null))
   }, [conversation.id, conversation.level])
 
-  /* Recharge le fil complet — au montage, toutes les 5s, et après envoi */
+  /* Recharge le fil complet, au montage, toutes les 5s, et après envoi */
   const fetchMessages = useCallback(async () => {
     try {
       const res = await messageAPI.messages(conversation.id)
       if (Array.isArray(res.data)) setMessages(res.data)
-    } catch { /* backend hors ligne — on conserve l'état courant */ }
+    } catch { /* backend hors ligne, on conserve l'état courant */ }
   }, [conversation.id])
 
   useEffect(() => {
@@ -166,7 +166,7 @@ export default function MessageThread({ conversation, onLevelUp }) {
       await fetchMessages()
       if (onLevelUp) onLevelUp(conversation.id, 3)
     } catch {
-      toast.error('Signature impossible — seul le client peut signer le contrat.')
+      toast.error('Signature impossible : seul le client peut signer le contrat.')
     }
     setSigning(false)
   }
@@ -175,7 +175,7 @@ export default function MessageThread({ conversation, onLevelUp }) {
     try {
       await messageAPI.rate(conversation.id, stars)
       setRated(stars)
-      toast.success(`Note ${stars}/5 enregistrée — la réputation de l'expert est mise à jour.`)
+      toast.success(`Note ${stars}/5 enregistrée : la réputation de l'expert est mise à jour.`)
       fetchMessages()
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Notation impossible.')
@@ -200,7 +200,7 @@ export default function MessageThread({ conversation, onLevelUp }) {
         </Badge>
       </div>
 
-      {/* Barre contextuelle — une seule, selon l'état */}
+      {/* Barre contextuelle, une seule, selon l'état */}
       <ContextBar
         conversation={conversation}
         preview={preview}
@@ -265,12 +265,12 @@ export default function MessageThread({ conversation, onLevelUp }) {
         {canRate && messages.length > 0 && <RatingPrompt onRate={rateMission} />}
       </div>
 
-      {/* Saisie — l'admin supervise en lecture seule */}
+      {/* Saisie, l'admin supervise en lecture seule */}
       <div className="px-[22px] py-3.5 border-t border-gray-200 bg-white">
         {isAdmin ? (
           <div className="flex items-center gap-2 text-[12px] text-gray-500 py-1.5">
             {cloneIcon(Icons.eye, { size: 14, color: '#9CA3AF' })}
-            Supervision — lecture seule
+            Supervision : lecture seule
           </div>
         ) : (
           <div className="flex gap-2.5 items-center">

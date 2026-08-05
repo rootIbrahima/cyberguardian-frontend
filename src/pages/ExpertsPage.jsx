@@ -21,7 +21,7 @@ export default function ExpertsPage() {
   useEffect(() => {
     expertAPI.list()
       .then((res) => { if (Array.isArray(res.data) && res.data.length) setExperts(res.data) })
-      .catch(() => {})   // backend hors ligne — annuaire de démonstration conservé
+      .catch(() => {})   // backend hors ligne, annuaire de démonstration conservé
   }, [])
 
   const filtered = experts.filter(
@@ -34,7 +34,7 @@ export default function ExpertsPage() {
     <div>
       <PageHeader
         title="Experts cybersécurité"
-        subtitle={`${experts.length} expert${experts.length > 1 ? 's' : ''} vérifié${experts.length > 1 ? 's' : ''} — identité et diplôme contrôlés`}
+        subtitle={`${experts.length} expert${experts.length > 1 ? 's' : ''} vérifié${experts.length > 1 ? 's' : ''}, identité et diplôme contrôlés`}
         actions={
           <div className="flex items-center gap-2.5 bg-white border border-gray-200 rounded-[10px] px-3.5">
             {cloneIcon(Icons.search, { size: 16, color: '#9CA3AF' })}

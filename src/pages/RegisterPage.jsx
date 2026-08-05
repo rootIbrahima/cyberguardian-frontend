@@ -48,7 +48,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen grid" style={{ gridTemplateColumns: '1fr 1fr', background: '#F5F6FA' }}>
-      {/* Left — branding (identique à LoginPage) */}
+      {/* Left, branding (identique à LoginPage) */}
       <div
         className="relative overflow-hidden flex flex-col justify-between"
         style={{
@@ -107,7 +107,7 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* Right — formulaire */}
+      {/* Right, formulaire */}
       <div className="flex flex-col justify-center px-[72px] py-[60px]" style={{ maxWidth: 560 }}>
         <div className="mb-8">
           <h1 className="text-[30px] font-bold tracking-[-0.025em] text-gray-900">Créer un compte</h1>

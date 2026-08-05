@@ -25,7 +25,7 @@ export default function AdminPage() {
         if (Array.isArray(u.data)) setUsers(u.data)
         setStats(s.data)
       })
-      .catch(() => {})   // backend hors ligne — données de démonstration conservées
+      .catch(() => {})   // backend hors ligne, données de démonstration conservées
   }
 
   useEffect(refresh, [])
@@ -39,7 +39,7 @@ export default function AdminPage() {
     setLoading(id + '-revoke')
     try {
       await adminAPI.revokeExpert(id)
-      toast.success('Expert révoqué — retiré de l\'annuaire, rôle repassé à client.')
+      toast.success('Expert révoqué : retiré de l\'annuaire, rôle repassé à client.')
       refresh()
     } catch {
       toast.error('Révocation impossible.')
@@ -93,7 +93,7 @@ export default function AdminPage() {
   return (
     <div>
       <PageHeader
-        title="Administration — Validation experts"
+        title="Administration : Validation experts"
         subtitle={`${pending.length} candidature${pending.length > 1 ? 's' : ''} en attente de vérification`}
       />
 
@@ -195,7 +195,7 @@ export default function AdminPage() {
         </table>
       </Card>
 
-      {/* Experts validés — révocation possible */}
+      {/* Experts validés, révocation possible */}
       <Card className="p-[22px_26px] mt-5">
         <div className="text-[15px] font-semibold mb-4">Experts validés ({approved.length})</div>
         <table className="w-full border-collapse">
@@ -247,7 +247,7 @@ export default function AdminPage() {
         </table>
       </Card>
 
-      {/* Utilisateurs — activation / désactivation des comptes */}
+      {/* Utilisateurs, activation / désactivation des comptes */}
       <Card className="p-[22px_26px] mt-5">
         <div className="text-[15px] font-semibold mb-4">Utilisateurs ({users.length})</div>
         <table className="w-full border-collapse">

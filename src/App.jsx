@@ -35,7 +35,7 @@ function RequireAuth() {
   return <Outlet />
 }
 
-/* ─── Role guard — blocks route and shows access denied ─── */
+/* ─── Role guard, blocks route and shows access denied ─── */
 function RequireRole({ roles }) {
   const role = getRole()
   if (!roles.includes(role)) {
@@ -58,7 +58,7 @@ function RequireRole({ roles }) {
   return <Outlet />
 }
 
-/* ─── Scan progress — full dark screen, no sidebar ─── */
+/* ─── Scan progress, full dark screen, no sidebar ─── */
 function ProgressLayout() {
   return <Outlet />
 }
@@ -114,7 +114,7 @@ export default function App() {
         {/* Authenticated */}
         <Route element={<RequireAuth />}>
 
-          {/* Scan progress — full screen, no sidebar */}
+          {/* Scan progress, full screen, no sidebar */}
           <Route path="/scan-progress/:id" element={<ScanProgressPage />} />
 
           {/* Layout with sidebar */}
@@ -130,7 +130,7 @@ export default function App() {
               <Route path="/experts" element={<ExpertsPage />} />
             </Route>
 
-            {/* ── CLIENT only — un admin ou un expert ne candidate pas ── */}
+            {/* ── CLIENT only, un admin ou un expert ne candidate pas ── */}
             <Route element={<RequireRole roles={['client']} />}>
               <Route path="/register-expert" element={<RegisterExpertPage />} />
             </Route>

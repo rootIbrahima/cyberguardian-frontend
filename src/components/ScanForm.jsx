@@ -32,7 +32,7 @@ export default function ScanForm() {
       const res = await scanAPI.launch(input.trim(), assetType)
       scanId = res.data?.id ?? 'demo'
     } catch {
-      /* demo mode — no backend */
+      /* demo mode, no backend */
     }
 
     setLoading(false)

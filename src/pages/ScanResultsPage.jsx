@@ -53,7 +53,7 @@ function renderMd(text) {
       return
     }
 
-    // Empty line — paragraph break
+    // Empty line, paragraph break
     if (!line.trim()) {
       flushList()
       if (result.length && result[result.length - 1]?.type !== 'br') {
@@ -145,7 +145,7 @@ function GitHubSection({ scan }) {
     const detectedLang = (results.langage || info.language || '').trim()
     const isNpmRepo    = isJsTs
     const msg = detectedLang
-      ? `Bandit et Safety non applicables — projet ${detectedLang}${isNpmRepo ? ' — npm audit utilisé à la place' : ''}`
+      ? `Bandit et Safety non applicables : projet ${detectedLang}${isNpmRepo ? ', npm audit utilisé à la place' : ''}`
       : note
     return (
       <div className="flex items-start gap-3 py-5 px-4 rounded-lg" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
@@ -203,7 +203,7 @@ function GitHubSection({ scan }) {
       {tab === 'bandit' && (
         banditErr  ? <ErrState err={banditErr} /> :
         banditNote ? <NaState note={banditNote} /> :
-        bandit.length === 0 ? <EmptyState msg={`Aucune vulnérabilité détectée${banditLoc ? ` — ${banditLoc} lignes analysées` : ''}`} /> :
+        bandit.length === 0 ? <EmptyState msg={`Aucune vulnérabilité détectée${banditLoc ? `, ${banditLoc} lignes analysées` : ''}`} /> :
         <div className="flex flex-col gap-3">
           {banditLoc > 0 && <div className="text-[11px] text-slate-400 mb-1">{banditLoc} lignes de code analysées</div>}
           {bandit.map((f, i) => (
@@ -237,7 +237,7 @@ function GitHubSection({ scan }) {
         safety.length === 0 ? (
           <EmptyState msg={
             safetyPkg > 0
-              ? `${safetyPkg} dépendances vérifiées — aucune CVE connue${safetyFile ? ` (${safetyFile})` : ''}`
+              ? `${safetyPkg} dépendances vérifiées, aucune CVE connue${safetyFile ? ` (${safetyFile})` : ''}`
               : 'Aucun fichier requirements.txt trouvé'
           } />
         ) : (
@@ -503,7 +503,7 @@ export default function ScanResultsPage() {
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      toast.error('Rapport PDF non disponible — backend hors ligne.')
+      toast.error('Rapport PDF non disponible : backend hors ligne.')
     } finally {
       timers.forEach(clearTimeout)
       setPdfLoading(false)
@@ -635,7 +635,7 @@ export default function ScanResultsPage() {
       {/* Breakdown + Issues (EASM only) */}
       {!isGithub && (
         <div className="grid grid-cols-2 gap-[18px] mb-5">
-          {/* Détail du score pondéré + SSL — données réelles du backend */}
+          {/* Détail du score pondéré + SSL, données réelles du backend */}
           <Card className="p-[22px_24px]">
             <div className="text-sm font-semibold mb-4">Détail du score</div>
             {(() => {
@@ -700,7 +700,7 @@ export default function ScanResultsPage() {
             })()}
           </Card>
 
-          {/* Issues — données réelles du backend */}
+          {/* Issues, données réelles du backend */}
           <Card className="p-[22px_24px] flex flex-col">
             {(() => {
               const issues = scan?.issues ?? []
@@ -854,7 +854,7 @@ export default function ScanResultsPage() {
                 lines.push(<>Le dépôt est principalement écrit en <strong>{lang}</strong>. Score de sécurité : <strong style={{ color: scoreColor }}>{score}/{scoreMax}</strong>.</>)
 
                 if (secrets > 0) {
-                  lines.push(<><strong style={{ color: '#EF4444' }}>⚠ {secrets} secret{secrets > 1 ? 's' : ''} exposé{secrets > 1 ? 's' : ''} détecté{secrets > 1 ? 's' : ''}</strong> — ceci est la priorité absolue. Révoquez immédiatement les tokens concernés sur les plateformes correspondantes (GitHub, AWS, etc.) et ajoutez ces fichiers au <code className="bg-white px-1 rounded border border-gray-200 text-[11px]">.gitignore</code>.</>)
+                  lines.push(<><strong style={{ color: '#EF4444' }}>⚠ {secrets} secret{secrets > 1 ? 's' : ''} exposé{secrets > 1 ? 's' : ''} détecté{secrets > 1 ? 's' : ''}</strong>, ceci est la priorité absolue. Révoquez immédiatement les tokens concernés sur les plateformes correspondantes (GitHub, AWS, etc.) et ajoutez ces fichiers au <code className="bg-white px-1 rounded border border-gray-200 text-[11px]">.gitignore</code>.</>)
                 }
 
                 if (cveCount > 0) {
@@ -862,9 +862,9 @@ export default function ScanResultsPage() {
                   const urgent = safetyF.filter((f) => f.priority === 'URGENTE').length
                   lines.push(<><strong>{cveCount} CVE</strong> détectée{cveCount > 1 ? 's' : ''} dans les dépendances. Exécutez <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono">{pkgManager}</code> pour corriger les vulnérabilités automatiquement corrigeables.</>)
                   if (urgent > 0) {
-                    lines.push(<><strong style={{ color: '#DC2626' }}>{urgent} CVE en priorité URGENTE</strong> — gravité élevée ET forte probabilité d'exploitation (croisement CVSS × EPSS). À corriger en premier, avant les autres.</>)
+                    lines.push(<><strong style={{ color: '#DC2626' }}>{urgent} CVE en priorité URGENTE</strong>, gravité élevée ET forte probabilité d'exploitation (croisement CVSS × EPSS). À corriger en premier, avant les autres.</>)
                   } else {
-                    lines.push(<>Les CVE sont classées par priorité combinée <strong>CVSS × EPSS</strong> (gravité croisée avec la probabilité d'exploitation réelle) dans l'onglet Safety — traitez d'abord celles marquées « ÉLEVÉE ».</>)
+                    lines.push(<>Les CVE sont classées par priorité combinée <strong>CVSS × EPSS</strong> (gravité croisée avec la probabilité d'exploitation réelle) dans l'onglet Safety, traitez d'abord celles marquées « ÉLEVÉE ».</>)
                   }
                 }
 
@@ -895,28 +895,28 @@ export default function ScanResultsPage() {
 
             const lines = []
 
-            // DNS anti-phishing — le critère le plus lourd du score (25 pts)
+            // DNS anti-phishing, le critère le plus lourd du score (25 pts)
             if (dns) {
               if (!dns.dmarc_present) {
-                lines.push(<><strong style={{ color: '#DC2626' }}>DMARC absent</strong> — n'importe qui peut envoyer un email en se faisant passer pour <strong>@{scan?.target}</strong>. Ajoutez un enregistrement TXT <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono">v=DMARC1; p=quarantine;</code> sur <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono">_dmarc.{scan?.target}</code>.</>)
+                lines.push(<><strong style={{ color: '#DC2626' }}>DMARC absent</strong>, n'importe qui peut envoyer un email en se faisant passer pour <strong>@{scan?.target}</strong>. Ajoutez un enregistrement TXT <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono">v=DMARC1; p=quarantine;</code> sur <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono">_dmarc.{scan?.target}</code>.</>)
               } else if (dns.dmarc_policy === 'none') {
                 lines.push(<>DMARC est présent mais en mode surveillance seule (<strong>p=none</strong>) : les emails usurpés sont quand même livrés. Passez à p=quarantine puis p=reject.</>)
               }
               if (!dns.spf_present) {
-                lines.push(<><strong style={{ color: '#DC2626' }}>SPF absent</strong> — aucun contrôle sur les serveurs autorisés à envoyer des emails pour votre domaine.</>)
+                lines.push(<><strong style={{ color: '#DC2626' }}>SPF absent</strong>, aucun contrôle sur les serveurs autorisés à envoyer des emails pour votre domaine.</>)
               }
               if (dns.spf_present && dns.dmarc_present && dns.dmarc_policy !== 'none') {
-                lines.push(<>La protection anti-phishing DNS est bien configurée (SPF + DMARC{dns.dkim_present ? ' + DKIM' : ''}{dns.dnssec_enabled ? ' + DNSSEC' : ''}) — score DNS <strong>{dns.score}/25</strong>.</>)
+                lines.push(<>La protection anti-phishing DNS est bien configurée (SPF + DMARC{dns.dkim_present ? ' + DKIM' : ''}{dns.dnssec_enabled ? ' + DNSSEC' : ''}) : score DNS <strong>{dns.score}/25</strong>.</>)
               }
               if (!dns.dnssec_enabled) {
-                lines.push(<><strong>DNSSEC non activé</strong> — vos réponses DNS ne sont pas signées et restent exposées à l'empoisonnement de cache. Activez DNSSEC chez votre hébergeur DNS.</>)
+                lines.push(<><strong>DNSSEC non activé</strong>, vos réponses DNS ne sont pas signées et restent exposées à l'empoisonnement de cache. Activez DNSSEC chez votre hébergeur DNS.</>)
               }
             }
 
-            // WHOIS — expiration du domaine (priorité absolue si expiré/proche)
+            // WHOIS : expiration du domaine (priorité absolue si expiré/proche)
             if (whois?.found && whois.days_until_expiry != null) {
               if (whois.days_until_expiry < 0) {
-                lines.push(<><strong style={{ color: '#DC2626' }}>Domaine expiré</strong> depuis {Math.abs(whois.days_until_expiry)} jours — il peut être racheté par un tiers qui prendrait le contrôle du site et des emails. Renouvelez-le immédiatement.</>)
+                lines.push(<><strong style={{ color: '#DC2626' }}>Domaine expiré</strong> depuis {Math.abs(whois.days_until_expiry)} jours, il peut être racheté par un tiers qui prendrait le contrôle du site et des emails. Renouvelez-le immédiatement.</>)
               } else if (whois.days_until_expiry <= 30) {
                 lines.push(<><strong>Le domaine expire dans {whois.days_until_expiry} jours</strong> (registrar {whois.registrar || 'N/A'}). Renouvelez-le sans tarder pour éviter une interruption de service et un risque de détournement.</>)
               }
@@ -926,9 +926,9 @@ export default function ScanResultsPage() {
             if (headers) {
               const missing = headers.headers_missing ?? []
               if (missing.length > 0) {
-                lines.push(<><strong>{missing.length} en-tête{missing.length > 1 ? 's' : ''} de sécurité HTTP manquant{missing.length > 1 ? 's' : ''}</strong> ({missing.slice(0, 3).join(', ')}{missing.length > 3 ? '…' : ''}) — protection incomplète contre le XSS, le clickjacking et le SSL stripping. Score headers : <strong>{headers.score}/20</strong>.</>)
+                lines.push(<><strong>{missing.length} en-tête{missing.length > 1 ? 's' : ''} de sécurité HTTP manquant{missing.length > 1 ? 's' : ''}</strong> ({missing.slice(0, 3).join(', ')}{missing.length > 3 ? '…' : ''}) : protection incomplète contre le XSS, le clickjacking et le SSL stripping. Score headers : <strong>{headers.score}/20</strong>.</>)
               } else if (headers.reachable) {
-                lines.push(<>Tous les en-têtes de sécurité HTTP sont en place — score headers <strong>{headers.score}/20</strong>.</>)
+                lines.push(<>Tous les en-têtes de sécurité HTTP sont en place, score headers <strong>{headers.score}/20</strong>.</>)
               }
             }
 
@@ -937,7 +937,7 @@ export default function ScanResultsPage() {
               lines.push(<>Serveur détecté : <strong>{server}</strong>.</>)
             }
 
-            // CVE — priorité croisée CVSS × EPSS
+            // CVE : priorité croisée CVSS × EPSS
             const cveUrgent   = cves.filter((c) => c.priority === 'URGENTE')
             const cveCritical = cves.filter((c) => ['CRITICAL','CRITIQUE'].includes((c.severity || '').toUpperCase()))
             const cveHigh     = cves.filter((c) => ['HIGH','HAUT'].includes((c.severity || '').toUpperCase()))
@@ -945,7 +945,7 @@ export default function ScanResultsPage() {
 
             if (cveUrgent.length > 0) {
               lines.push(
-                <><strong style={{ color: '#DC2626' }}>⚠ {cveUrgent.length} CVE en priorité URGENTE</strong> — gravité élevée croisée avec une forte probabilité d'exploitation réelle (CVSS × EPSS). À corriger en premier.{' '}
+                <><strong style={{ color: '#DC2626' }}>⚠ {cveUrgent.length} CVE en priorité URGENTE</strong>, gravité élevée croisée avec une forte probabilité d'exploitation réelle (CVSS × EPSS). À corriger en premier.{' '}
                 {cveUrgent.slice(0, 3).map((c, i) => (
                   <span key={i}><br />• <strong>{c.id}</strong> (CVSS {c.cvss}{epssTxt(c)}) : {(c.title || '').slice(0, 90)}{(c.title || '').length > 90 ? '…' : ''}</span>
                 ))}</>
@@ -976,7 +976,7 @@ export default function ScanResultsPage() {
 
             // SSL
             if (!ssl.valid) {
-              lines.push(<>Le certificat SSL est <strong>invalide</strong> — les navigateurs bloqueront l'accès au site. Installez un certificat signé par une autorité reconnue (Let's Encrypt est gratuit).</>)
+              lines.push(<>Le certificat SSL est <strong>invalide</strong>, les navigateurs bloqueront l'accès au site. Installez un certificat signé par une autorité reconnue (Let's Encrypt est gratuit).</>)
             } else if (ssl.expired) {
               lines.push(<>Le certificat SSL est <strong>expiré</strong>. Les visiteurs verront une alerte de sécurité. Renouvelez-le immédiatement.</>)
             } else if (ssl.days_until_expiry <= 30) {
@@ -986,13 +986,13 @@ export default function ScanResultsPage() {
             }
 
             if (ssl.self_signed) {
-              lines.push(<>Le certificat est <strong>auto-signé</strong> — non approuvé par les navigateurs. Remplacez-le par un certificat d'une CA publique.</>)
+              lines.push(<>Le certificat est <strong>auto-signé</strong>, non approuvé par les navigateurs. Remplacez-le par un certificat d'une CA publique.</>)
             }
 
             if (ssl.tls_version && ['TLSv1', 'TLSv1.1'].includes(ssl.tls_version)) {
               lines.push(<>La version <strong>{ssl.tls_version}</strong> est obsolète et vulnérable. Activez uniquement TLS 1.2 et TLS 1.3 sur votre serveur.</>)
             } else if (ssl.tls_version) {
-              lines.push(<>La version <strong>{ssl.tls_version}</strong> est utilisée — {ssl.tls_version === 'TLSv1.3' ? 'configuration optimale.' : 'TLS 1.3 serait préférable pour une sécurité maximale.'}</>)
+              lines.push(<>La version <strong>{ssl.tls_version}</strong> est utilisée, {ssl.tls_version === 'TLSv1.3' ? 'configuration optimale.' : 'TLS 1.3 serait préférable pour une sécurité maximale.'}</>)
             }
 
             if (issues.length === 0 && cves.length === 0) {

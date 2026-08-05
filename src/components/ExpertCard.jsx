@@ -26,7 +26,7 @@ export default function ExpertCard({ expert }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="text-[15px] font-semibold tracking-[-0.01em] truncate">{expert.name}</span>
-            <span title="Identité vérifiée — CNI et diplôme contrôlés">
+            <span title="Identité vérifiée : CNI et diplôme contrôlés">
               {cloneIcon(Icons.checkCircle, { size: 14, color: '#10B981' })}
             </span>
           </div>

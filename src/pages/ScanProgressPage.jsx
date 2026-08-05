@@ -167,7 +167,7 @@ export default function ScanProgressPage() {
             {cloneIcon(Icons.shield, { color: '#fff', size: 20 })}
           </div>
           <div>
-            <div className="text-white font-bold text-[15px] tracking-[-0.01em]">CyberGuardian — Analyse en cours</div>
+            <div className="text-white font-bold text-[15px] tracking-[-0.01em]">CyberGuardian, Analyse en cours</div>
             <div className="font-mono text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
               {isGithub ? 'Analyse de dépôt GitHub' : 'Analyse de surface d\'attaque externe'}
             </div>
@@ -226,7 +226,7 @@ export default function ScanProgressPage() {
             <span className="w-3 h-3 rounded-full bg-orange-500" />
             <span className="w-3 h-3 rounded-full bg-green-500" />
             <span className="ml-3 text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              cyberguardian — scanner — {target}
+              cyberguardian, scanner, {target}
             </span>
           </div>
 
@@ -250,7 +250,7 @@ export default function ScanProgressPage() {
           {phase === 'done' && (
             <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="text-green-400 text-[12px] font-mono">
-                Analyse terminée en {elapsed}s — Redirection vers les résultats…
+                Analyse terminée en {elapsed}s : Redirection vers les résultats…
               </div>
             </div>
           )}

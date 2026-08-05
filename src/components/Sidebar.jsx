@@ -88,7 +88,7 @@ export default function Sidebar({ collapsed = false, onToggle }) {
   const role = (user.role || 'client').toLowerCase()
   const nav  = NAV_BY_ROLE[role] || NAV_BY_ROLE.client
 
-  /* Badge : candidatures en attente (admin) ou messages non lus — rafraîchi toutes les 15s */
+  /* Badge : candidatures en attente (admin) ou messages non lus, rafraîchi toutes les 15s */
   useEffect(() => {
     const fetchUnread = async () => {
       try {
@@ -101,7 +101,7 @@ export default function Sidebar({ collapsed = false, onToggle }) {
             setUnread(res.data.reduce((total, c) => total + (c.unread || 0), 0))
           }
         }
-      } catch { /* backend hors ligne — pas de badge */ }
+      } catch { /* backend hors ligne, pas de badge */ }
     }
     fetchUnread()
     const t = setInterval(fetchUnread, 15000)
@@ -223,7 +223,7 @@ export default function Sidebar({ collapsed = false, onToggle }) {
         style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         {collapsed ? (
           <>
-            <span title={`${user.name} — ${ROLE_LABELS[role] || role}`}>
+            <span title={`${user.name}, ${ROLE_LABELS[role] || role}`}>
               <Avatar name={user.name} color={ROLE_COLORS[role] || '#2A7ACC'} size={32} />
             </span>
             <button
@@ -260,7 +260,7 @@ export default function Sidebar({ collapsed = false, onToggle }) {
         )}
       </div>
 
-      {/* Confirmation de déconnexion — clic extérieur ou Échap pour annuler */}
+      {/* Confirmation de déconnexion, clic extérieur ou Échap pour annuler */}
       {confirmLogout && (
         <div
           className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-900/40"

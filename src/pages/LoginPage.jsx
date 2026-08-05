@@ -38,7 +38,7 @@ export default function LoginPage() {
       if (err.response?.status === 401) {
         setError('Email ou mot de passe incorrect.')
       } else if (!err.response) {
-        // Backend hors ligne — fallback offline pour la démo
+        // Backend hors ligne, fallback offline pour la démo
         const fallbackUser = ROLE_MAP[email.toLowerCase()] || { name: email.split('@')[0], role: 'client' }
         localStorage.setItem('cg-token', 'offline-token')
         localStorage.setItem('cg-user', JSON.stringify(fallbackUser))

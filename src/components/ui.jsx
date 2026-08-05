@@ -21,7 +21,7 @@ export function Avatar({ name, color, size = 36, initials }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   BADGE — teinte légère, radius 6px, jamais trop coloré
+   BADGE : teinte légère, radius 6px, jamais trop coloré
 ══════════════════════════════════════════════════════════ */
 const BADGE_COLORS = {
   blue:   { bg: '#EFF6FF', fg: '#1D4ED8' },
@@ -47,7 +47,7 @@ export function Badge({ children, color = 'blue', icon }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   SEVERITY BADGE — icône + couleur sémantique
+   SEVERITY BADGE : icône + couleur sémantique
    Usage : <SeverityBadge level="HIGH" /> ou "CRITIQUE"
 ══════════════════════════════════════════════════════════ */
 const SEV_MAP = {
@@ -78,7 +78,7 @@ export function SeverityBadge({ level = 'LOW', showLabel = true }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   CARD — radius 8px, ombre légère, bordure subtile
+   CARD : radius 8px, ombre légère, bordure subtile
 ══════════════════════════════════════════════════════════ */
 export function Card({ children, className = '', style, ...props }) {
   return (
@@ -93,7 +93,7 @@ export function Card({ children, className = '', style, ...props }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   BUTTON — variantes alignées sur la palette brief
+   BUTTON : variantes alignées sur la palette brief
 ══════════════════════════════════════════════════════════ */
 const BTN_VARIANTS = {
   primary:   'bg-[#1F5C99] text-white border-transparent hover:bg-[#1a4f87] disabled:bg-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed',
@@ -299,7 +299,7 @@ export function PageHeader({ title, subtitle, actions }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   SKELETON — placeholder animé pendant le chargement
+   SKELETON : placeholder animé pendant le chargement
    Usage : <Skeleton w="100%" h={16} /> ou <Skeleton className="w-32 h-4" />
 ══════════════════════════════════════════════════════════ */
 export function Skeleton({ w, h, className = '', rounded = false }) {
@@ -323,7 +323,7 @@ export function SkeletonCard({ lines = 3 }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   TOOLTIP — survol pour expliquer métriques ou valeurs
+   TOOLTIP : survol pour expliquer métriques ou valeurs
    Usage : <Tooltip tip="Score basé sur TLS + CVE">42/100</Tooltip>
 ══════════════════════════════════════════════════════════ */
 export function Tooltip({ tip, children, side = 'top' }) {
@@ -346,7 +346,7 @@ export function Tooltip({ tip, children, side = 'top' }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   RELATIVE TIME — "il y a 2 h", absolu au survol
+   RELATIVE TIME : "il y a 2 h", absolu au survol
    Usage : <RelativeTime date="2026-05-24T14:32:00" />
            <RelativeTime date="24 mai 2026, 14:32" />
 ══════════════════════════════════════════════════════════ */
@@ -395,7 +395,7 @@ export function RelativeTime({ date, className = '' }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   COPY VALUE — copie au presse-papier avec feedback ✓
+   COPY VALUE : copie au presse-papier avec feedback ✓
    Usage : <CopyValue value="192.168.1.1" />
 ══════════════════════════════════════════════════════════ */
 export function CopyValue({ value, label, className = '' }) {
@@ -425,7 +425,7 @@ export function CopyValue({ value, label, className = '' }) {
 }
 
 /* ══════════════════════════════════════════════════════════
-   TOAST — notifications légères (success/error/info/warning)
+   TOAST : notifications légères (success/error/info/warning)
    Usage depuis n'importe où : toast.success('Scan supprimé')
                                 toast.error('Échec du serveur')
 ══════════════════════════════════════════════════════════ */
@@ -492,7 +492,7 @@ export function Toaster() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   SCORE DELTA — évolution par rapport au scan précédent de la même cible
+   SCORE DELTA : évolution par rapport au scan précédent de la même cible
    Usage : <ScoreDelta value={9} />   (positif = score amélioré)
 ══════════════════════════════════════════════════════════ */
 export function ScoreDelta({ value }) {

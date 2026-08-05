@@ -60,7 +60,7 @@ export default function MessagesPage() {
         title="Messagerie"
         subtitle={
           (JSON.parse(localStorage.getItem('cg-user') || '{}').role || 'client') === 'admin'
-            ? 'Supervision des conversations client-expert — lecture seule'
+            ? 'Supervision des conversations client-expert, lecture seule'
             : 'Vos échanges avec les experts'
         }
       />

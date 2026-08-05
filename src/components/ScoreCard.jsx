@@ -24,7 +24,7 @@ export default function ScoreCard({ score = 0, breakdown = null, sslScore = null
     ? { label: 'Niveau moyen', color: 'orange' }
     : { label: 'Niveau critique', color: 'red' }
 
-  /* Détail par critère (dernier scan) — repli sur la seule barre SSL pour les anciens scans */
+  /* Détail par critère (dernier scan), repli sur la seule barre SSL pour les anciens scans */
   const bars = breakdown?.length
     ? breakdown.map((b) => ({ label: b.label, pts: b.points, max: b.max }))
     : sslScore != null
