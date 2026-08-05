@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import { cloneIcon, Icons } from './Icons'
-import { Avatar } from './ui'
+import { Avatar, Button } from './ui'
 import { messageAPI, adminAPI } from '../lib/api'
 
 /* ─── Nav definitions per role ─── */
@@ -28,11 +28,12 @@ const NAV_BY_ROLE = {
   },
   admin: {
     principal: [
-      { path: '/admin',           label: 'Administration',  icon: Icons.admin },
-      { path: '/dashboard',       label: 'Tableau de bord', icon: Icons.dashboard },
-      { path: '/experts',         label: 'Experts',         icon: Icons.experts },
-      { path: '/scan-results',    label: 'Tous les scans',  icon: Icons.results },
-      { path: '/messages',        label: 'Messages',        icon: Icons.message },
+      { path: '/admin',           label: 'Administration',   icon: Icons.admin },
+      { path: '/dashboard',       label: 'Tableau de bord',  icon: Icons.dashboard },
+      { path: '/experts',         label: 'Experts',          icon: Icons.experts },
+      { path: '/scan-results',    label: 'Tous les scans',   icon: Icons.results },
+      { path: '/remediation',     label: 'Correction GitHub', icon: Icons.github },
+      { path: '/messages',        label: 'Messages',         icon: Icons.message },
     ],
     compte: [],
   },
@@ -80,7 +81,8 @@ function NavButton({ item, isActive, onClick, collapsed }) {
 export default function Sidebar({ collapsed = false, onToggle }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const [unread, setUnread] = useState(0)
+  const [unread, setUnread]               = useState(0)
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   const user = JSON.parse(localStorage.getItem('cg-user') || '{"name":"Ibrahima LY","role":"client"}')
   const role = (user.role || 'client').toLowerCase()
@@ -110,7 +112,16 @@ export default function Sidebar({ collapsed = false, onToggle }) {
   const withBadge = (item) =>
     item.path === badgePath && unread > 0 ? { ...item, badge: unread } : item
 
+  /* Échap referme la demande de confirmation de déconnexion */
+  useEffect(() => {
+    if (!confirmLogout) return
+    const onKey = (e) => { if (e.key === 'Escape') setConfirmLogout(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [confirmLogout])
+
   const handleLogout = () => {
+    setConfirmLogout(false)
     localStorage.removeItem('cg-token')
     localStorage.removeItem('cg-user')
     navigate('/login')
@@ -216,7 +227,7 @@ export default function Sidebar({ collapsed = false, onToggle }) {
               <Avatar name={user.name} color={ROLE_COLORS[role] || '#2A7ACC'} size={32} />
             </span>
             <button
-              onClick={handleLogout}
+              onClick={() => setConfirmLogout(true)}
               className="bg-transparent border-none cursor-pointer p-1 transition-opacity hover:opacity-70"
               style={{ opacity: 0.45, color: '#fff' }}
               title="Déconnexion"
@@ -238,7 +249,7 @@ export default function Sidebar({ collapsed = false, onToggle }) {
               </div>
             </div>
             <button
-              onClick={handleLogout}
+              onClick={() => setConfirmLogout(true)}
               className="bg-transparent border-none cursor-pointer p-1 transition-opacity hover:opacity-70"
               style={{ opacity: 0.45, color: '#fff' }}
               title="Déconnexion"
@@ -248,6 +259,34 @@ export default function Sidebar({ collapsed = false, onToggle }) {
           </div>
         )}
       </div>
+
+      {/* Confirmation de déconnexion — clic extérieur ou Échap pour annuler */}
+      {confirmLogout && (
+        <div
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-900/40"
+          onClick={() => setConfirmLogout(false)}
+        >
+          <div
+            className="bg-white w-[360px] max-w-[calc(100vw-32px)] p-5 shadow-xl"
+            style={{ borderRadius: 'var(--cg-radius)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-[15px] font-bold text-slate-900">Se déconnecter ?</div>
+            <p className="text-[13px] text-slate-500 mt-1.5 leading-relaxed">
+              Votre session sera fermée. Reconnectez-vous pour retrouver vos scans
+              et vos conversations.
+            </p>
+            <div className="flex justify-end gap-2 mt-5">
+              <Button variant="secondary" size="sm" onClick={() => setConfirmLogout(false)}>
+                Annuler
+              </Button>
+              <Button variant="primary" size="sm" onClick={handleLogout}>
+                Se déconnecter
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   )
 }

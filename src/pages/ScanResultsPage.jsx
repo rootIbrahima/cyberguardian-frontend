@@ -621,6 +621,11 @@ export default function ScanResultsPage() {
           <Button variant="secondary" icon={Icons.experts} onClick={() => navigate('/experts')}>
             Contacter un expert
           </Button>
+          {isGithub && (
+            <Button variant="secondary" icon={Icons.github} onClick={() => navigate('/settings')}>
+              Demander une remédiation assistée
+            </Button>
+          )}
         </div>
       </Card>
 

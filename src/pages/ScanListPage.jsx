@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { scanAPI } from '../lib/api'
-import { Card, PageHeader, RelativeTime, toast, SkeletonCard } from '../components/ui'
+import { Card, PageHeader, RelativeTime, toast, SkeletonCard, ScoreDelta } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 
 const STATUS_MAP = {
@@ -82,6 +82,14 @@ export default function ScanListPage() {
     s.typeLabel?.toLowerCase().includes(search.toLowerCase())
   )
 
+  // Évolution du score par cible (relances comprises), pour le badge de tendance.
+  // Regroupé sur l'ensemble des scans, pas seulement ceux filtrés par la recherche.
+  const historyByTarget = scans.reduce((acc, s) => {
+    if (s.score === null || s.score === undefined) return acc
+    ;(acc[s.target] ||= []).push(s)
+    return acc
+  }, {})
+
   return (
     <div>
       <PageHeader
@@ -144,6 +152,15 @@ export default function ScanListPage() {
                 const isDeleting  = deletingId === scan.id
                 const isRerunning = rerunningId === scan.id
                 const isPendingDelete = confirmDeleteId === scan.id
+                // Delta affiché uniquement sur le scan le plus récent d'une cible,
+                // comparé à celui juste avant lui (pas au tout premier de l'historique).
+                const targetHistory = (historyByTarget[scan.target] || [])
+                  .slice().sort((a, b) => a.id - b.id)
+                const idxInHistory  = targetHistory.findIndex((h) => h.id === scan.id)
+                const isLatest      = idxInHistory === targetHistory.length - 1
+                const delta = isLatest && idxInHistory > 0
+                  ? scan.score - targetHistory[idxInHistory - 1].score
+                  : null
 
                 return (
                   <tr
@@ -167,9 +184,16 @@ export default function ScanListPage() {
                     {/* Score */}
                     <td className="py-3.5 text-center">
                       {scan.score !== null ? (
-                        <span className="text-[13px] font-bold font-mono" style={{ color: scoreColor }}>
-                          {scan.score}/{scoreMax}
-                        </span>
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-[13px] font-bold font-mono" style={{ color: scoreColor }}>
+                            {scan.score}/{scoreMax}
+                          </span>
+                          {delta !== null && (
+                            <span title="Évolution par rapport au scan précédent de cette cible">
+                              <ScoreDelta value={delta} />
+                            </span>
+                          )}
+                        </div>
                       ) : (
                         <span className="text-xs text-gray-400">—</span>
                       )}
