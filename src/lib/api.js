@@ -77,6 +77,28 @@ export const adminAPI = {
   toggleUser:      (id)  => api.put(`/admin/users/${id}/toggle`),
   stats:           ()    => api.get('/admin/stats'),
   document:        (id, kind) => api.get(`/admin/experts/${id}/document/${kind}`, { responseType: 'blob' }),
+  remediationCandidates: ()      => api.get('/admin/remediation/candidats'),
+  proposeRemediation:    (scanId) => api.post(`/admin/scans/${scanId}/remediation`),
+}
+
+export const notificationAPI = {
+  list:        ()    => api.get('/notifications'),
+  markRead:    (id)  => api.put(`/notifications/${id}/read`),
+  markAllRead: ()    => api.put('/notifications/read-all'),
+}
+
+export const telegramAPI = {
+  generateCode: () => api.get('/telegram/generer-code'),
+  status:       () => api.get('/telegram/statut'),
+  unlink:       () => api.delete('/telegram/delier'),
+}
+
+export const githubAPI = {
+  connect:    ()        => api.get('/github/connect'),
+  status:     ()        => api.get('/github/statut'),
+  authorize:  (repoUrl) => api.post('/github/autoriser-correction', { repo_url: repoUrl }),
+  revoke:     (id)      => api.delete(`/github/autoriser-correction/${id}`),
+  disconnect: ()        => api.delete('/github/deconnecter'),
 }
 
 export default api

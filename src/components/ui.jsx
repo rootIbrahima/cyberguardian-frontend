@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, Settings, AlertCircle, AlertTriangle, Info, Minus,
-         CheckCircle2, XCircle, Copy, Check } from 'lucide-react'
+         CheckCircle2, XCircle, Copy, Check, TrendingUp, TrendingDown } from 'lucide-react'
 import { cloneIcon } from './Icons'
-import { messageAPI, adminAPI } from '../lib/api'
+import { notificationAPI } from '../lib/api'
 
 /* ══════════════════════════════════════════════════════════
    AVATAR
@@ -173,42 +173,12 @@ function NotificationBell() {
   const navigate = useNavigate()
   const [open, setOpen]   = useState(false)
   const [items, setItems] = useState([])
-  const role = (JSON.parse(localStorage.getItem('cg-user') || '{}').role || 'client').toLowerCase()
-  const isAdmin = role === 'admin'
 
   const fetchItems = useCallback(() => {
-    if (isAdmin) {
-      adminAPI.pendingExperts()
-        .then((res) => {
-          if (Array.isArray(res.data)) {
-            setItems(res.data.map((e) => ({
-              id: `exp-${e.id}`,
-              label: `Candidature expert — ${e.name}`,
-              sub: e.specialty || 'En attente de validation',
-              to: '/admin',
-            })))
-          }
-        })
-        .catch(() => {})
-    } else {
-      messageAPI.conversations()
-        .then((res) => {
-          if (Array.isArray(res.data)) {
-            setItems(
-              res.data
-                .filter((c) => (c.unread || 0) > 0)
-                .map((c) => ({
-                  id: `conv-${c.id}`,
-                  label: `${c.unread} nouveau${c.unread > 1 ? 'x' : ''} message${c.unread > 1 ? 's' : ''} — ${c.expert.name}`,
-                  sub: c.subject,
-                  to: '/messages',
-                }))
-            )
-          }
-        })
-        .catch(() => {})
-    }
-  }, [isAdmin])
+    notificationAPI.list()
+      .then((res) => { if (Array.isArray(res.data)) setItems(res.data) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     fetchItems()
@@ -219,8 +189,24 @@ function NotificationBell() {
     return () => { clearInterval(t); window.removeEventListener('focus', onFocus) }
   }, [fetchItems])
 
-  const count = items.length
-  const go = (to) => { setOpen(false); navigate(to) }
+  const unreadCount = items.filter((n) => !n.read).length
+
+  const openItem = (n) => {
+    setOpen(false)
+    if (!n.read) {
+      setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, read: true } : x)))
+      notificationAPI.markRead(n.id).catch(() => {})
+    }
+    if (!n.link) return
+    if (n.link.startsWith('http')) window.open(n.link, '_blank', 'noopener')
+    else navigate(n.link)
+  }
+
+  const markAllRead = (e) => {
+    e.stopPropagation()
+    setItems((prev) => prev.map((x) => ({ ...x, read: true })))
+    notificationAPI.markAllRead().catch(() => {})
+  }
 
   return (
     <div className="relative">
@@ -230,9 +216,9 @@ function NotificationBell() {
         className="w-9 h-9 rounded-[var(--cg-radius)] border border-slate-200 bg-white flex items-center justify-center text-slate-500 relative hover:bg-slate-50 transition-colors cursor-pointer"
       >
         <Bell size={16} strokeWidth={2} />
-        {count > 0 && (
+        {unreadCount > 0 && (
           <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center border border-white">
-            {count > 9 ? '9+' : count}
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
@@ -242,11 +228,19 @@ function NotificationBell() {
           {/* clic à l'extérieur pour fermer */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 mt-2 w-[320px] bg-white border border-slate-200 rounded-[10px] shadow-lg z-50 overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-slate-100 text-[12px] font-semibold text-slate-700">
-              Notifications
+            <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
+              <span className="text-[12px] font-semibold text-slate-700">Notifications</span>
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllRead}
+                  className="text-[11px] font-semibold text-blue-700 hover:underline cursor-pointer"
+                >
+                  Tout marquer comme lu
+                </button>
+              )}
             </div>
-            <div className="max-h-[320px] overflow-auto">
-              {count === 0 ? (
+            <div className="max-h-[360px] overflow-auto">
+              {items.length === 0 ? (
                 <div className="px-4 py-8 text-center text-[12.5px] text-slate-400">
                   Aucune notification
                 </div>
@@ -254,26 +248,25 @@ function NotificationBell() {
                 items.map((n) => (
                   <button
                     key={n.id}
-                    onClick={() => go(n.to)}
+                    onClick={() => openItem(n)}
                     className="w-full text-left px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer flex gap-2.5 items-start"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                    <span
+                      className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
+                      style={{ background: n.read ? 'transparent' : '#EF4444' }}
+                    />
                     <span className="flex-1 min-w-0">
-                      <span className="block text-[12.5px] font-medium text-slate-800 truncate">{n.label}</span>
-                      <span className="block text-[11px] text-slate-400 font-mono truncate">{n.sub}</span>
+                      <span className={`block text-[12.5px] truncate ${n.read ? 'font-medium text-slate-500' : 'font-semibold text-slate-800'}`}>
+                        {n.title}
+                      </span>
+                      {n.body && (
+                        <span className="block text-[11px] text-slate-400 truncate">{n.body}</span>
+                      )}
                     </span>
                   </button>
                 ))
               )}
             </div>
-            {count > 0 && (
-              <button
-                onClick={() => go(isAdmin ? '/admin' : '/messages')}
-                className="w-full px-4 py-2.5 text-[12px] font-semibold text-blue-700 hover:bg-slate-50 transition-colors cursor-pointer border-t border-slate-100"
-              >
-                {isAdmin ? 'Voir les candidatures' : 'Ouvrir la messagerie'}
-              </button>
-            )}
           </div>
         </>
       )}
@@ -495,6 +488,31 @@ export function Toaster() {
         )
       })}
     </div>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   SCORE DELTA — évolution par rapport au scan précédent de la même cible
+   Usage : <ScoreDelta value={9} />   (positif = score amélioré)
+══════════════════════════════════════════════════════════ */
+export function ScoreDelta({ value }) {
+  if (!value) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-slate-400 font-mono">
+        <Minus size={10} strokeWidth={2.5} />
+        0
+      </span>
+    )
+  }
+  const up = value > 0
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 text-[11px] font-bold font-mono"
+      style={{ color: up ? '#10B981' : '#EF4444' }}
+    >
+      {up ? <TrendingUp size={12} strokeWidth={2.5} /> : <TrendingDown size={12} strokeWidth={2.5} />}
+      {up ? '+' : ''}{value}
+    </span>
   )
 }
 
