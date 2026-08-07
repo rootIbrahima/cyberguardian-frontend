@@ -592,7 +592,13 @@ export default function ScanResultsPage() {
           </div>
           <CopyValue value={scan?.target} className="text-[24px] font-bold font-mono tracking-[-0.02em] text-slate-900" />
           <div className="text-[13px] text-slate-500 mt-1 flex items-center gap-1.5">
-            Analysé <RelativeTime date={scan?.date} /> · {isGithub ? 'Bandit · Safety · TruffleHog' : scan?.results?.dns ? 'Analyse DNS · SSL/TLS · Headers' : 'Analyse SSL/TLS · Headers'}
+            Analysé <RelativeTime date={scan?.date} /> · {isGithub
+              ? 'Bandit · Safety · TruffleHog'
+              : ['DNS', 'SSL/TLS', 'Headers', 'Ports', 'Réputation']
+                  .filter((_, i) => [scan?.results?.dns, scan?.results?.ssl, scan?.results?.headers,
+                                     scan?.results?.ports?.score != null,
+                                     scan?.results?.reputation?.score != null][i])
+                  .join(' · ')}
           </div>
           <div className="flex gap-6 mt-3.5 text-xs flex-wrap">
             {!isGithub && (
@@ -932,6 +938,34 @@ export default function ScanResultsPage() {
               }
             }
 
+            // Ports réseau (15 pts)
+            const ports = scan?.results?.ports
+            if (ports?.score != null) {
+              const ouverts   = ports.open_ports ?? []
+              const sensibles = ouverts.filter((p) => p.severity === 'CRITIQUE' || p.severity === 'HAUT')
+              if (sensibles.length > 0) {
+                lines.push(<><strong style={{ color: '#DC2626' }}>{sensibles.length} service{sensibles.length > 1 ? 's' : ''} sensible{sensibles.length > 1 ? 's' : ''} exposé{sensibles.length > 1 ? 's' : ''} sur internet</strong> ({sensibles.map((p) => `${p.port} ${p.service}`).join(', ')}). Un service d'administration ou une base de données joignable publiquement est une porte d'entrée directe. Score ports : <strong>{ports.score}/15</strong>.</>)
+              } else if (ouverts.length > 0) {
+                lines.push(<>{ouverts.length} port{ouverts.length > 1 ? 's' : ''} ouvert{ouverts.length > 1 ? 's' : ''} ({ouverts.map((p) => `${p.port} ${p.service}`).join(', ')}), tous attendus pour un service web. Score ports : <strong>{ports.score}/15</strong>.</>)
+              } else if (ports.reachable) {
+                lines.push(<>Aucun port sensible ouvert parmi les {ports.ports_scanned} testés, score ports <strong>{ports.score}/15</strong>.</>)
+              }
+            }
+
+            // Réputation (15 pts) : historique, et non configuration
+            const rep = scan?.results?.reputation
+            if (rep?.score != null) {
+              if (rep.vt_malveillant > 0) {
+                lines.push(<><strong style={{ color: '#DC2626' }}>Signalé comme malveillant par {rep.vt_malveillant} moteur{rep.vt_malveillant > 1 ? 's' : ''} de sécurité</strong> sur {rep.vt_total_moteurs} consultés. Vos emails risquent d'être bloqués et votre site signalé aux visiteurs. Demandez une réévaluation après avoir traité l'origine du signalement.</>)
+              }
+              if (rep.abuse_score >= 25) {
+                lines.push(<><strong>Adresse IP signalée pour abus</strong> (indice {rep.abuse_score}/100, {rep.abuse_signalements} signalement{rep.abuse_signalements > 1 ? 's' : ''} sur 90 jours{rep.abuse_fournisseur ? `, hébergeur ${rep.abuse_fournisseur}` : ''}). Si l'adresse est partagée, demandez-en une dédiée ; sinon vérifiez qu'aucune machine du réseau n'est compromise.</>)
+              }
+              if (rep.vt_malveillant === 0 && rep.abuse_score < 25) {
+                lines.push(<>Réputation saine sur {rep.sources?.join(' et ') || 'les sources consultées'}, aucun signalement significatif. Score réputation : <strong>{rep.score}/15</strong>.</>)
+              }
+            }
+
             // Serveur détecté
             if (server) {
               lines.push(<>Serveur détecté : <strong>{server}</strong>.</>)
@@ -1066,8 +1100,20 @@ export default function ScanResultsPage() {
             const dns     = scan?.results?.dns
             const whois   = scan?.results?.whois
             const headers = scan?.results?.headers
+            const ports   = scan?.results?.ports
+            const rep     = scan?.results?.reputation
             const cves    = scan?.results?.cves ?? []
             const suggestions = []
+            /* Les constats les plus graves passent devant : un service exposé ou
+               un signalement de réputation prime sur une bonne pratique manquante */
+            const portSensible = (ports?.open_ports ?? []).find(
+              (p) => p.severity === 'CRITIQUE' || p.severity === 'HAUT')
+            if (portSensible)
+              suggestions.push(`Le port ${portSensible.port} (${portSensible.service}) est ouvert, que faire ?`)
+            if (rep?.vt_malveillant > 0)
+              suggestions.push('Pourquoi mon site est-il signalé comme malveillant ?')
+            else if (rep?.abuse_score >= 25)
+              suggestions.push('Mon adresse IP est signalée pour abus, comment régulariser ?')
             if (whois?.found && whois.days_until_expiry != null && whois.days_until_expiry <= 30)
                                                             suggestions.push('Que se passe-t-il si mon domaine expire ?')
             if (dns && !dns.dmarc_present)                  suggestions.push('C\'est grave le DMARC absent ?')
