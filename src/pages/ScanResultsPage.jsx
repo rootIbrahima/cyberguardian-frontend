@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { Card, Badge, Button, PageHeader, SeverityBadge, Skeleton, RelativeTime, CopyValue, toast } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
-import { scanAPI } from '../lib/api'
+import { scanAPI, API_BASE } from '../lib/api'
 
 /* ─── Markdown renderer (LLM responses) ─── */
 function parseBold(text) {
@@ -427,11 +427,22 @@ export default function ScanResultsPage() {
     setConversations((prev) => [...prev, { question: q, answer: '', date: '' }])
 
     try {
-      const resp = await fetch(`http://localhost:8001/scans/${id}/ask`, {
+      // Appel direct plutôt qu'axios : la réponse est un flux SSE lu au fil de
+      // l'eau. Le jeton doit donc être joint à la main, l'intercepteur d'axios
+      // ne s'applique pas ici.
+      const resp = await fetch(`${API_BASE}/scans/${id}/ask`, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type':  'application/json',
+          Authorization:   `Bearer ${localStorage.getItem('cg-token') || ''}`,
+        },
         body:    JSON.stringify({ question: q }),
       })
+      if (!resp.ok) {
+        throw new Error(resp.status === 401
+          ? 'Session expirée, reconnectez-vous pour interroger l\'assistant.'
+          : `Le service d'analyse a répondu ${resp.status}.`)
+      }
 
       const reader  = resp.body.getReader()
       const decoder = new TextDecoder()
@@ -475,10 +486,16 @@ export default function ScanResultsPage() {
           }
         }
       }
-    } catch {
+    } catch (err) {
+      // Le message précis évite un « indisponible » opaque : une session
+      // expirée et un service injoignable n'appellent pas la même réaction.
       setConversations((prev) => {
         const updated = [...prev]
-        updated[updated.length - 1] = { ...updated[updated.length - 1], answer: 'Service IA indisponible.', date: new Date().toLocaleString('fr-FR') }
+        updated[updated.length - 1] = {
+          ...updated[updated.length - 1],
+          answer: err?.message || "Assistant injoignable, vérifiez que le serveur est démarré.",
+          date:   new Date().toLocaleString('fr-FR'),
+        }
         return updated
       })
     } finally {

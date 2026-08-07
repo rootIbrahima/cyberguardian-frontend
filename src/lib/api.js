@@ -2,6 +2,10 @@ import axios from 'axios'
 
 const BASE_URL = 'http://localhost:8001'
 
+// Exporté pour les appels qui ne peuvent pas passer par axios, comme la lecture
+// d'un flux SSE : ils doivent viser la même origine que le reste de l'API.
+export const API_BASE = BASE_URL
+
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
