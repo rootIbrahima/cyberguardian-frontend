@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { authAPI } from '../lib/api'
+import { authAPI , statsAPI } from '../lib/api'
 import { Badge, Button, LabeledInput } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 
@@ -10,6 +10,14 @@ export default function LoginPage() {
   const [pwd, setPwd] = useState('')
   const [showPwd, setShowPwd] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // Agrégats réels affichés sous le titre ; l'échec est silencieux, la page
+  // de connexion doit s'afficher même si l'API est injoignable.
+  const [stats, setStats] = useState(null)
+  useEffect(() => {
+    statsAPI.publiques().then((r) => setStats(r.data)).catch(() => {})
+  }, [])
+
   const [error, setError] = useState('')
 
   const HOME_BY_ROLE = { client: '/dashboard', expert: '/dashboard', admin: '/admin' }
@@ -105,14 +113,14 @@ export default function LoginPage() {
             Protégez votre surface d'attaque externe
           </h2>
           <p className="text-[15px] leading-relaxed mt-4" style={{ color: 'rgba(255,255,255,0.65)' }}>
-            Évaluation automatisée de la posture de sécurité pour les PME sénégalaises. 12 outils MCP, rapports IA en français, mise en relation avec des experts certifiés.
+            Évaluation automatisée de la posture de sécurité pour les PME sénégalaises. Analyse DNS, TLS, en-têtes, ports et réputation, rapports IA en français, mise en relation avec des experts certifiés.
           </p>
 
           <div className="grid gap-3.5 mt-9" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
             {[
-              { n: '247', l: 'Scans réalisés' },
-              { n: '12', l: 'Outils MCP' },
-              { n: '18', l: 'Experts validés' },
+              { n: stats ? String(stats.scans)   : '—', l: 'Scans réalisés' },
+              { n: stats ? String(stats.outils)  : '—', l: 'Outils MCP' },
+              { n: stats ? String(stats.experts) : '—', l: 'Experts validés' },
             ].map((s) => (
               <div key={s.l} className="py-3.5" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                 <div className="text-white text-[24px] font-bold font-mono tracking-[-0.02em]">{s.n}</div>

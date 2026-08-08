@@ -90,6 +90,11 @@ export const adminAPI = {
   proposeRemediation:    (scanId) => api.post(`/admin/scans/${scanId}/remediation`),
 }
 
+export const statsAPI = {
+  // Agrégats affichés avant connexion : seule route publique hors auth
+  publiques: () => api.get('/stats/publiques'),
+}
+
 export const notificationAPI = {
   list:        ()    => api.get('/notifications'),
   markRead:    (id)  => api.put(`/notifications/${id}/read`),
