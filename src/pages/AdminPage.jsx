@@ -74,20 +74,41 @@ export default function AdminPage() {
     refresh()
   }
 
-  const viewDocument = async (id, kind) => {
+  /* Pièce justificative affichée dans la page : l'ouvrir dans un onglet ferait
+     quitter la plateforme au milieu de la validation d'une candidature. */
+  const [piece, setPiece] = useState(null)
+
+  const viewDocument = async (id, kind, nom) => {
     try {
-      const res = await adminAPI.document(id, kind)
-      window.open(URL.createObjectURL(res.data), '_blank')
+      const res  = await adminAPI.document(id, kind)
+      const type = res.data.type || ''
+      setPiece({
+        url:   URL.createObjectURL(res.data),
+        pdf:   type.includes('pdf'),
+        titre: `${kind === 'cni' ? 'Pièce d\'identité' : 'Diplôme'} — ${nom}`,
+      })
     } catch {
       toast.error('Document non fourni par le candidat.')
     }
   }
 
+  const fermerPiece = () => {
+    if (piece) URL.revokeObjectURL(piece.url)   // libère le blob
+    setPiece(null)
+  }
+
+  useEffect(() => {
+    if (!piece) return
+    const onKey = (e) => { if (e.key === 'Escape') fermerPiece() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [piece])
+
   const STATS = [
     { l: 'En attente',           v: pending.length,        c: '#F59E0B', i: Icons.clock },
-    { l: 'Experts validés',      v: stats?.approved ?? 12, c: '#10B981', i: Icons.checkCircle },
-    { l: 'Utilisateurs inscrits', v: stats?.users ?? 18,    c: '#1F5C99', i: Icons.experts },
-    { l: 'Scans réalisés',       v: stats?.scans ?? 24,    c: '#8B5CF6', i: Icons.scan },
+    { l: 'Experts validés',      v: stats?.approved ?? '—', c: '#10B981', i: Icons.checkCircle },
+    { l: 'Utilisateurs inscrits', v: stats?.users ?? '—',    c: '#1F5C99', i: Icons.experts },
+    { l: 'Scans réalisés',       v: stats?.scans ?? '—',    c: '#8B5CF6', i: Icons.scan },
   ]
 
   return (
@@ -156,8 +177,8 @@ export default function AdminPage() {
                 <td className="py-3.5 px-3 text-xs text-gray-500">{e.date}</td>
                 <td className="py-3.5 px-3 text-center">
                   <div className="flex gap-1.5 justify-center">
-                    <Button variant="secondary" size="sm" icon={Icons.eye} onClick={() => viewDocument(e.id, 'cni')}>CNI</Button>
-                    <Button variant="secondary" size="sm" icon={Icons.eye} onClick={() => viewDocument(e.id, 'diploma')}>Diplôme</Button>
+                    <Button variant="secondary" size="sm" icon={Icons.eye} onClick={() => viewDocument(e.id, 'cni', e.name)}>CNI</Button>
+                    <Button variant="secondary" size="sm" icon={Icons.eye} onClick={() => viewDocument(e.id, 'diploma', e.name)}>Diplôme</Button>
                   </div>
                 </td>
                 <td className="py-3.5 px-3 text-center">
@@ -301,6 +322,55 @@ export default function AdminPage() {
           </tbody>
         </table>
       </Card>
+
+      {/* Pièce justificative, consultée sans quitter la page de validation */}
+      {piece && (
+        <div
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-900/60 p-6"
+          onClick={fermerPiece}
+        >
+          <div
+            className="bg-white w-full max-w-3xl max-h-[90vh] flex flex-col shadow-xl overflow-hidden"
+            style={{ borderRadius: 'var(--cg-radius)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200">
+              <div className="text-[14px] font-semibold text-slate-900">{piece.titre}</div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={piece.url}
+                  download
+                  className="text-[12px] font-semibold text-blue-700 hover:underline"
+                >
+                  Télécharger
+                </a>
+                <Button variant="secondary" size="sm" onClick={fermerPiece}>Fermer</Button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center p-4">
+              {piece.pdf ? (
+                <iframe
+                  src={piece.url}
+                  title={piece.titre}
+                  className="w-full h-[70vh] border-0 bg-white"
+                />
+              ) : (
+                <img
+                  src={piece.url}
+                  alt={piece.titre}
+                  className="max-w-full max-h-[70vh] object-contain"
+                />
+              )}
+            </div>
+
+            <div className="px-5 py-2.5 border-t border-slate-100 text-[11.5px] text-slate-500">
+              Document transmis par le candidat. Sa consultation est réservée à la
+              vérification d'identité et n'est pas conservée hors de la plateforme.
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
