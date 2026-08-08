@@ -1,6 +1,11 @@
 import axios from 'axios'
 
-const BASE_URL = 'http://localhost:8001'
+// En production, VITE_API_URL est défini au moment du build (fichier .env du
+// frontend) et vaut « /api », le chemin que nginx redirige vers le backend.
+// Une URL relative évite d'inscrire le domaine dans le code : le même build
+// fonctionne derrière n'importe quel nom de domaine. Repli sur le port local
+// pour le développement.
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001'
 
 // Exporté pour les appels qui ne peuvent pas passer par axios, comme la lecture
 // d'un flux SSE : ils doivent viser la même origine que le reste de l'API.
