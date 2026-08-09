@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Menu } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { cloneIcon, Icons } from './Icons'
 import { Avatar, Button } from './ui'
 import { messageAPI, adminAPI } from '../lib/api'
@@ -48,7 +48,7 @@ function NavButton({ item, isActive, onClick, collapsed }) {
       onClick={onClick}
       title={collapsed ? item.label : undefined}
       className={`w-full flex items-center rounded-lg border-none cursor-pointer mb-0.5 transition-all duration-150 relative ${
-        collapsed ? 'justify-center px-0 py-[11px]' : 'gap-[11px] px-[14px] py-[10px] text-left'
+        collapsed ? 'justify-center px-0 py-[11px]' : 'gap-[11px] px-[14px] py-[10px] max-lg:py-3 text-left'
       }`}
       style={{
         background: isActive ? 'rgba(255,255,255,0.1)' : 'transparent',
@@ -78,7 +78,7 @@ function NavButton({ item, isActive, onClick, collapsed }) {
   )
 }
 
-export default function Sidebar({ collapsed = false, onToggle }) {
+export default function Sidebar({ collapsed = false, onToggle, mobile = false, ouvert = false }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [unread, setUnread]               = useState(0)
@@ -112,13 +112,17 @@ export default function Sidebar({ collapsed = false, onToggle }) {
   const withBadge = (item) =>
     item.path === badgePath && unread > 0 ? { ...item, badge: unread } : item
 
-  /* Échap referme la demande de confirmation de déconnexion */
+  /* Échap referme la demande de confirmation de déconnexion, à défaut le tiroir */
   useEffect(() => {
-    if (!confirmLogout) return
-    const onKey = (e) => { if (e.key === 'Escape') setConfirmLogout(false) }
+    if (!confirmLogout && !(mobile && ouvert)) return
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return
+      if (confirmLogout) setConfirmLogout(false)
+      else onToggle?.()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [confirmLogout])
+  }, [confirmLogout, mobile, ouvert, onToggle])
 
   const handleLogout = () => {
     setConfirmLogout(false)
@@ -131,30 +135,40 @@ export default function Sidebar({ collapsed = false, onToggle }) {
     location.pathname === path ||
     (path === '/scan-results' && location.pathname.startsWith('/scan-results'))
 
-  const handleNav = (path) => navigate(path)
+  // Sur petit écran, rejouer la page courante ne déclenche aucun changement
+  // d'URL : le tiroir doit se refermer de lui-même
+  const handleNav = (path) => {
+    navigate(path)
+    if (mobile) onToggle?.()
+  }
 
   return (
     <nav
-      className="flex flex-col fixed left-0 top-0 z-10 h-screen"
+      className="flex flex-col fixed left-0 top-0 h-screen"
       style={{
-        width: collapsed ? 68 : 240,
+        width: mobile ? 264 : collapsed ? 68 : 240,
+        zIndex: mobile ? 20 : 10,
         background: '#0F1929',
         padding: '16px 0 24px',
         borderRight: '1px solid rgba(255,255,255,0.04)',
-        transition: 'width 0.2s ease',
+        // Escamotée hors écran plutôt que démontée : l'animation de glissement
+        // reste possible, et « visibility » la sort du parcours de tabulation
+        transform:  mobile && !ouvert ? 'translateX(-100%)' : 'translateX(0)',
+        visibility: mobile && !ouvert ? 'hidden' : 'visible',
+        transition: 'width 0.2s ease, transform 0.22s ease, visibility 0.22s',
       }}
     >
       {/* Hamburger + logo */}
       <div className={`flex items-center pb-5 ${collapsed ? 'flex-col gap-3 px-0' : 'gap-2 px-4'}`}>
         <button
           onClick={onToggle}
-          title={collapsed ? 'Déplier le menu' : 'Replier le menu'}
+          title={mobile ? 'Fermer le menu' : collapsed ? 'Déplier le menu' : 'Replier le menu'}
           className="flex items-center justify-center rounded-lg border-none cursor-pointer flex-shrink-0 transition-colors"
           style={{ width: 36, height: 36, background: 'transparent', color: 'rgba(255,255,255,0.6)' }}
           onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
         >
-          <Menu size={19} strokeWidth={2} />
+          {mobile ? <X size={19} strokeWidth={2} /> : <Menu size={19} strokeWidth={2} />}
         </button>
         <div
           className="flex items-center justify-center rounded-[9px] flex-shrink-0"
@@ -209,7 +223,7 @@ export default function Sidebar({ collapsed = false, onToggle }) {
               key={item.path}
               item={item}
               isActive={isActive(item.path)}
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNav(item.path)}
               collapsed={collapsed}
             />
           ))}

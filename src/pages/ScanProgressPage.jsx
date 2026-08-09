@@ -154,7 +154,7 @@ export default function ScanProgressPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-6"
+      className="min-h-screen flex items-center justify-center p-4 sm:p-6"
       style={{ background: '#0F1929' }}
     >
       <div className="w-full max-w-2xl">
@@ -166,13 +166,13 @@ export default function ScanProgressPage() {
           >
             {cloneIcon(Icons.shield, { color: '#fff', size: 20 })}
           </div>
-          <div>
-            <div className="text-white font-bold text-[15px] tracking-[-0.01em]">CyberGuardian, Analyse en cours</div>
+          <div className="min-w-0">
+            <div className="text-white font-bold text-[13.5px] sm:text-[15px] tracking-[-0.01em] truncate">CyberGuardian, Analyse en cours</div>
             <div className="font-mono text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
               {isGithub ? 'Analyse de dépôt GitHub' : 'Analyse de surface d\'attaque externe'}
             </div>
           </div>
-          <div className="ml-auto text-right">
+          <div className="ml-auto text-right flex-shrink-0">
             <div className="font-mono text-[13px] text-white">{elapsed}s</div>
             <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
               {isGithub ? 'estimé : 20-30s' : 'estimé : 3-5s'}
@@ -186,7 +186,7 @@ export default function ScanProgressPage() {
           style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
         >
           {cloneIcon(Icons.scan, { size: 16, color: '#3B8FDB' })}
-          <span className="font-mono text-[13px] text-white">{target}</span>
+          <span className="font-mono text-[13px] text-white truncate">{target}</span>
           <span
             className="ml-auto text-[11px] font-semibold px-2 py-0.5 rounded"
             style={{ background: 'rgba(59,143,219,0.15)', color: '#6AADE6' }}
@@ -214,7 +214,7 @@ export default function ScanProgressPage() {
 
         {/* Terminal */}
         <div
-          className="rounded-xl p-5 overflow-auto font-mono"
+          className="rounded-xl p-4 sm:p-5 overflow-auto font-mono"
           style={{
             background: 'rgba(0,0,0,0.4)',
             border: '1px solid rgba(255,255,255,0.06)',

@@ -36,6 +36,19 @@ body {
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "cv11", "ss01";
   line-height: 1.5;
+  /* Safari iOS grossit le texte de son propre chef en rotation paysage */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ── Écrans tactiles ────────────────────────────────────── */
+@media (max-width: 1023px) {
+  /* Sous 16 px, Safari iOS zoome sur le champ à chaque mise au point et ne
+     revient jamais à l'échelle initiale : la page reste décalée. */
+  input, select, textarea { font-size: 16px; }
+
+  /* Le voile gris au doigt donne une impression de latence sur les cartes
+     et les lignes de tableau cliquables. */
+  * { -webkit-tap-highlight-color: transparent; }
 }
 
 ::selection {

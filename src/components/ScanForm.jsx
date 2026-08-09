@@ -42,7 +42,7 @@ export default function ScanForm() {
   }
 
   return (
-    <div className="bg-white rounded-[14px] border border-gray-200 p-[26px] mb-[22px]">
+    <div className="bg-white rounded-[14px] border border-gray-200 p-4 sm:p-[26px] mb-[22px]">
       <div className="text-[15px] font-semibold mb-4">Nouveau scan</div>
 
       {/* Type tabs */}
@@ -68,19 +68,20 @@ export default function ScanForm() {
       </div>
 
       {/* Input row */}
-      <div className="flex gap-2.5">
+      <div className="flex flex-col sm:flex-row gap-2.5">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleScan()}
           placeholder={currentAsset?.placeholder}
-          className="flex-1 px-4 py-3 rounded-[10px] border border-gray-300 text-sm font-mono outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10 placeholder-gray-400"
+          className="flex-1 min-w-0 px-4 py-3 rounded-[10px] border border-gray-300 text-sm font-mono outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10 placeholder-gray-400"
         />
         <Button
           variant="primary"
           onClick={handleScan}
           disabled={!input.trim() || !consent || loading}
           icon={loading ? null : Icons.scan}
+          className="w-full sm:w-auto"
         >
           {loading
             ? <><span className="spinner mr-2" />Lancement…</>

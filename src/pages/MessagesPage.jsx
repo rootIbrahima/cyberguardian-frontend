@@ -3,10 +3,12 @@ import { Card, PageHeader, Avatar } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 import MessageThread from '../components/MessageThread'
 import { messageAPI } from '../lib/api'
+import useMobile from '../lib/useMobile'
 
 const POLL_INTERVAL = 5000
 
 export default function MessagesPage() {
+  const mobile = useMobile()
   const [conversations, setConversations] = useState([])
   const [activeConv, setActiveConv]       = useState(null)
   const [search, setSearch]               = useState('')
@@ -30,10 +32,14 @@ export default function MessagesPage() {
 
   /* ─── Keep activeConv in sync with conversations list ─── */
   useEffect(() => {
-    setActiveConv((prev) =>
-      (prev && conversations.find((c) => c.id === prev.id)) || conversations[0] || null
-    )
-  }, [conversations])
+    setActiveConv((prev) => {
+      const encore = prev && conversations.find((c) => c.id === prev.id)
+      if (encore) return encore
+      // Sur téléphone, liste et fil se partagent le même espace : on affiche la
+      // liste tant qu'aucune conversation n'a été choisie explicitement.
+      return mobile ? null : conversations[0] || null
+    })
+  }, [conversations, mobile])
 
   /* ─── Level upgrade from MessageThread (contract signed) ─── */
   const handleLevelUp = (convId, newLevel) => {
@@ -55,7 +61,7 @@ export default function MessagesPage() {
   const LEVEL_COLORS = { 1: '#9CA3AF', 2: '#F59E0B', 3: '#10B981' }
 
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 40px)' }}>
+    <div className="flex flex-col" style={{ height: mobile ? 'calc(100dvh - 80px)' : 'calc(100vh - 40px)' }}>
       <PageHeader
         title="Messagerie"
         subtitle={
@@ -65,17 +71,12 @@ export default function MessagesPage() {
         }
       />
 
-      <Card
-        className="overflow-hidden flex-1"
-        style={{
-          padding: 0,
-          display: 'grid',
-          gridTemplateColumns: '320px 1fr',
-          minHeight: 0,
-        }}
-      >
+      <Card className="overflow-hidden flex-1 p-0 grid min-h-0 lg:grid-cols-[320px_1fr]">
         {/* ─── Conversation list ─── */}
-        <div className="border-r border-gray-200 flex flex-col" style={{ minHeight: 0 }}>
+        <div
+          className={`border-r border-gray-200 flex-col ${mobile && activeConv ? 'hidden' : 'flex'}`}
+          style={{ minHeight: 0 }}
+        >
           {/* Search */}
           <div className="p-[16px_18px] border-b border-gray-200">
             <div className="flex items-center gap-2.5 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
@@ -84,7 +85,7 @@ export default function MessagesPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Rechercher une conversation…"
-                className="border-none outline-none text-[13px] flex-1 bg-transparent placeholder-gray-400"
+                className="border-none outline-none text-[13px] flex-1 min-w-0 bg-transparent placeholder-gray-400"
               />
             </div>
           </div>
@@ -146,9 +147,10 @@ export default function MessagesPage() {
             key={activeConv.id}
             conversation={activeConv}
             onLevelUp={handleLevelUp}
+            onBack={mobile ? () => setActiveConv(null) : null}
           />
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2 text-gray-400">
+          <div className={`flex-col items-center justify-center gap-2 text-gray-400 ${mobile ? 'hidden' : 'flex'}`}>
             {cloneIcon(Icons.message, { size: 30, color: '#D1D5DB' })}
             <span className="text-sm">
               {conversations.length === 0 ? 'Aucune conversation pour le moment' : 'Sélectionnez une conversation'}

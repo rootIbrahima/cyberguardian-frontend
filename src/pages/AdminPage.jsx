@@ -119,9 +119,9 @@ export default function AdminPage() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3.5 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5 mb-6">
         {STATS.map((s) => (
-          <Card key={s.l} className="p-[18px] flex items-center gap-3.5">
+          <Card key={s.l} className="p-3.5 sm:p-[18px] flex items-center gap-3 sm:gap-3.5">
             <div
               className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
               style={{ background: s.c + '22' }}
@@ -137,8 +137,8 @@ export default function AdminPage() {
       </div>
 
       {/* Table */}
-      <Card className="p-[22px_26px]">
-        <div className="flex justify-between items-center mb-4">
+      <Card className="p-4 sm:p-[22px_26px]">
+        <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
           <div className="text-[15px] font-semibold">Candidatures en attente</div>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" icon={Icons.filter}>Filtrer</Button>
@@ -146,7 +146,8 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <table className="w-full border-collapse">
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <table className="w-full min-w-[900px] border-collapse sm:min-w-0">
           <thead>
             <tr className="border-b border-gray-200">
               {['Candidat', 'Niveau', 'Spécialité', 'Date', 'Documents', 'Actions'].map((h, i) => (
@@ -167,8 +168,8 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2.5">
                     <Avatar name={e.name} color="#6B7280" size={34} />
                     <div>
-                      <div className="text-[13.5px] font-medium">{e.name}</div>
-                      <div className="text-[11px] text-gray-400 font-mono">CNI {e.cni}</div>
+                      <div className="text-[13.5px] font-medium whitespace-nowrap">{e.name}</div>
+                      <div className="text-[11px] text-gray-400 font-mono whitespace-nowrap">CNI {e.cni}</div>
                     </div>
                   </div>
                 </td>
@@ -214,12 +215,14 @@ export default function AdminPage() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {/* Experts validés, révocation possible */}
-      <Card className="p-[22px_26px] mt-5">
+      <Card className="p-4 sm:p-[22px_26px] mt-5">
         <div className="text-[15px] font-semibold mb-4">Experts validés ({approved.length})</div>
-        <table className="w-full border-collapse">
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <table className="w-full min-w-[900px] border-collapse sm:min-w-0">
           <thead>
             <tr className="border-b border-gray-200">
               {['Expert', 'Spécialité', 'Missions', 'Action'].map((h, i) => (
@@ -237,7 +240,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2.5">
                     <Avatar name={e.name} color={e.color} size={34} />
                     <div>
-                      <div className="text-[13.5px] font-medium">{e.name}</div>
+                      <div className="text-[13.5px] font-medium whitespace-nowrap">{e.name}</div>
                       <div className="text-[11px] text-gray-400">{e.email}</div>
                     </div>
                   </div>
@@ -266,12 +269,14 @@ export default function AdminPage() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {/* Utilisateurs, activation / désactivation des comptes */}
-      <Card className="p-[22px_26px] mt-5">
+      <Card className="p-4 sm:p-[22px_26px] mt-5">
         <div className="text-[15px] font-semibold mb-4">Utilisateurs ({users.length})</div>
-        <table className="w-full border-collapse">
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <table className="w-full min-w-[900px] border-collapse sm:min-w-0">
           <thead>
             <tr className="border-b border-gray-200">
               {['Utilisateur', 'Rôle', 'Scans', 'Statut', 'Action'].map((h, i) => (
@@ -290,7 +295,7 @@ export default function AdminPage() {
                   <div className="flex items-center gap-2.5">
                     <Avatar name={u.name} color="#6B7280" size={34} />
                     <div>
-                      <div className="text-[13.5px] font-medium">{u.name}</div>
+                      <div className="text-[13.5px] font-medium whitespace-nowrap">{u.name}</div>
                       <div className="text-[11px] text-gray-400">{u.email}</div>
                     </div>
                   </div>
@@ -321,12 +326,13 @@ export default function AdminPage() {
             ))}
           </tbody>
         </table>
+        </div>
       </Card>
 
       {/* Pièce justificative, consultée sans quitter la page de validation */}
       {piece && (
         <div
-          className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-900/60 p-6"
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-900/60 p-3 sm:p-6"
           onClick={fermerPiece}
         >
           <div
@@ -334,9 +340,9 @@ export default function AdminPage() {
             style={{ borderRadius: 'var(--cg-radius)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200">
-              <div className="text-[14px] font-semibold text-slate-900">{piece.titre}</div>
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 border-b border-slate-200">
+              <div className="text-[13px] sm:text-[14px] font-semibold text-slate-900 truncate">{piece.titre}</div>
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <a
                   href={piece.url}
                   download
@@ -348,23 +354,23 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center p-4">
+            <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center p-2 sm:p-4">
               {piece.pdf ? (
                 <iframe
                   src={piece.url}
                   title={piece.titre}
-                  className="w-full h-[70vh] border-0 bg-white"
+                  className="w-full h-[60vh] sm:h-[70vh] border-0 bg-white"
                 />
               ) : (
                 <img
                   src={piece.url}
                   alt={piece.titre}
-                  className="max-w-full max-h-[70vh] object-contain"
+                  className="max-w-full max-h-[60vh] sm:max-h-[70vh] object-contain"
                 />
               )}
             </div>
 
-            <div className="px-5 py-2.5 border-t border-slate-100 text-[11.5px] text-slate-500">
+            <div className="px-4 sm:px-5 py-2.5 border-t border-slate-100 text-[11px] sm:text-[11.5px] text-slate-500">
               Document transmis par le candidat. Sa consultation est réservée à la
               vérification d'identité et n'est pas conservée hors de la plateforme.
             </div>

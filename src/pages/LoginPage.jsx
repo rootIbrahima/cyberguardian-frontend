@@ -60,14 +60,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen grid" style={{ gridTemplateColumns: '1fr 1fr', background: '#F5F6FA' }}>
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2" style={{ background: '#F5F6FA' }}>
       {/* Left: branding */}
       <div
-        className="relative overflow-hidden flex flex-col justify-between"
-        style={{
-          background: 'linear-gradient(160deg, #0F1929 0%, #153D66 70%, #1F5C99 100%)',
-          padding: '60px 72px',
-        }}
+        className="relative overflow-hidden flex flex-col justify-between gap-8 px-6 py-9 sm:px-10 sm:py-12 lg:gap-0 lg:px-[72px] lg:py-[60px]"
+        style={{ background: 'linear-gradient(160deg, #0F1929 0%, #153D66 70%, #1F5C99 100%)' }}
       >
         {/* Grid overlay */}
         <div
@@ -108,22 +105,24 @@ export default function LoginPage() {
 
         {/* Hero text */}
         <div className="relative max-w-[480px]">
-          <Badge color="blue" icon={Icons.shield}>Nouveau · Analyse GitHub + Rapports intelligents</Badge>
-          <h2 className="text-white text-[38px] font-bold leading-[1.1] tracking-[-0.025em] mt-5">
+          <span className="[&>span]:whitespace-normal">
+            <Badge color="blue" icon={Icons.shield}>Nouveau · Analyse GitHub + Rapports intelligents</Badge>
+          </span>
+          <h2 className="text-white text-[26px] sm:text-[32px] lg:text-[38px] font-bold leading-[1.15] tracking-[-0.025em] mt-5">
             Protégez votre surface d'attaque externe
           </h2>
-          <p className="text-[15px] leading-relaxed mt-4" style={{ color: 'rgba(255,255,255,0.65)' }}>
+          <p className="text-[14px] sm:text-[15px] leading-relaxed mt-4" style={{ color: 'rgba(255,255,255,0.65)' }}>
             Évaluation automatisée de la posture de sécurité pour les PME sénégalaises. Analyse DNS, TLS, en-têtes, ports et réputation, rapports IA en français, mise en relation avec des experts certifiés.
           </p>
 
-          <div className="grid gap-3.5 mt-9" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+          <div className="grid grid-cols-3 gap-3 sm:gap-3.5 mt-6 lg:mt-9">
             {[
               { n: stats ? String(stats.scans)   : '—', l: 'Scans réalisés' },
               { n: stats ? String(stats.outils)  : '—', l: 'Outils MCP' },
               { n: stats ? String(stats.experts) : '—', l: 'Experts validés' },
             ].map((s) => (
               <div key={s.l} className="py-3.5" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                <div className="text-white text-[24px] font-bold font-mono tracking-[-0.02em]">{s.n}</div>
+                <div className="text-white text-[20px] sm:text-[24px] font-bold font-mono tracking-[-0.02em]">{s.n}</div>
                 <div className="text-[11px] mt-0.5 tracking-[0.02em]" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.l}</div>
               </div>
             ))}
@@ -134,9 +133,9 @@ export default function LoginPage() {
       </div>
 
       {/* Right: form */}
-      <div className="flex flex-col justify-center px-[72px] py-[60px]" style={{ maxWidth: 560 }}>
+      <div className="flex w-full flex-col justify-center px-6 py-10 sm:px-10 sm:py-12 lg:max-w-[560px] lg:px-[72px] lg:py-[60px]">
         <div className="mb-8">
-          <h1 className="text-[30px] font-bold tracking-[-0.025em] text-gray-900">Se connecter</h1>
+          <h1 className="text-[26px] sm:text-[30px] font-bold tracking-[-0.025em] text-gray-900">Se connecter</h1>
           <p className="text-sm text-gray-500 mt-1.5">Accédez à votre tableau de bord EASM</p>
         </div>
 

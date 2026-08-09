@@ -21,7 +21,7 @@ const TYPE_ICONS = {
 
 function MetricCard({ label, value, sub, color, icon, trend, trendBad }) {
   return (
-    <Card className="p-[20px_22px_18px] flex flex-col gap-2">
+    <Card className="p-4 sm:p-[20px_22px_18px] flex flex-col gap-2">
       <div className="flex justify-between items-center">
         <span className="text-xs text-gray-500 font-medium">{label}</span>
         <div
@@ -31,7 +31,7 @@ function MetricCard({ label, value, sub, color, icon, trend, trendBad }) {
           {cloneIcon(icon, { color, size: 17 })}
         </div>
       </div>
-      <div className="text-[28px] font-bold tracking-[-0.02em] leading-none font-mono">{value}</div>
+      <div className="text-[24px] sm:text-[28px] font-bold tracking-[-0.02em] leading-none font-mono">{value}</div>
       <div className="flex justify-between items-center">
         <div className="text-[11.5px] text-gray-500">{sub}</div>
         {trend && trend !== '0' && (
@@ -63,8 +63,8 @@ function ScanRow({ scan }) {
           <div className="w-8 h-8 rounded-[var(--cg-radius)] bg-blue-50 flex items-center justify-center flex-shrink-0">
             {cloneIcon(typeIcon, { size: 16, color: '#1F5C99' })}
           </div>
-          <div>
-            <div className="text-[13px] font-medium font-mono text-slate-800">{scan.target}</div>
+          <div className="min-w-0">
+            <div className="text-[13px] font-medium font-mono text-slate-800 truncate max-w-[150px] sm:max-w-none">{scan.target}</div>
             <div className="text-[11px] text-slate-400">{scan.typeLabel || scan.type}</div>
           </div>
         </div>
@@ -78,7 +78,7 @@ function ScanRow({ scan }) {
           <span className="text-xs text-slate-400">—</span>
         )}
       </td>
-      <td className="py-3 text-center">
+      <td className="py-3 text-center hidden sm:table-cell">
         <span
           className="text-xs font-semibold px-2 py-1 rounded-md inline-flex items-center gap-1"
           style={{ background: s.bg, color: s.color }}
@@ -102,7 +102,7 @@ function ExpertMissions({ conversations }) {
   const missions = conversations.filter((c) => c.level >= 2)
 
   return (
-    <Card className="p-[22px_26px] mb-[22px]">
+    <Card className="p-4 sm:p-[22px_26px] mb-[22px]">
       <div className="flex justify-between items-center mb-4">
         <div>
           <div className="text-[15px] font-semibold">Missions en cours</div>
@@ -237,16 +237,16 @@ export default function DashboardPage() {
       {role === 'expert' && <ExpertMissions conversations={convs} />}
 
       {/* Metrics */}
-      <div className="grid grid-cols-4 gap-3.5 mb-[22px]">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5 mb-[22px]">
         {metrics.map((m) => (
           <MetricCard key={m.label} {...m} />
         ))}
       </div>
 
       {/* Score + Recent scans */}
-      <div className="grid gap-[18px]" style={{ gridTemplateColumns: role === 'client' ? '300px 1fr' : '1fr' }}>
+      <div className={`grid gap-[18px] ${role === 'client' ? 'lg:grid-cols-[300px_1fr]' : ''}`}>
         {role === 'client' && (
-          <Card className="p-[26px]">
+          <Card className="p-5 sm:p-[26px]">
             <ScoreCard
               score={avgEasmScore || 0}
               breakdown={lastScan?.results?.score_detail?.breakdown}
@@ -256,7 +256,7 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        <Card className="p-[22px_26px]">
+        <Card className="p-4 sm:p-[22px_26px]">
           <div className="flex justify-between items-center mb-3.5">
             <div>
               <div className="text-[15px] font-semibold">
@@ -299,7 +299,7 @@ export default function DashboardPage() {
                   {['Cible', 'Score', 'Statut', 'Date'].map((h, i) => (
                     <th
                       key={h}
-                      className="pb-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-[0.08em]"
+                      className={`pb-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-[0.08em] ${i === 2 ? 'hidden sm:table-cell' : ''}`}
                       style={{ textAlign: i === 0 ? 'left' : i === 3 ? 'right' : 'center' }}
                     >
                       {h}

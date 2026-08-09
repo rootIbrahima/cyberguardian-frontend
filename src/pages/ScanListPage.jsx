@@ -17,6 +17,53 @@ const TYPE_ICONS = {
   GitHub:  Icons.github,
 }
 
+/* Relancer et supprimer, partagés par le tableau et par la liste en cartes */
+function ScanActions({ scan, deletingId, rerunningId, confirmDeleteId, onRerun, onDelete }) {
+  const isDeleting      = deletingId === scan.id
+  const isRerunning     = rerunningId === scan.id
+  const isPendingDelete = confirmDeleteId === scan.id
+
+  return (
+    <div className="flex items-center justify-end gap-1">
+      <button
+        onClick={(e) => onRerun(e, scan)}
+        disabled={isRerunning || isDeleting}
+        title="Relancer le scan"
+        className="w-8 h-8 rounded-md flex items-center justify-center transition-colors hover:bg-blue-50 disabled:opacity-40"
+      >
+        {isRerunning ? (
+          <span className="spinner" style={{ width: 13, height: 13, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }} />
+        ) : (
+          cloneIcon(Icons.refresh, { size: 14, color: '#1F5C99' })
+        )}
+      </button>
+
+      {isPendingDelete ? (
+        <button
+          onClick={(e) => onDelete(e, scan.id)}
+          className="text-[11px] font-semibold px-2 py-1 rounded-md transition-colors"
+          style={{ background: '#FEE2E2', color: '#DC2626' }}
+        >
+          Confirmer
+        </button>
+      ) : (
+        <button
+          onClick={(e) => onDelete(e, scan.id)}
+          disabled={isDeleting || isRerunning}
+          title="Supprimer le scan"
+          className="w-8 h-8 rounded-md flex items-center justify-center transition-colors hover:bg-red-50 disabled:opacity-40"
+        >
+          {isDeleting ? (
+            <span className="spinner" style={{ width: 13, height: 13, borderTopColor: '#EF4444', borderColor: 'rgba(239,68,68,0.2)' }} />
+          ) : (
+            cloneIcon(Icons.trash, { size: 14, color: '#EF4444' })
+          )}
+        </button>
+      )}
+    </div>
+  )
+}
+
 export default function ScanListPage() {
   const navigate = useNavigate()
   const [scans, setScans]           = useState([])
@@ -90,6 +137,29 @@ export default function ScanListPage() {
     return acc
   }, {})
 
+  // Dérivés calculés une fois : le tableau et les cartes affichent la même chose
+  const lignes = filtered.map((scan) => {
+    const isGithub = scan.type === 'github'
+    const scoreMax = isGithub ? (scan.results?.score_max ?? 30) : 100
+    // Delta affiché uniquement sur le scan le plus récent d'une cible, comparé à
+    // celui juste avant lui (pas au tout premier de l'historique).
+    const histo = (historyByTarget[scan.target] || []).slice().sort((a, b) => a.id - b.id)
+    const rang  = histo.findIndex((h) => h.id === scan.id)
+    return {
+      scan,
+      statut:     STATUS_MAP[scan.status] || STATUS_MAP.completed,
+      typeIcon:   TYPE_ICONS[scan.typeLabel] || Icons.domain,
+      scoreMax,
+      scoreColor: scan.score >= (scoreMax * 0.8) ? '#10B981' : scan.score >= (scoreMax * 0.5) ? '#F59E0B' : '#EF4444',
+      delta:      rang === histo.length - 1 && rang > 0 ? scan.score - histo[rang - 1].score : null,
+    }
+  })
+
+  const actionsCommunes = {
+    deletingId, rerunningId, confirmDeleteId,
+    onRerun: handleRerun, onDelete: handleDelete,
+  }
+
   return (
     <div>
       <PageHeader
@@ -97,7 +167,7 @@ export default function ScanListPage() {
         subtitle={`${scans.length} scan${scans.length !== 1 ? 's' : ''} au total`}
       />
 
-      <Card className="p-[22px_26px]">
+      <Card className="p-4 sm:p-[22px_26px]">
         {/* Search */}
         <div className="relative mb-5">
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
@@ -128,41 +198,75 @@ export default function ScanListPage() {
             )}
           </div>
         ) : (
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b border-gray-200">
-                {['Cible', 'Score', 'CVE', 'Statut', 'Date', ''].map((h, i) => (
-                  <th
-                    key={i}
-                    className="pb-3 text-[10.5px] font-bold text-gray-400 uppercase tracking-[0.08em]"
-                    style={{ textAlign: i === 0 ? 'left' : i === 5 ? 'right' : 'center' }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((scan) => {
-                const s         = STATUS_MAP[scan.status] || STATUS_MAP.completed
-                const typeIcon  = TYPE_ICONS[scan.typeLabel] || Icons.domain
-                const isGithub  = scan.type === 'github'
-                const scoreMax  = isGithub ? (scan.results?.score_max ?? 30) : 100
-                const scoreColor = scan.score >= (scoreMax * 0.8) ? '#10B981' : scan.score >= (scoreMax * 0.5) ? '#F59E0B' : '#EF4444'
-                const isDeleting  = deletingId === scan.id
-                const isRerunning = rerunningId === scan.id
-                const isPendingDelete = confirmDeleteId === scan.id
-                // Delta affiché uniquement sur le scan le plus récent d'une cible,
-                // comparé à celui juste avant lui (pas au tout premier de l'historique).
-                const targetHistory = (historyByTarget[scan.target] || [])
-                  .slice().sort((a, b) => a.id - b.id)
-                const idxInHistory  = targetHistory.findIndex((h) => h.id === scan.id)
-                const isLatest      = idxInHistory === targetHistory.length - 1
-                const delta = isLatest && idxInHistory > 0
-                  ? scan.score - targetHistory[idxInHistory - 1].score
-                  : null
+          <>
+            {/* Liste en cartes sous 640 px : quatre colonnes ne tiennent pas dans
+                les 296 px utiles d'un téléphone de 360 px, même en en masquant deux */}
+            <div className="flex flex-col gap-2 sm:hidden">
+              {lignes.map(({ scan, statut, typeIcon, scoreMax, scoreColor, delta }) => (
+                <div
+                  key={scan.id}
+                  onClick={() => navigate(`/scan-results/${scan.id}`)}
+                  className="rounded-[var(--cg-radius)] border border-gray-200 p-3.5 transition-colors active:bg-gray-50"
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                      {cloneIcon(typeIcon, { size: 17, color: '#1F5C99' })}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13.5px] font-semibold font-mono truncate">{scan.target}</div>
+                      <div className="text-[11px] text-gray-400">
+                        {scan.typeLabel} · <RelativeTime date={scan.date} />
+                      </div>
+                    </div>
+                    {scan.score !== null ? (
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[13px] font-bold font-mono" style={{ color: scoreColor }}>
+                          {scan.score}/{scoreMax}
+                        </span>
+                        {delta !== null && <ScoreDelta value={delta} />}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400 flex-shrink-0">—</span>
+                    )}
+                  </div>
 
-                return (
+                  <div className="mt-2.5 pt-2.5 border-t border-gray-100 flex items-center gap-2.5">
+                    <span
+                      className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
+                      style={{ background: statut.bg, color: statut.color }}
+                    >
+                      {statut.label}
+                    </span>
+                    <span
+                      className="text-[11px] font-mono"
+                      style={{ color: scan.cve > 0 ? '#F59E0B' : '#9CA3AF' }}
+                    >
+                      {scan.cve ?? 0} CVE
+                    </span>
+                    <div className="ml-auto" onClick={(e) => e.stopPropagation()}>
+                      <ScanActions scan={scan} {...actionsCommunes} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <table className="hidden w-full border-collapse sm:table">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  {['Cible', 'Score', 'CVE', 'Statut', 'Date', ''].map((h, i) => (
+                    <th
+                      key={i}
+                      className="pb-3 text-[10.5px] font-bold text-gray-400 uppercase tracking-[0.08em]"
+                      style={{ textAlign: i === 0 ? 'left' : i === 5 ? 'right' : 'center' }}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {lignes.map(({ scan, statut, typeIcon, scoreMax, scoreColor, delta }) => (
                   <tr
                     key={scan.id}
                     onClick={() => navigate(`/scan-results/${scan.id}`)}
@@ -174,7 +278,7 @@ export default function ScanListPage() {
                         <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
                           {cloneIcon(typeIcon, { size: 17, color: '#1F5C99' })}
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <div className="text-[13.5px] font-semibold font-mono">{scan.target}</div>
                           <div className="text-[11px] text-gray-400">{scan.typeLabel}</div>
                         </div>
@@ -213,9 +317,9 @@ export default function ScanListPage() {
                     <td className="py-3.5 text-center">
                       <span
                         className="text-xs font-semibold px-2.5 py-1 rounded-md inline-block"
-                        style={{ background: s.bg, color: s.color }}
+                        style={{ background: statut.bg, color: statut.color }}
                       >
-                        {s.label}
+                        {statut.label}
                       </span>
                     </td>
 
@@ -226,57 +330,13 @@ export default function ScanListPage() {
 
                     {/* Actions */}
                     <td className="py-3.5" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1">
-                        {/* Relancer */}
-                        <button
-                          onClick={(e) => handleRerun(e, scan)}
-                          disabled={isRerunning || isDeleting}
-                          title="Relancer le scan"
-                          className="w-7 h-7 rounded-md flex items-center justify-center transition-colors hover:bg-blue-50 disabled:opacity-40"
-                        >
-                          {isRerunning ? (
-                            <span
-                              className="spinner"
-                              style={{ width: 13, height: 13, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }}
-                            />
-                          ) : (
-                            cloneIcon(Icons.refresh, { size: 14, color: '#1F5C99' })
-                          )}
-                        </button>
-
-                        {/* Supprimer */}
-                        {isPendingDelete ? (
-                          <button
-                            onClick={(e) => handleDelete(e, scan.id)}
-                            className="text-[11px] font-semibold px-2 py-1 rounded-md transition-colors"
-                            style={{ background: '#FEE2E2', color: '#DC2626' }}
-                          >
-                            Confirmer
-                          </button>
-                        ) : (
-                          <button
-                            onClick={(e) => handleDelete(e, scan.id)}
-                            disabled={isDeleting || isRerunning}
-                            title="Supprimer le scan"
-                            className="w-7 h-7 rounded-md flex items-center justify-center transition-colors hover:bg-red-50 disabled:opacity-40"
-                          >
-                            {isDeleting ? (
-                              <span
-                                className="spinner"
-                                style={{ width: 13, height: 13, borderTopColor: '#EF4444', borderColor: 'rgba(239,68,68,0.2)' }}
-                              />
-                            ) : (
-                              cloneIcon(Icons.trash, { size: 14, color: '#EF4444' })
-                            )}
-                          </button>
-                        )}
-                      </div>
+                      <ScanActions scan={scan} {...actionsCommunes} />
                     </td>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
       </Card>
     </div>

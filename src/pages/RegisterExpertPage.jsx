@@ -96,7 +96,7 @@ export default function RegisterExpertPage() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <Card className="p-7">
+        <Card className="p-5 sm:p-7">
           <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
             Informations personnelles
           </div>
@@ -110,7 +110,7 @@ export default function RegisterExpertPage() {
               onChange={(v) => setForm({ ...form, cni: v })}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1.5">Niveau d'études</label>
                 <select
@@ -147,7 +147,7 @@ export default function RegisterExpertPage() {
               Pièces justificatives
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FileUpload
                 label="Photo de votre CNI"
                 hint="JPG, PNG · max 5 MB"
@@ -169,9 +169,9 @@ export default function RegisterExpertPage() {
             </label>
           </div>
 
-          <div className="flex gap-2.5 mt-6 pt-5 border-t border-gray-100">
+          <div className="flex flex-col-reverse gap-2.5 mt-6 pt-5 border-t border-gray-100 sm:flex-row [&>button]:w-full sm:[&>button]:w-auto">
             <Button variant="secondary" type="button" onClick={() => window.history.back()}>Annuler</Button>
-            <div className="flex-1" />
+            <div className="hidden flex-1 sm:block" />
             <Button variant="primary" icon={Icons.send} type="submit" disabled={loading}>
               {loading ? 'Envoi…' : 'Soumettre ma candidature'}
             </Button>

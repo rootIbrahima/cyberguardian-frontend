@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Menu } from 'lucide-react'
 import Sidebar from './components/Sidebar'
-import { Toaster } from './components/ui'
+import { Toaster, HeaderTools } from './components/ui'
+import { cloneIcon, Icons } from './components/Icons'
+import useMobile from './lib/useMobile'
 
 import LoginPage          from './pages/LoginPage'
 import RegisterPage       from './pages/RegisterPage'
@@ -40,8 +43,8 @@ function RequireRole({ roles }) {
   const role = getRole()
   if (!roles.includes(role)) {
     return (
-      <div className="flex items-center justify-center h-[60vh] flex-col gap-3">
-        <div className="text-4xl">🔒</div>
+      <div className="flex items-center justify-center h-[60vh] flex-col gap-3 px-4">
+        {cloneIcon(Icons.lock, { size: 32, color: '#9CA3AF' })}
         <div className="text-gray-700 font-semibold text-lg">Accès non autorisé</div>
         <div className="text-sm text-gray-400 text-center max-w-xs">
           Votre rôle <strong>{role}</strong> ne permet pas d'accéder à cette page.
@@ -63,32 +66,95 @@ function ProgressLayout() {
   return <Outlet />
 }
 
+/* ─── Barre supérieure des petits écrans ───
+   La barre latérale y est escamotée : sans ce point d'entrée permanent,
+   la navigation deviendrait inaccessible une fois le tiroir refermé. */
+function MobileBar({ onMenu }) {
+  return (
+    <header className="sticky top-0 z-[15] flex h-[52px] items-center gap-3 border-b border-slate-200 bg-white px-4">
+      <button
+        onClick={onMenu}
+        aria-label="Ouvrir le menu de navigation"
+        className="-ml-1.5 flex h-9 w-9 items-center justify-center rounded-lg border-none bg-transparent text-slate-600 active:bg-slate-100"
+      >
+        <Menu size={20} strokeWidth={2} />
+      </button>
+      <div className="flex items-center gap-2">
+        <div
+          className="flex h-7 w-7 items-center justify-center rounded-md"
+          style={{ background: 'linear-gradient(135deg, #2A7ACC, #1F5C99)' }}
+        >
+          {cloneIcon(Icons.shield, { color: '#fff', size: 15 })}
+        </div>
+        <span className="text-[14px] font-bold tracking-[-0.02em] text-slate-900">CyberGuardian</span>
+      </div>
+      <div className="ml-auto flex items-center gap-2">
+        <HeaderTools />
+      </div>
+    </header>
+  )
+}
+
 /* ─── Main layout with sidebar ─── */
 function AppLayout() {
   const location = useLocation()
+  const mobile   = useMobile()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('cg-sidebar') === 'min')
+  const [tiroir, setTiroir]       = useState(false)
+
   const toggleSidebar = () => setCollapsed((c) => {
     localStorage.setItem('cg-sidebar', c ? 'max' : 'min')
     return !c
   })
+
+  // Le tiroir se referme à chaque navigation, sinon il recouvre la page
+  // que l'on vient justement d'ouvrir
+  useEffect(() => { setTiroir(false) }, [location.pathname])
+
+  // Défilement du corps figé tant que le tiroir est ouvert : sans cela le
+  // contenu glisse derrière le voile au moindre mouvement du doigt
+  useEffect(() => {
+    document.body.style.overflow = mobile && tiroir ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [mobile, tiroir])
 
   // La messagerie occupe tout l'espace disponible, sans bride de largeur
   const isMessages = location.pathname === '/messages'
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar collapsed={collapsed} onToggle={toggleSidebar} />
+      <Sidebar
+        collapsed={!mobile && collapsed}
+        onToggle={mobile ? () => setTiroir(false) : toggleSidebar}
+        mobile={mobile}
+        ouvert={tiroir}
+      />
+
+      {mobile && tiroir && (
+        <div
+          className="fixed inset-0 z-[19] bg-slate-900/50"
+          onClick={() => setTiroir(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <main
-        className="flex-1 min-h-screen"
+        className="flex-1 min-h-screen w-full min-w-0"
         style={{
-          marginLeft: collapsed ? 68 : 240,
-          padding: isMessages ? '20px 24px 20px' : '28px 36px 60px',
+          marginLeft: mobile ? 0 : collapsed ? 68 : 240,
           maxWidth: isMessages ? 'none' : 1440,
-          width: '100%',
           transition: 'margin-left 0.2s ease',
         }}
       >
-        <div className="page-anim">
+        {mobile && <MobileBar onMenu={() => setTiroir(true)} />}
+        <div
+          className="page-anim"
+          style={{
+            padding: mobile
+              ? (isMessages ? '12px 12px 16px' : '18px 16px 48px')
+              : (isMessages ? '20px 24px 20px' : '28px 36px 60px'),
+          }}
+        >
           <Outlet />
         </div>
       </main>

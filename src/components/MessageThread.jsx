@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ChevronLeft } from 'lucide-react'
 import { Avatar, Badge, Button, toast } from './ui'
 import { cloneIcon, Icons } from './Icons'
 import { messageAPI } from '../lib/api'
@@ -32,7 +33,7 @@ function ContextBar({ conversation, preview, isClient, isAdmin, signing, onSign,
 
   if (preview?.access === 'expired') {
     return (
-      <div className="px-[22px] py-2 flex items-center gap-2 border-b text-xs"
+      <div className="px-4 sm:px-[22px] py-2 flex items-center gap-2 border-b text-xs"
         style={{ background: '#FEF2F2', borderColor: '#FEE2E2', color: '#B91C1C' }}>
         {cloneIcon(Icons.clock, { size: 13, color: '#EF4444' })}
         Accès au rapport expiré (48h){isClient && ', signez un nouveau contrat pour le renouveler'}.
@@ -45,8 +46,8 @@ function ContextBar({ conversation, preview, isClient, isAdmin, signing, onSign,
       .map((b) => `${b.label.split(' ')[0]} ${b.points}/${b.max}`)
       .join(' · ')
     return (
-      <div className="px-[22px] py-2 flex items-center gap-3 border-b border-gray-100 bg-white text-xs text-gray-500">
-        <span className="flex-1 truncate">
+      <div className="px-4 sm:px-[22px] py-2 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border-b border-gray-100 bg-white text-xs text-gray-500">
+        <span className="flex-1 sm:truncate">
           {detail ? <>Partagé avec l'expert : <span className="font-mono text-gray-700">{detail}</span></>
                   : "L'expert voit le score détaillé par catégorie."}
         </span>
@@ -61,8 +62,8 @@ function ContextBar({ conversation, preview, isClient, isAdmin, signing, onSign,
 
   if (conversation.level === 3 && preview?.access === 'full' && preview.scan_id) {
     return (
-      <div className="px-[22px] py-2 flex items-center gap-3 border-b border-gray-100 bg-white text-xs text-gray-500">
-        <span className="flex-1 truncate">
+      <div className="px-4 sm:px-[22px] py-2 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border-b border-gray-100 bg-white text-xs text-gray-500">
+        <span className="flex-1 sm:truncate">
           Rapport complet partagé : score <span className="font-mono text-gray-700">{preview.scan.score}/100</span>
           {countdown && countdown !== 'Expiré' && <> · expire dans <span className="font-mono text-gray-700">{countdown}</span></>}
         </span>
@@ -108,7 +109,7 @@ function RatingPrompt({ onRate }) {
 }
 
 /* ─── Composant principal ─── */
-export default function MessageThread({ conversation, onLevelUp }) {
+export default function MessageThread({ conversation, onLevelUp, onBack }) {
   const navigate = useNavigate()
   const [messages, setMessages] = useState([])
   const [input, setInput]       = useState('')
@@ -187,7 +188,16 @@ export default function MessageThread({ conversation, onLevelUp }) {
   return (
     <div className="flex flex-col min-h-0 h-full">
       {/* En-tête */}
-      <div className="flex items-center gap-3 px-[22px] py-3.5 border-b border-gray-200">
+      <div className="flex items-center gap-3 px-4 sm:px-[22px] py-3.5 border-b border-gray-200">
+        {onBack && (
+          <button
+            onClick={onBack}
+            aria-label="Revenir à la liste des conversations"
+            className="-ml-1.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border-none bg-transparent text-gray-500 active:bg-gray-100"
+          >
+            <ChevronLeft size={20} strokeWidth={2} />
+          </button>
+        )}
         <Avatar name={conversation.expert.name} color={conversation.expert.color} size={40} />
         <div className="flex-1 min-w-0">
           <div className="text-[14.5px] font-semibold truncate">{conversation.expert.name}</div>
@@ -195,9 +205,11 @@ export default function MessageThread({ conversation, onLevelUp }) {
             {conversation.expert.specialty} · <span className="font-mono">{conversation.subject}</span>
           </div>
         </div>
-        <Badge color={conversation.level === 3 ? 'green' : conversation.level === 2 ? 'orange' : 'gray'} icon={Icons.lock}>
-          {conversation.level === 1 ? 'Demande reçue' : conversation.level === 2 ? 'Mission acceptée' : 'Contrat signé'}
-        </Badge>
+        <span className="hidden sm:inline-flex">
+          <Badge color={conversation.level === 3 ? 'green' : conversation.level === 2 ? 'orange' : 'gray'} icon={Icons.lock}>
+            {conversation.level === 1 ? 'Demande reçue' : conversation.level === 2 ? 'Mission acceptée' : 'Contrat signé'}
+          </Badge>
+        </span>
       </div>
 
       {/* Barre contextuelle, une seule, selon l'état */}
@@ -213,7 +225,7 @@ export default function MessageThread({ conversation, onLevelUp }) {
 
       {/* Fil de messages */}
       <div ref={scrollRef}
-        className="flex-1 overflow-auto p-6 flex flex-col gap-3.5"
+        className="flex-1 overflow-auto p-4 sm:p-6 flex flex-col gap-3.5"
         style={{ background: '#F5F6FA' }}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center flex-1 gap-2 text-gray-400">
@@ -236,7 +248,7 @@ export default function MessageThread({ conversation, onLevelUp }) {
           }
           return (
             <div key={i}
-              className="flex gap-2.5 max-w-[75%]"
+              className="flex gap-2.5 max-w-[88%] sm:max-w-[75%]"
               style={{
                 flexDirection: m.from === 'client' ? 'row-reverse' : 'row',
                 alignSelf: m.from === 'client' ? 'flex-end' : 'flex-start',
@@ -266,7 +278,7 @@ export default function MessageThread({ conversation, onLevelUp }) {
       </div>
 
       {/* Saisie, l'admin supervise en lecture seule */}
-      <div className="px-[22px] py-3.5 border-t border-gray-200 bg-white">
+      <div className="px-4 sm:px-[22px] py-3.5 border-t border-gray-200 bg-white">
         {isAdmin ? (
           <div className="flex items-center gap-2 text-[12px] text-gray-500 py-1.5">
             {cloneIcon(Icons.eye, { size: 14, color: '#9CA3AF' })}
@@ -279,9 +291,11 @@ export default function MessageThread({ conversation, onLevelUp }) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && send()}
               placeholder="Écrire un message…"
-              className="flex-1 px-4 py-[11px] rounded-[10px] border border-gray-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
+              className="flex-1 min-w-0 px-4 py-[11px] rounded-[10px] border border-gray-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
             />
-            <Button variant="primary" icon={Icons.send} onClick={send} disabled={!input.trim()}>Envoyer</Button>
+            <Button variant="primary" icon={Icons.send} onClick={send} disabled={!input.trim()} className="flex-shrink-0">
+              <span className="hidden sm:inline">Envoyer</span>
+            </Button>
           </div>
         )}
       </div>

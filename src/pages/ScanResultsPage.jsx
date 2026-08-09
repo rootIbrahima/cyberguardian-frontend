@@ -156,7 +156,7 @@ function GitHubSection({ scan }) {
   }
 
   return (
-    <Card className="p-[22px_24px] mb-5">
+    <Card className="p-4 sm:p-[22px_24px] mb-5">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -173,7 +173,7 @@ function GitHubSection({ scan }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 mb-5 border-b border-slate-100 pb-3">
+      <div className="flex flex-wrap gap-1.5 mb-5 border-b border-slate-100 pb-3">
         {TABS.map((t) => (
           <button
             key={t.key}
@@ -359,7 +359,7 @@ function GitHubSection({ scan }) {
       {/* Infos repo */}
       {tab === 'info' && (
         info.error ? <ErrState err={info.error} /> : (
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
             {[
               { label: 'Visibilité',      value: info.visibility ?? '—' },
               { label: 'Langage',         value: info.language   ?? '—' },
@@ -532,7 +532,7 @@ export default function ScanResultsPage() {
     return (
       <div className="space-y-4">
         <Skeleton w="30%" h={14} />
-        <Card className="p-7 flex items-center gap-6">
+        <Card className="p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
           <Skeleton w={110} h={110} rounded className="flex-shrink-0" />
           <div className="flex-1 space-y-3">
             <div className="flex gap-2"><Skeleton w={80} h={22} className="rounded-md" /><Skeleton w={120} h={22} className="rounded-md" /></div>
@@ -540,9 +540,9 @@ export default function ScanResultsPage() {
             <Skeleton w="70%" h={14} />
             <div className="flex gap-6"><Skeleton w={60} h={12} /><Skeleton w={60} h={12} /><Skeleton w={60} h={12} /></div>
           </div>
-          <div className="flex flex-col gap-2 flex-shrink-0"><Skeleton w={148} h={36} className="rounded-[var(--cg-radius)]" /><Skeleton w={148} h={36} className="rounded-[var(--cg-radius)]" /></div>
+          <div className="hidden sm:flex flex-col gap-2 flex-shrink-0"><Skeleton w={148} h={36} className="rounded-[var(--cg-radius)]" /><Skeleton w={148} h={36} className="rounded-[var(--cg-radius)]" /></div>
         </Card>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card className="p-6 space-y-3"><Skeleton w="40%" h={14} /><Skeleton h={8} className="rounded-full" /><Skeleton w="80%" h={12} /><Skeleton w="60%" h={12} /></Card>
           <Card className="p-6 space-y-3"><Skeleton w="40%" h={14} /><Skeleton h={48} /><Skeleton h={48} /></Card>
         </div>
@@ -587,8 +587,8 @@ export default function ScanResultsPage() {
       <PageHeader title="Résultats du scan" subtitle={`${scan?.target} · ${scan?.date || ''}`} />
 
       {/* Target hero card */}
-      <Card className="p-7 mb-5 flex items-center gap-6">
-        <div className="relative flex-shrink-0" style={{ width: 110, height: 110 }}>
+      <Card className="p-5 sm:p-7 mb-5 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
+        <div className="relative flex-shrink-0 self-center sm:self-auto" style={{ width: 110, height: 110 }}>
           <ScoreRing score={scorePct} size={110} stroke={9} />
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-[30px] font-bold font-mono tracking-[-0.03em]" style={{ color: scoreColor }}>
@@ -598,7 +598,7 @@ export default function ScanResultsPage() {
           </div>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2.5 mb-1.5 flex-wrap">
             <Badge color="blue" icon={isGithub ? Icons.github : Icons.domain}>
               {isGithub ? 'GitHub' : scan?.typeLabel || 'Domaine'}
@@ -607,7 +607,7 @@ export default function ScanResultsPage() {
               {scorePct >= 80 ? 'Bon · Surveillance recommandée' : scorePct >= 50 ? 'Niveau moyen · Action requise' : 'Critique · Action urgente'}
             </Badge>
           </div>
-          <CopyValue value={scan?.target} className="text-[24px] font-bold font-mono tracking-[-0.02em] text-slate-900" />
+          <CopyValue value={scan?.target} className="text-[24px] font-bold font-mono tracking-[-0.02em] text-slate-900 break-all" />
           <div className="text-[13px] text-slate-500 mt-1 flex items-center gap-1.5">
             Analysé <RelativeTime date={scan?.date} /> · {isGithub
               ? 'Bandit · Safety · TruffleHog'
@@ -635,7 +635,7 @@ export default function ScanResultsPage() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 w-full sm:w-auto [&>button]:w-full sm:[&>button]:w-auto">
           <Button variant="primary" icon={pdfLoading ? null : Icons.download} onClick={handleDownloadPDF} disabled={pdfLoading}>
             {pdfLoading
               ? <><span className="spinner mr-2" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />{PDF_STEPS[pdfStep]}</>
@@ -657,9 +657,9 @@ export default function ScanResultsPage() {
 
       {/* Breakdown + Issues (EASM only) */}
       {!isGithub && (
-        <div className="grid grid-cols-2 gap-[18px] mb-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[18px] mb-5">
           {/* Détail du score pondéré + SSL, données réelles du backend */}
-          <Card className="p-[22px_24px]">
+          <Card className="p-4 sm:p-[22px_24px]">
             <div className="text-sm font-semibold mb-4">Détail du score</div>
             {(() => {
               const ssl       = scan?.results?.ssl
@@ -724,7 +724,7 @@ export default function ScanResultsPage() {
           </Card>
 
           {/* Issues, données réelles du backend */}
-          <Card className="p-[22px_24px] flex flex-col">
+          <Card className="p-4 sm:p-[22px_24px] flex flex-col">
             {(() => {
               const issues = scan?.issues ?? []
               return (
@@ -777,7 +777,7 @@ export default function ScanResultsPage() {
         const PRIO_RANK  = { 'URGENTE': 0, 'ÉLEVÉE': 1, 'À SURVEILLER': 2, 'FAIBLE': 3 }
         const sortedCves = [...cves].sort((a, b) => (PRIO_RANK[a.priority] ?? 4) - (PRIO_RANK[b.priority] ?? 4))
         return (
-          <Card className="p-[22px_24px] mb-5">
+          <Card className="p-4 sm:p-[22px_24px] mb-5">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #FEF2F2, #FEE2E2)' }}>
@@ -832,7 +832,7 @@ export default function ScanResultsPage() {
       })()}
 
       {/* AI Report */}
-      <Card className="p-7 mb-5">
+      <Card className="p-5 sm:p-7 mb-5">
         <div className="flex items-center gap-3 mb-[18px]">
           <div className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
             style={{ background: '#1F5C99' }}>
@@ -1093,7 +1093,7 @@ export default function ScanResultsPage() {
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAskAI()}
             placeholder="Poser une question sur votre rapport…"
-            className="flex-1 px-4 py-[11px] rounded-[var(--cg-radius)] border border-slate-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
+            className="flex-1 min-w-0 px-4 py-[11px] rounded-[var(--cg-radius)] border border-slate-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
           />
           <Button variant="primary" icon={askingAI ? null : Icons.send} onClick={handleAskAI} disabled={askingAI}>
             {askingAI ? <><span className="spinner mr-2" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />En cours…</> : 'Envoyer'}

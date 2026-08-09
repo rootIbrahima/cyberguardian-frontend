@@ -36,13 +36,13 @@ export default function ExpertsPage() {
         title="Experts cybersécurité"
         subtitle={`${experts.length} expert${experts.length > 1 ? 's' : ''} vérifié${experts.length > 1 ? 's' : ''}, identité et diplôme contrôlés`}
         actions={
-          <div className="flex items-center gap-2.5 bg-white border border-gray-200 rounded-[10px] px-3.5">
+          <div className="flex flex-1 items-center gap-2.5 bg-white border border-gray-200 rounded-[10px] px-3.5 sm:flex-none">
             {cloneIcon(Icons.search, { size: 16, color: '#9CA3AF' })}
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher…"
-              className="border-none outline-none py-[9px] text-[13px] w-[200px] bg-transparent placeholder-gray-400"
+              className="border-none outline-none py-[9px] text-[13px] w-full min-w-0 sm:w-[200px] bg-transparent placeholder-gray-400"
             />
           </div>
         }
@@ -71,7 +71,7 @@ export default function ExpertsPage() {
 
       {/* Cards grid */}
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filtered.map((expert) => (
             <ExpertCard key={expert.id} expert={expert} />
           ))}

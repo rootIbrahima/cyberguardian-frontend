@@ -227,7 +227,7 @@ function NotificationBell() {
         <>
           {/* clic à l'extérieur pour fermer */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-2 w-[320px] bg-white border border-slate-200 rounded-[10px] shadow-lg z-50 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-[min(320px,calc(100vw-32px))] bg-white border border-slate-200 rounded-[10px] shadow-lg z-50 overflow-hidden">
             <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
               <span className="text-[12px] font-semibold text-slate-700">Notifications</span>
               {unreadCount > 0 && (
@@ -274,25 +274,39 @@ function NotificationBell() {
   )
 }
 
-export function PageHeader({ title, subtitle, actions }) {
+/* Cloche et raccourci paramètres. Sur poste de travail ils vivent dans
+   l'en-tête de page ; en dessous de 1024 px, ils rejoignent la barre supérieure
+   plutôt que d'occuper une ligne entière sous le titre. */
+export function HeaderTools() {
   const navigate = useNavigate()
-
   return (
-    <div className="flex justify-between items-start mb-6 gap-4">
-      <div>
-        <h1 className="text-[22px] font-bold tracking-[-0.02em] text-slate-900 leading-tight">{title}</h1>
-        {subtitle && <p className="text-[13px] text-slate-500 mt-0.5">{subtitle}</p>}
+    <>
+      <NotificationBell />
+      <button
+        onClick={() => navigate('/settings')}
+        title="Paramètres du compte"
+        className="w-9 h-9 rounded-[var(--cg-radius)] border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
+      >
+        <Settings size={16} strokeWidth={2} />
+      </button>
+    </>
+  )
+}
+
+export function PageHeader({ title, subtitle, actions }) {
+  return (
+    <div className="flex flex-col gap-3 mb-5 sm:mb-6 sm:flex-row sm:justify-between sm:items-start sm:gap-4">
+      <div className="min-w-0">
+        <h1 className="text-[19px] sm:text-[22px] font-bold tracking-[-0.02em] text-slate-900 leading-tight">{title}</h1>
+        {subtitle && <p className="text-[12.5px] sm:text-[13px] text-slate-500 mt-0.5">{subtitle}</p>}
       </div>
-      <div className="flex gap-2 items-center flex-shrink-0">
+      {/* Sans action propre, la rangée disparaît sous 1024 px : les deux icônes
+          sont déjà accessibles depuis la barre supérieure */}
+      <div className={`gap-2 items-center flex-shrink-0 ${actions ? 'flex w-full sm:w-auto' : 'hidden lg:flex'}`}>
         {actions}
-        <NotificationBell />
-        <button
-          onClick={() => navigate('/settings')}
-          title="Paramètres du compte"
-          className="w-9 h-9 rounded-[var(--cg-radius)] border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors cursor-pointer"
-        >
-          <Settings size={16} strokeWidth={2} />
-        </button>
+        <div className="hidden lg:flex gap-2 items-center">
+          <HeaderTools />
+        </div>
       </div>
     </div>
   )
@@ -334,7 +348,7 @@ export function Tooltip({ tip, children, side = 'top' }) {
     <span className="relative group inline-flex items-center">
       {children}
       <span
-        className={`absolute left-1/2 -translate-x-1/2 ${posClass} px-2 py-1 text-[11px] bg-slate-900 text-white rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50 font-normal tracking-normal`}
+        className={`hidden sm:block absolute left-1/2 -translate-x-1/2 ${posClass} px-2 py-1 text-[11px] bg-slate-900 text-white rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-50 font-normal tracking-normal`}
       >
         {tip}
         <span
@@ -356,10 +370,21 @@ function parseDate(dateStr) {
   const d = new Date(dateStr)
   if (!isNaN(d)) return d
   // Try "24 mai 2026, 14:32" French format
-  const months = { jan:0,fév:1,feb:1,mar:2,avr:3,apr:3,mai:4,may:4,jun:5,jul:6,aoû:7,aug:7,sep:8,oct:9,nov:10,déc:11,dec:11 }
-  const m = dateStr.match(/(\d{1,2})\s+(\w+)\s+(\d{4})(?:,?\s+(\d{1,2}):(\d{2}))?/)
+  // Le préfixe de quatre lettres est testé en premier : « juin » et « juillet »
+  // partagent les trois premières et le backend produit les deux formes,
+  // abrégée (« aou. ») comme entière (« juin »).
+  const months = {
+    jan:0, fev:1, fév:1, feb:1, mar:2, avr:3, apr:3, mai:4, may:4,
+    juin:5, jun:5, juil:6, jul:6, aout:7, aou:7, aoû:7, aug:7,
+    sep:8, oct:9, nov:10, dec:11, déc:11,
+  }
+  // Le point de l'abréviation doit être toléré, sinon « 07 aou. 2026 » ne
+  // correspond à rien et la date s'affiche brute au lieu de « il y a 2 j ».
+  // \w exclut les accents : « déc. » et « fév. » imposent une classe explicite.
+  const m = dateStr.match(/(\d{1,2})\s+([^\s.]+)\.?\s+(\d{4})(?:,?\s+(\d{1,2}):(\d{2}))?/)
   if (m) {
-    const mon = months[(m[2] || '').toLowerCase().slice(0,3)]
+    const nom = (m[2] || '').toLowerCase()
+    const mon = months[nom.slice(0, 4)] ?? months[nom.slice(0, 3)]
     if (mon !== undefined)
       return new Date(+m[3], mon, +m[1], +(m[4]||0), +(m[5]||0))
   }
@@ -473,13 +498,13 @@ export function Toaster() {
   if (toasts.length === 0) return null
 
   return (
-    <div className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 items-end pointer-events-none">
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:bottom-5 sm:right-5 z-[9999] flex flex-col gap-2 items-end pointer-events-none">
       {toasts.map((t) => {
         const st = TOAST_STYLES[t.type] || TOAST_STYLES.info
         return (
           <div
             key={t.id}
-            className="toast-enter pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-[var(--cg-radius)] border shadow-md text-[13px] font-medium max-w-[320px]"
+            className="toast-enter pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-[var(--cg-radius)] border shadow-md text-[13px] font-medium max-w-full sm:max-w-[320px]"
             style={{ background: st.bg, borderColor: st.border, color: '#1E293B' }}
           >
             <span style={{ color: st.icon, flexShrink: 0 }}>{TOAST_ICONS[t.type]}</span>

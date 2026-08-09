@@ -61,7 +61,7 @@ function TelegramSection() {
   }
 
   return (
-    <Card className="p-7 mt-5">
+    <Card className="p-5 sm:p-7 mt-5">
       <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
         Notifications Telegram
       </div>
@@ -89,7 +89,7 @@ function TelegramSection() {
         </div>
       ) : (
         /* État 1, non lié */
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div>
             <div className="text-[14px] font-semibold mb-1.5">Lier votre compte Telegram</div>
             <p className="text-[12.5px] text-gray-500 mb-4 leading-relaxed">
@@ -191,14 +191,14 @@ function GitHubSection() {
   }
 
   return (
-    <Card className="p-7 mt-5">
+    <Card className="p-5 sm:p-7 mt-5">
       <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
         Correction assistée GitHub
       </div>
 
       {statut?.connecte ? (
         <div>
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                 {cloneIcon(Icons.checkCircle, { size: 20, color: '#059669' })}
@@ -218,13 +218,13 @@ function GitHubSection() {
             <span className="font-semibold"> Pull Request </span> corrective vous est proposée. Rien
             n'est modifié sans votre fusion.
           </div>
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
             <input
               value={repo}
               onChange={(e) => setRepo(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && autoriser()}
               placeholder="https://github.com/organisation/depot"
-              className="flex-1 px-4 py-2.5 rounded-[10px] border border-gray-300 text-sm outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
+              className="flex-1 min-w-0 px-4 py-2.5 rounded-[10px] border border-gray-300 text-sm outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
             />
             <Button variant="primary" icon={Icons.check} onClick={autoriser} disabled={busy}>
               Autoriser
@@ -252,7 +252,7 @@ function GitHubSection() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div>
             <div className="text-[14px] font-semibold mb-1.5">Laisser corriger vos dépôts</div>
             <p className="text-[12.5px] text-gray-500 mb-4 leading-relaxed">
@@ -309,15 +309,15 @@ export default function SettingsPage() {
       <PageHeader title="Paramètres" subtitle="Informations du compte et sécurité" />
 
       {/* Compte */}
-      <Card className="p-7 mb-5">
+      <Card className="p-5 sm:p-7 mb-5">
         <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
           Compte
         </div>
         <div className="flex items-center gap-4">
           <Avatar name={user.name} color="#1F5C99" size={52} />
-          <div className="flex-1">
-            <div className="text-[16px] font-semibold">{user.name || '—'}</div>
-            <div className="text-[13px] text-gray-500">{user.email || '—'}</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[16px] font-semibold truncate">{user.name || '—'}</div>
+            <div className="text-[13px] text-gray-500 truncate">{user.email || '—'}</div>
           </div>
           <Badge color={ROLE_COLORS[role]}>{ROLE_LABELS[role]}</Badge>
         </div>
@@ -325,7 +325,7 @@ export default function SettingsPage() {
 
       {/* Mot de passe */}
       <form onSubmit={handleSubmit}>
-        <Card className="p-7">
+        <Card className="p-5 sm:p-7">
           <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
             Changer le mot de passe
           </div>
@@ -343,7 +343,7 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
-          <div className="flex justify-between items-center mt-6 pt-5 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-6 pt-5 border-t border-gray-100">
             <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
               {cloneIcon(Icons.lock, { size: 12, color: '#9CA3AF' })}
               Hachage côté serveur · jamais stocké en clair

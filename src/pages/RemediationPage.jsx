@@ -34,8 +34,9 @@ export default function RemediationPage() {
         subtitle="Dépôts dont le client a autorisé la correction, la proposition ouvre une Pull Request que le client valide."
       />
 
-      <Card className="p-[22px_26px]">
-        <table className="w-full border-collapse">
+      <Card className="p-4 sm:p-[22px_26px]">
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <table className="w-full min-w-[780px] border-collapse sm:min-w-0">
           <thead>
             <tr className="border-b border-gray-200">
               {['Client', 'Dépôt', 'Vulnérabilités', 'Dernier scan', 'Action'].map((h, i) => (
@@ -102,6 +103,7 @@ export default function RemediationPage() {
             )}
           </tbody>
         </table>
+        </div>
       </Card>
     </div>
   )
