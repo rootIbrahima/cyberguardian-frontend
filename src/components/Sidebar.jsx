@@ -145,7 +145,7 @@ export default function Sidebar({ collapsed = false, onToggle, mobile = false, o
 
   return (
     <nav
-      className="flex flex-col fixed left-0 top-0 h-screen"
+      className="flex flex-col fixed left-0 top-0 cg-hauteur-fenetre overflow-y-auto overflow-x-hidden"
       style={{
         width: mobile ? 264 : collapsed ? 68 : 240,
         zIndex: mobile ? 20 : 10,

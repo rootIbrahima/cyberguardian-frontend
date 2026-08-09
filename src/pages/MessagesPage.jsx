@@ -61,7 +61,10 @@ export default function MessagesPage() {
   const LEVEL_COLORS = { 1: '#9CA3AF', 2: '#F59E0B', 3: '#10B981' }
 
   return (
-    <div className="flex flex-col" style={{ height: mobile ? 'calc(100dvh - 80px)' : 'calc(100vh - 40px)' }}>
+    <div
+      className={`flex flex-col ${mobile ? 'cg-hauteur-messagerie' : ''}`}
+      style={mobile ? undefined : { height: 'calc(100vh - 40px)' }}
+    >
       <PageHeader
         title="Messagerie"
         subtitle={

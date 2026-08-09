@@ -40,6 +40,20 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
+/* ── Hauteur de fenêtre fiable sur mobile ───────────────── */
+/* 100vh désigne la fenêtre barre d'adresse masquée, donc plus haute que la
+   zone réellement visible : le bas d'un élément fixe dimensionné ainsi passe
+   sous l'interface du navigateur, hors d'atteinte du doigt. C'est ce qui
+   rendait la déconnexion, en pied de barre latérale, impossible à toucher.
+   L'unité dynamique suit la hauteur visible du moment. */
+.cg-hauteur-fenetre {
+  height: 100dvh;
+}
+
+.cg-hauteur-messagerie {
+  height: calc(100dvh - 80px);
+}
+
 /* ── Écrans tactiles ────────────────────────────────────── */
 @media (max-width: 1023px) {
   /* Sous 16 px, Safari iOS zoome sur le champ à chaque mise au point et ne
