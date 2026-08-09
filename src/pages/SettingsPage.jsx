@@ -89,7 +89,7 @@ function TelegramSection() {
         </div>
       ) : (
         /* État 1, non lié */
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className={`grid gap-5 ${code ? 'lg:grid-cols-2' : ''}`}>
           <div>
             <div className="text-[14px] font-semibold mb-1.5">Lier votre compte Telegram</div>
             <p className="text-[12.5px] text-gray-500 mb-4 leading-relaxed">
@@ -252,18 +252,16 @@ function GitHubSection() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div>
-            <div className="text-[14px] font-semibold mb-1.5">Laisser corriger vos dépôts</div>
-            <p className="text-[12.5px] text-gray-500 mb-4 leading-relaxed">
-              Connectez votre compte GitHub pour autoriser CyberGuardian à proposer des correctifs
-              (dépendances vulnérables, secrets exposés) sous forme de Pull Request. Vous gardez le
-              dernier mot : la correction n'est appliquée que si vous la fusionnez.
-            </p>
-            <Button variant="primary" icon={Icons.github} onClick={connecter} disabled={busy}>
-              {busy ? 'Redirection…' : 'Connecter GitHub'}
-            </Button>
-          </div>
+        <div>
+          <div className="text-[14px] font-semibold mb-1.5">Laisser corriger vos dépôts</div>
+          <p className="text-[12.5px] text-gray-500 mb-4 leading-relaxed max-w-[62ch]">
+            Connectez votre compte GitHub pour autoriser CyberGuardian à proposer des correctifs
+            (dépendances vulnérables, secrets exposés) sous forme de Pull Request. Vous gardez le
+            dernier mot : la correction n'est appliquée que si vous la fusionnez.
+          </p>
+          <Button variant="primary" icon={Icons.github} onClick={connecter} disabled={busy}>
+            {busy ? 'Redirection…' : 'Connecter GitHub'}
+          </Button>
         </div>
       )}
     </Card>
