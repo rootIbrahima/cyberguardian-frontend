@@ -163,9 +163,9 @@ function GitHubSection({ scan }) {
           style={{ background: 'linear-gradient(135deg, #111827, #374151)' }}>
           {cloneIcon(Icons.github, { color: '#fff', size: 18 })}
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="text-[14px] font-semibold">Résultats GitHub Scan</div>
-          <div className="text-xs text-slate-500 font-mono mt-0.5">
+          <div className="text-xs text-slate-500 font-mono mt-0.5 truncate">
             {scan?.target} · {results.langage || info.language || 'N/A'} · {scan?.score ?? 0}/{scoreMax}
           </div>
         </div>
@@ -783,10 +783,10 @@ export default function ScanResultsPage() {
                 style={{ background: 'linear-gradient(135deg, #FEF2F2, #FEE2E2)' }}>
                 {cloneIcon(Icons.alert, { color: '#EF4444', size: 18 })}
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="text-[14px] font-semibold">CVE identifiées</div>
                 {banner && (
-                  <div className="text-xs text-slate-500 font-mono mt-0.5">Serveur détecté : {banner}</div>
+                  <div className="text-xs text-slate-500 font-mono mt-0.5 truncate">Serveur détecté : {banner}</div>
                 )}
               </div>
               <Badge color="red">{cves.length} CVE</Badge>
@@ -796,8 +796,8 @@ export default function ScanResultsPage() {
                 <div key={i} className="p-3 rounded-[9px]"
                   style={{ background: SEV_BG[cve.severity] || '#F9FAFB', border: `1px solid ${SEV_BDR[cve.severity] || '#E5E7EB'}` }}>
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="text-[12.5px] font-medium text-slate-800 leading-snug">{cve.title}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12.5px] font-medium text-slate-800 leading-snug break-words">{cve.title}</div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       {cve.priority && (
@@ -838,17 +838,17 @@ export default function ScanResultsPage() {
             style={{ background: '#1F5C99' }}>
             {cloneIcon(Icons.results, { color: '#fff', size: 20 })}
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="text-[15px] font-semibold">Analyse du rapport</div>
             <div className="text-xs text-slate-500 mt-0.5">Posez vos questions sur les résultats de ce scan</div>
           </div>
         </div>
 
-        <div className="text-[13.5px] text-slate-700 leading-[1.7] p-[18px_20px] bg-slate-50 rounded-[var(--cg-radius)] border border-slate-100 mb-4">
+        <div className="text-[13.5px] text-slate-700 leading-[1.7] break-words p-4 sm:p-[18px_20px] bg-slate-50 rounded-[var(--cg-radius)] border border-slate-100 mb-4">
           <strong className="text-slate-900">Rapport automatique</strong>
           <br />
           Le scan de{' '}
-          <code className="bg-white px-1.5 py-px rounded border border-gray-200 text-[12px] font-mono">{scan?.target}</code>{' '}
+          <code className="bg-white px-1.5 py-px rounded border border-gray-200 text-[12px] font-mono break-all">{scan?.target}</code>{' '}
           révèle une posture de sécurité{' '}
           <strong style={{ color: scoreColor }}>
             {scorePct >= 80 ? `bonne (${score}/${scoreMax})` : scorePct >= 50 ? `moyenne (${score}/${scoreMax})` : `critique (${score}/${scoreMax})`}
@@ -921,7 +921,7 @@ export default function ScanResultsPage() {
             // DNS anti-phishing, le critère le plus lourd du score (25 pts)
             if (dns) {
               if (!dns.dmarc_present) {
-                lines.push(<><strong style={{ color: '#DC2626' }}>DMARC absent</strong>, n'importe qui peut envoyer un email en se faisant passer pour <strong>@{scan?.target}</strong>. Ajoutez un enregistrement TXT <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono">v=DMARC1; p=quarantine;</code> sur <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono">_dmarc.{scan?.target}</code>.</>)
+                lines.push(<><strong style={{ color: '#DC2626' }}>DMARC absent</strong>, n'importe qui peut envoyer un email en se faisant passer pour <strong>@{scan?.target}</strong>. Ajoutez un enregistrement TXT <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono">v=DMARC1; p=quarantine;</code> sur <code className="bg-white px-1 rounded border border-gray-200 text-[11px] font-mono break-all">_dmarc.{scan?.target}</code>.</>)
               } else if (dns.dmarc_policy === 'none') {
                 lines.push(<>DMARC est présent mais en mode surveillance seule (<strong>p=none</strong>) : les emails usurpés sont quand même livrés. Passez à p=quarantine puis p=reject.</>)
               }
@@ -1064,7 +1064,7 @@ export default function ScanResultsPage() {
                   <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 mt-0.5 text-[10px] font-bold text-slate-600">
                     Q
                   </div>
-                  <div className="flex-1 px-3 py-2 rounded-[var(--cg-radius)] bg-slate-100 text-[13px] text-slate-800">
+                  <div className="flex-1 min-w-0 break-words px-3 py-2 rounded-[var(--cg-radius)] bg-slate-100 text-[13px] text-slate-800">
                     {c.question}
                   </div>
                 </div>
@@ -1073,7 +1073,7 @@ export default function ScanResultsPage() {
                     style={{ background: '#1F5C99' }}>
                     CG
                   </div>
-                  <div className="flex-1 px-3 py-2 rounded-[var(--cg-radius)] text-[13px] text-slate-700 leading-relaxed"
+                  <div className="flex-1 min-w-0 break-words px-3 py-2 rounded-[var(--cg-radius)] text-[13px] text-slate-700 leading-relaxed"
                     style={{ background: '#F3F8FD', border: '1px solid #E8F1FA' }}>
                     {c.answer
                       ? <>{renderMd(c.answer)}{askingAI && i === conversations.length - 1 && <span className="inline-block w-[2px] h-[13px] bg-blue-400 ml-0.5 animate-pulse" />}</>

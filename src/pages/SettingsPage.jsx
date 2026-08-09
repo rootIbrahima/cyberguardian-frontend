@@ -104,7 +104,7 @@ function TelegramSection() {
             <div className="rounded-xl p-4" style={{ background: '#F5F6FA', border: '1px solid #E5E7EB' }}>
               <div className="text-[11px] text-gray-500 mb-1.5">Votre code de liaison :</div>
               <div className="flex items-center gap-2 mb-2">
-                <code className="flex-1 text-[15px] font-bold font-mono tracking-wider bg-white px-3 py-2 rounded-lg border border-gray-200">
+                <code className="flex-1 min-w-0 text-[15px] font-bold font-mono tracking-wider bg-white px-3 py-2 rounded-lg border border-gray-200">
                   {code.code}
                 </code>
                 <button onClick={() => copier(code.code)}
