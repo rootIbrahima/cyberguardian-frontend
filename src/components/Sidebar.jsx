@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Menu, X } from 'lucide-react'
 import { cloneIcon, Icons } from './Icons'
@@ -153,7 +154,7 @@ export default function Sidebar({ collapsed = false, onToggle, mobile = false, o
         borderRight: '1px solid rgba(255,255,255,0.04)',
         // Escamotée hors écran plutôt que démontée : l'animation de glissement
         // reste possible, et « visibility » la sort du parcours de tabulation
-        transform:  mobile && !ouvert ? 'translateX(-100%)' : 'translateX(0)',
+        transform:  mobile ? (ouvert ? 'translateX(0)' : 'translateX(-100%)') : 'none',
         visibility: mobile && !ouvert ? 'hidden' : 'visible',
         transition: 'width 0.2s ease, transform 0.22s ease, visibility 0.22s',
       }}
@@ -274,14 +275,18 @@ export default function Sidebar({ collapsed = false, onToggle, mobile = false, o
         )}
       </div>
 
-      {/* Confirmation de déconnexion, clic extérieur ou Échap pour annuler */}
-      {confirmLogout && (
+      {/* Confirmation de déconnexion, clic extérieur ou Échap pour annuler.
+          Rendue dans le corps du document : la barre latérale porte un transform
+          en mode tiroir, et un ancêtre transformé devient le bloc conteneur de
+          ses descendants en position fixe. La fenêtre se serait centrée dans les
+          240 px de la barre au lieu de l'écran. */}
+      {confirmLogout && createPortal(
         <div
-          className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-900/40"
+          className="fixed inset-0 z-[9998] flex items-center justify-center bg-slate-900/40 p-4"
           onClick={() => setConfirmLogout(false)}
         >
           <div
-            className="bg-white w-[360px] max-w-[calc(100vw-32px)] p-5 shadow-xl"
+            className="bg-white w-full max-w-[360px] p-5 shadow-xl"
             style={{ borderRadius: 'var(--cg-radius)' }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -299,7 +304,8 @@ export default function Sidebar({ collapsed = false, onToggle, mobile = false, o
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </nav>
   )
