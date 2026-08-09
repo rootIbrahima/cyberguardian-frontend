@@ -61,7 +61,7 @@ function TelegramSection() {
   }
 
   return (
-    <Card className="p-5 sm:p-7 mt-5">
+    <Card className="p-5 sm:p-7">
       <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
         Notifications Telegram
       </div>
@@ -191,7 +191,7 @@ function GitHubSection() {
   }
 
   return (
-    <Card className="p-5 sm:p-7 mt-5">
+    <Card className="p-5 sm:p-7">
       <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
         Correction assistée GitHub
       </div>
@@ -303,58 +303,69 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div style={{ maxWidth: 640 }}>
+    <div className="max-w-[760px] min-[1160px]:max-w-none">
       <PageHeader title="Paramètres" subtitle="Informations du compte et sécurité" />
 
-      {/* Compte */}
-      <Card className="p-5 sm:p-7 mb-5">
-        <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
-          Compte
-        </div>
-        <div className="flex items-center gap-4">
-          <Avatar name={user.name} color="#1F5C99" size={52} />
-          <div className="flex-1 min-w-0">
-            <div className="text-[16px] font-semibold truncate">{user.name || '—'}</div>
-            <div className="text-[13px] text-gray-500 truncate">{user.email || '—'}</div>
-          </div>
-          <Badge color={ROLE_COLORS[role]}>{ROLE_LABELS[role]}</Badge>
-        </div>
-      </Card>
-
-      {/* Mot de passe */}
-      <form onSubmit={handleSubmit}>
-        <Card className="p-5 sm:p-7">
-          <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
-            Changer le mot de passe
-          </div>
-          <div className="flex flex-col gap-4">
-            {fields.map((f) => (
-              <div key={f.key}>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">{f.label}</label>
-                <input
-                  type="password"
-                  value={form[f.key]}
-                  onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
-                  required
-                  className="w-full px-4 py-3 rounded-[10px] border border-gray-300 text-sm outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-6 pt-5 border-t border-gray-100">
-            <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
-              {cloneIcon(Icons.lock, { size: 12, color: '#9CA3AF' })}
-              Hachage côté serveur · jamais stocké en clair
+      {/* Deux colonnes au-delà de 1280 px : le compte et son mot de passe d'un
+          côté, les canaux externes de l'autre. Chaque colonne empile ses cartes
+          pour elle-même ; une grille alignerait les rangées sur la carte la plus
+          haute et laisserait des trous, les hauteurs étant très inégales. */}
+      <div className="grid items-start gap-5 min-[1160px]:grid-cols-2">
+        <div className="flex flex-col gap-5">
+          {/* Compte */}
+          <Card className="p-5 sm:p-7">
+            <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
+              Compte
             </div>
-            <Button variant="primary" icon={Icons.check} type="submit" disabled={saving}>
-              {saving ? 'Enregistrement…' : 'Mettre à jour'}
-            </Button>
-          </div>
-        </Card>
-      </form>
+            <div className="flex items-center gap-4">
+              <Avatar name={user.name} color="#1F5C99" size={52} />
+              <div className="flex-1 min-w-0">
+                <div className="text-[16px] font-semibold truncate">{user.name || '—'}</div>
+                <div className="text-[13px] text-gray-500 truncate">{user.email || '—'}</div>
+              </div>
+              <Badge color={ROLE_COLORS[role]}>{ROLE_LABELS[role]}</Badge>
+            </div>
+          </Card>
 
-      <TelegramSection />
-      <GitHubSection />
+          {/* Mot de passe */}
+          <form onSubmit={handleSubmit}>
+            <Card className="p-5 sm:p-7">
+              <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
+                Changer le mot de passe
+              </div>
+              <div className="flex flex-col gap-4">
+                {fields.map((f) => (
+                  <div key={f.key}>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">{f.label}</label>
+                    <input
+                      type="password"
+                      value={form[f.key]}
+                      onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+                      required
+                      className="w-full px-4 py-3 rounded-[10px] border border-gray-300 text-sm outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-6 pt-5 border-t border-gray-100">
+                <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-gray-400">
+                  {cloneIcon(Icons.lock, { size: 12, color: '#9CA3AF' })}
+                  Hachage côté serveur · jamais stocké en clair
+                </div>
+                <Button variant="primary" icon={Icons.check} type="submit" disabled={saving}
+                  className="flex-shrink-0 whitespace-nowrap">
+                  {saving ? 'Enregistrement…' : 'Mettre à jour'}
+                </Button>
+              </div>
+            </Card>
+          </form>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <TelegramSection />
+          <GitHubSection />
+        </div>
+      </div>
     </div>
   )
 }
