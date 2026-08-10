@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, Settings, AlertCircle, AlertTriangle, Info, Minus, RotateCw,
-         CheckCircle2, XCircle, Copy, Check, TrendingUp, TrendingDown } from 'lucide-react'
+         CheckCircle2, XCircle, Copy, Check, TrendingUp, TrendingDown,
+         MessageSquare, Handshake, ShieldCheck, Star, UserPlus, BadgeCheck,
+         GitPullRequest } from 'lucide-react'
 import { cloneIcon } from './Icons'
 import { notificationAPI } from '../lib/api'
 
@@ -170,6 +172,16 @@ export function LabeledInput({ label, icon, value, onChange, placeholder, type =
 /* ══════════════════════════════════════════════════════════
    PAGE HEADER
 ══════════════════════════════════════════════════════════ */
+const NOTIF_TYPES = {
+  message:         { Icon: MessageSquare,  bg: '#EFF6FF', fg: '#1D4ED8' },
+  mission_level:   { Icon: Handshake,      bg: '#FFF7ED', fg: '#854F0B' },
+  contract:        { Icon: ShieldCheck,    bg: '#F0FDF4', fg: '#1A7A4A' },
+  rating:          { Icon: Star,           bg: '#FEFCE8', fg: '#713F12' },
+  expert_pending:  { Icon: UserPlus,       bg: '#F5F3FF', fg: '#5B21B6' },
+  expert_decision: { Icon: BadgeCheck,     bg: '#F0FDF4', fg: '#1A7A4A' },
+  remediation:     { Icon: GitPullRequest, bg: '#F8FAFC', fg: '#334155' },
+}
+
 function NotificationBell() {
   const navigate = useNavigate()
   const [open, setOpen]   = useState(false)
@@ -228,44 +240,69 @@ function NotificationBell() {
         <>
           {/* clic à l'extérieur pour fermer */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-2 w-[min(320px,calc(100vw-32px))] bg-white border border-slate-200 rounded-[10px] shadow-lg z-50 overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
-              <span className="text-[12px] font-semibold text-slate-700">Notifications</span>
+          <div className="absolute right-0 mt-2 w-[min(380px,calc(100vw-32px))] bg-white border border-slate-200 rounded-[10px] shadow-lg z-50 overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
+              <span className="text-[12.5px] font-semibold text-slate-800">
+                Notifications
+                {unreadCount > 0 && (
+                  <span className="ml-1.5 font-normal text-slate-500">
+                    · {unreadCount} non lue{unreadCount > 1 ? 's' : ''}
+                  </span>
+                )}
+              </span>
               {unreadCount > 0 && (
                 <button
                   onClick={markAllRead}
-                  className="text-[11px] font-semibold text-blue-700 hover:underline cursor-pointer"
+                  className="text-[11px] font-semibold text-blue-700 hover:underline cursor-pointer flex-shrink-0"
                 >
                   Tout marquer comme lu
                 </button>
               )}
             </div>
-            <div className="max-h-[360px] overflow-auto">
+            <div className="max-h-[400px] overflow-auto">
               {items.length === 0 ? (
-                <div className="px-4 py-8 text-center text-[12.5px] text-slate-500">
-                  Aucune notification
+                <div className="px-6 py-10 text-center">
+                  <div className="text-[13px] font-medium text-slate-600">Aucune notification</div>
+                  <p className="mt-1 text-[11.5px] leading-relaxed text-slate-500">
+                    Les réponses de vos experts, les décisions sur vos candidatures et les
+                    évaluations de mission apparaîtront ici.
+                  </p>
                 </div>
               ) : (
-                items.map((n) => (
-                  <button
-                    key={n.id}
-                    onClick={() => openItem(n)}
-                    className="w-full text-left px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer flex gap-2.5 items-start"
-                  >
-                    <span
-                      className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
-                      style={{ background: n.read ? 'transparent' : '#EF4444' }}
-                    />
-                    <span className="flex-1 min-w-0">
-                      <span className={`block text-[12.5px] truncate ${n.read ? 'font-medium text-slate-500' : 'font-semibold text-slate-800'}`}>
-                        {n.title}
+                items.map((n) => {
+                  const t = NOTIF_TYPES[n.type] || { Icon: Bell, bg: '#F8FAFC', fg: '#64748B' }
+                  return (
+                    <button
+                      key={n.id}
+                      onClick={() => openItem(n)}
+                      className="w-full text-left px-3.5 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors cursor-pointer flex gap-3 items-start"
+                      style={{ background: n.read ? undefined : '#F7FAFE' }}
+                    >
+                      <span
+                        className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
+                        style={{ background: t.bg }}
+                      >
+                        <t.Icon size={15} strokeWidth={2} style={{ color: t.fg }} />
                       </span>
-                      {n.body && (
-                        <span className="block text-[11px] text-slate-500 truncate">{n.body}</span>
-                      )}
-                    </span>
-                  </button>
-                ))
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-start justify-between gap-2">
+                          <span className={`text-[12.5px] leading-snug ${n.read ? 'font-medium text-slate-600' : 'font-semibold text-slate-900'}`}>
+                            {n.title}
+                          </span>
+                          {!n.read && <span className="mt-1 h-[7px] w-[7px] flex-shrink-0 rounded-full bg-blue-600" />}
+                        </span>
+                        {n.body && (
+                          <span className="mt-0.5 block text-[11.5px] leading-snug text-slate-500 line-clamp-2">
+                            {n.body}
+                          </span>
+                        )}
+                        <span className="mt-1.5 block text-[10.5px] text-slate-500">
+                          <RelativeTime date={n.createdAt} />
+                        </span>
+                      </span>
+                    </button>
+                  )
+                })
               )}
             </div>
           </div>
