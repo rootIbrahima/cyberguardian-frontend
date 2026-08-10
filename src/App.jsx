@@ -5,7 +5,8 @@ import Sidebar from './components/Sidebar'
 import { Toaster, HeaderTools } from './components/ui'
 import { cloneIcon, Icons } from './components/Icons'
 import useMobile from './lib/useMobile'
-import { lireJeton, lireUtilisateur } from './lib/session'
+import { lireJeton, lireUtilisateur, majUtilisateur } from './lib/session'
+import { authAPI } from './lib/api'
 
 import LoginPage          from './pages/LoginPage'
 import RegisterPage       from './pages/RegisterPage'
@@ -36,7 +37,37 @@ function RequireAuth() {
   const token = lireJeton()
   const location = useLocation()
   if (!token) return <Navigate to="/login" state={{ from: location }} replace />
-  return <Outlet />
+  return (
+    <>
+      <SynchroProfil />
+      <Outlet />
+    </>
+  )
+}
+
+/* ─── Profil confronté au serveur ───
+   Le rôle était figé au moment de la connexion et jamais revérifié : un client
+   promu expert continuait de voir l'interface client, et un expert révoqué
+   gardait la sienne, jusqu'à une déconnexion manuelle. Les gardes de route
+   lisent ce rôle, l'écran affiché ne correspondait plus au compte réel.
+
+   Un écart déclenche un rechargement : rare par nature, et cela évite de
+   propager l'information à la main dans les huit endroits qui la lisent. */
+function SynchroProfil() {
+  useEffect(() => {
+    let monte = true
+    authAPI.me()
+      .then((res) => {
+        if (!monte || !res.data) return
+        const local = lireUtilisateur()
+        if (local.role === res.data.role && local.name === res.data.name) return
+        majUtilisateur({ name: res.data.name, email: res.data.email, role: res.data.role })
+        window.location.reload()
+      })
+      .catch(() => { /* jeton invalide : l'intercepteur ferme déjà la session */ })
+    return () => { monte = false }
+  }, [])
+  return null
 }
 
 /* ─── Role guard, blocks route and shows access denied ─── */

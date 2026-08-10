@@ -32,6 +32,14 @@ export function lireUtilisateur() {
   }
 }
 
+/* Rafraîchit le profil sans toucher au choix de persistance : écrire dans
+   localStorage un profil dont le jeton vit dans sessionStorage ferait survivre
+   l'identité à la fermeture de l'onglet. */
+export function majUtilisateur(utilisateur) {
+  const zone = localStorage.getItem(CLE_JETON) ? localStorage : sessionStorage
+  zone.setItem(CLE_USER, JSON.stringify(utilisateur))
+}
+
 export function fermerSession() {
   for (const zone of [localStorage, sessionStorage]) {
     zone.removeItem(CLE_JETON)
