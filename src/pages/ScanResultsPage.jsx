@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { Card, Badge, Button, PageHeader, SeverityBadge, Skeleton, RelativeTime, CopyValue, toast } from '../components/ui'
+import { Square } from 'lucide-react'
 import { cloneIcon, Icons } from '../components/Icons'
 import { scanAPI, API_BASE, messageErreur } from '../lib/api'
 import { lireJeton } from '../lib/session'
@@ -401,12 +402,16 @@ export default function ScanResultsPage() {
   const [question, setQuestion] = useState('')
   const [conversations, setConversations] = useState([])
   const [askingAI, setAskingAI] = useState(false)
-  const [attenteIA, setAttenteIA] = useState(0)
   const abortIA = useRef(null)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfStep, setPdfStep]   = useState(0)
 
   const DELAI_PDF = 180000   // le modèle est mutualisé, sa latence varie de 1 à 5
+
+  // Le texte d'analyse est joint au scan dès qu'il a été rédigé. Sa présence
+  // dit laquelle des deux étapes le téléchargement va réellement traverser,
+  // plutôt que de faire défiler des libellés sur minuteur.
+  const rapportPret = Boolean(scan?.results?.rapport_ia)
 
   useEffect(() => {
     if (!id || id === 'demo') { setLoading(false); return }
@@ -427,9 +432,9 @@ export default function ScanResultsPage() {
     setQuestion('')
 
     // Le serveur d'inférence est mutualisé : la réponse arrive entre 30 s et
-    // plus d'une minute. Sans compteur ni sortie de secours, l'écran paraît figé.
+    // plus d'une minute. Le bouton d'arrêt évite d'y être condamné, et l'heure
+    // de départ sert à distinguer un abandon volontaire d'une expiration.
     const debut = Date.now()
-    const compteur = setInterval(() => setAttenteIA(Math.floor((Date.now() - debut) / 1000)), 1000)
     const arret = new AbortController()
     abortIA.current = arret
     const expiration = setTimeout(() => arret.abort(), 180000)
@@ -518,10 +523,8 @@ export default function ScanResultsPage() {
         return updated
       })
     } finally {
-      clearInterval(compteur)
       clearTimeout(expiration)
       abortIA.current = null
-      setAttenteIA(0)
       setAskingAI(false)
     }
   }
@@ -662,7 +665,11 @@ export default function ScanResultsPage() {
         <div className="flex flex-col gap-2 w-full sm:w-auto [&>button]:w-full sm:[&>button]:w-auto">
           <Button variant="primary" icon={pdfLoading ? null : Icons.download} onClick={handleDownloadPDF} disabled={pdfLoading}>
             {pdfLoading
-              ? <><span className="spinner mr-2" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />Génération{pdfStep > 2 ? ` · ${pdfStep} s` : '…'}</>
+              ? <><span className="spinner mr-2" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />
+                  {rapportPret
+                    ? 'Composition du document…'
+                    : pdfStep < 4 ? "Rédaction de l'analyse…" : `Rédaction de l'analyse… ${pdfStep} s`}
+                </>
               : 'Télécharger PDF'}
           </Button>
           <Button variant="secondary" icon={Icons.experts} onClick={() => navigate('/experts')}>
@@ -1103,15 +1110,7 @@ export default function ScanResultsPage() {
                       ? <>{renderMd(c.answer)}{askingAI && i === conversations.length - 1 && <span className="inline-block w-[2px] h-[13px] bg-blue-400 ml-0.5 animate-pulse" />}</>
                       : <span className="flex items-center gap-2 text-slate-500">
                           <span className="spinner" style={{ width: 12, height: 12, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }} />
-                          L'assistant rédige{attenteIA > 2 ? ` · ${attenteIA} s` : '…'}
-                          {attenteIA > 4 && (
-                            <button
-                              onClick={() => abortIA.current?.abort()}
-                              className="border-none bg-transparent p-0 text-[12px] font-semibold text-slate-500 underline cursor-pointer hover:text-slate-700"
-                            >
-                              Abandonner
-                            </button>
-                          )}
+                          L'assistant rédige…
                         </span>
                     }
                     {c.date && <div className="text-[10px] text-slate-500 mt-1.5">{c.date}</div>}
@@ -1130,9 +1129,16 @@ export default function ScanResultsPage() {
             placeholder="Poser une question sur votre rapport…"
             className="flex-1 min-w-0 px-4 py-[11px] rounded-[var(--cg-radius)] border border-slate-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
           />
-          <Button variant="primary" icon={askingAI ? null : Icons.send} onClick={handleAskAI} disabled={askingAI}>
-            {askingAI ? <><span className="spinner mr-2" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />En cours…</> : 'Envoyer'}
-          </Button>
+          {askingAI ? (
+            <Button variant="secondary" onClick={() => abortIA.current?.abort()} className="flex-shrink-0">
+              <Square size={12} strokeWidth={3} fill="currentColor" />
+              Arrêter
+            </Button>
+          ) : (
+            <Button variant="primary" icon={Icons.send} onClick={handleAskAI} disabled={!question.trim()} className="flex-shrink-0">
+              Envoyer
+            </Button>
+          )}
         </div>
 
         <div className="flex gap-1.5 mt-2.5 flex-wrap">
