@@ -58,6 +58,23 @@ export default function AdminPage() {
     setLoading(null)
   }
 
+  /* Export des candidatures en attente : un administrateur qui instruit un
+     dossier travaille souvent hors de l'écran, et le point-virgule est le
+     séparateur attendu par les tableurs configurés en français. */
+  const exporterCandidatures = () => {
+    const champs = ['Nom', 'CNI', 'Niveau', 'Spécialité', 'Date de dépôt']
+    const echapper = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const lignes = pending.map((e) => [e.name, e.cni, e.level, e.specialty, e.date].map(echapper).join(';'))
+    // BOM en tête, sans quoi Excel lit les accents de travers
+    const csv = String.fromCharCode(0xFEFF) + [champs.join(';'), ...lignes].join(String.fromCharCode(13, 10))
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    const lien = document.createElement('a')
+    lien.href = url
+    lien.download = `candidatures-experts-${new Date().toISOString().slice(0, 10)}.csv`
+    lien.click()
+    URL.revokeObjectURL(url)
+  }
+
   const handleApprove = async (id) => {
     setLoading(id + '-approve')
     try { await adminAPI.approveExpert(id) } catch {}
@@ -140,10 +157,10 @@ export default function AdminPage() {
       <Card className="p-4 sm:p-[22px_26px]">
         <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
           <div className="text-[15px] font-semibold">Candidatures en attente</div>
-          <div className="flex gap-2">
-            <Button variant="secondary" size="sm" icon={Icons.filter}>Filtrer</Button>
-            <Button variant="secondary" size="sm" icon={Icons.download}>Exporter</Button>
-          </div>
+          <Button variant="secondary" size="sm" icon={Icons.download}
+            onClick={exporterCandidatures} disabled={pending.length === 0}>
+            Exporter en CSV
+          </Button>
         </div>
 
         <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
@@ -153,7 +170,7 @@ export default function AdminPage() {
               {['Candidat', 'Niveau', 'Spécialité', 'Date', 'Documents', 'Actions'].map((h, i) => (
                 <th
                   key={h}
-                  className="pb-3 text-[11px] font-semibold text-gray-400 uppercase tracking-[0.06em] px-3"
+                  className="pb-3 text-[11px] font-semibold text-gray-500 uppercase tracking-[0.06em] px-3"
                   style={{ textAlign: i >= 4 ? 'center' : 'left' }}
                 >
                   {h}
@@ -169,7 +186,7 @@ export default function AdminPage() {
                     <Avatar name={e.name} color="#6B7280" size={34} />
                     <div>
                       <div className="text-[13.5px] font-medium whitespace-nowrap">{e.name}</div>
-                      <div className="text-[11px] text-gray-400 font-mono whitespace-nowrap">CNI {e.cni}</div>
+                      <div className="text-[11px] text-gray-500 font-mono whitespace-nowrap">CNI {e.cni}</div>
                     </div>
                   </div>
                 </td>
@@ -208,7 +225,7 @@ export default function AdminPage() {
             ))}
             {pending.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-10 text-center text-gray-400 text-[13px]">
+                <td colSpan={6} className="py-10 text-center text-gray-500 text-[13px]">
                   Aucune candidature en attente
                 </td>
               </tr>
@@ -226,7 +243,7 @@ export default function AdminPage() {
           <thead>
             <tr className="border-b border-gray-200">
               {['Expert', 'Spécialité', 'Missions', 'Action'].map((h, i) => (
-                <th key={h} className="pb-3 text-[11px] font-semibold text-gray-400 uppercase tracking-[0.06em] px-3"
+                <th key={h} className="pb-3 text-[11px] font-semibold text-gray-500 uppercase tracking-[0.06em] px-3"
                   style={{ textAlign: i === 3 ? 'center' : 'left' }}>
                   {h}
                 </th>
@@ -241,7 +258,7 @@ export default function AdminPage() {
                     <Avatar name={e.name} color={e.color} size={34} />
                     <div>
                       <div className="text-[13.5px] font-medium whitespace-nowrap">{e.name}</div>
-                      <div className="text-[11px] text-gray-400">{e.email}</div>
+                      <div className="text-[11px] text-gray-500">{e.email}</div>
                     </div>
                   </div>
                 </td>
@@ -262,7 +279,7 @@ export default function AdminPage() {
             ))}
             {approved.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-10 text-center text-gray-400 text-[13px]">
+                <td colSpan={4} className="py-10 text-center text-gray-500 text-[13px]">
                   Aucun expert validé
                 </td>
               </tr>
@@ -280,7 +297,7 @@ export default function AdminPage() {
           <thead>
             <tr className="border-b border-gray-200">
               {['Utilisateur', 'Rôle', 'Scans', 'Statut', 'Action'].map((h, i) => (
-                <th key={h} className="pb-3 text-[11px] font-semibold text-gray-400 uppercase tracking-[0.06em] px-3"
+                <th key={h} className="pb-3 text-[11px] font-semibold text-gray-500 uppercase tracking-[0.06em] px-3"
                   style={{ textAlign: i >= 3 ? 'center' : 'left' }}>
                   {h}
                 </th>
@@ -296,7 +313,7 @@ export default function AdminPage() {
                     <Avatar name={u.name} color="#6B7280" size={34} />
                     <div>
                       <div className="text-[13.5px] font-medium whitespace-nowrap">{u.name}</div>
-                      <div className="text-[11px] text-gray-400">{u.email}</div>
+                      <div className="text-[11px] text-gray-500">{u.email}</div>
                     </div>
                   </div>
                 </td>

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { scanAPI } from '../lib/api'
-import { Card, PageHeader, RelativeTime, toast, SkeletonCard, ScoreDelta } from '../components/ui'
+import { Card, PageHeader, RelativeTime, toast, SkeletonCard, ScoreDelta, ServeurInjoignable } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 
 const STATUS_MAP = {
@@ -83,6 +83,7 @@ export default function ScanListPage() {
   const navigate = useNavigate()
   const [scans, setScans]           = useState([])
   const [loading, setLoading]       = useState(true)
+  const [horsLigne, setHorsLigne]   = useState(false)
   const [search, setSearch]         = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [tri, setTri]         = useState({ cle: 'date', sens: 'desc' })
@@ -94,8 +95,8 @@ export default function ScanListPage() {
   const loadScans = useCallback(() => {
     setLoading(true)
     scanAPI.list()
-      .then((res) => setScans(res.data || []))
-      .catch(() => setScans([]))
+      .then((res) => { setScans(res.data || []); setHorsLigne(false) })
+      .catch(() => { setScans([]); setHorsLigne(true) })
       .finally(() => setLoading(false))
   }, [])
 
@@ -208,7 +209,7 @@ export default function ScanListPage() {
       <Card className="p-4 sm:p-[22px_26px]">
         {/* Search */}
         <div className="relative mb-5">
-          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500">
             {cloneIcon(Icons.search, { size: 16, color: 'currentColor' })}
           </div>
           <input
@@ -223,6 +224,8 @@ export default function ScanListPage() {
           <div className="space-y-3">
             {[1,2,3].map(i => <SkeletonCard key={i} lines={1} />)}
           </div>
+        ) : horsLigne ? (
+          <ServeurInjoignable quoi="vos scans" onReessayer={loadScans} />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: '#EFF6FF' }}>
@@ -232,7 +235,7 @@ export default function ScanListPage() {
               {search ? 'Aucun résultat pour cette recherche' : 'Aucun scan effectué'}
             </div>
             {!search && (
-              <div className="text-sm text-gray-400">Lancez votre premier scan depuis le dashboard.</div>
+              <div className="text-sm text-gray-500">Lancez votre premier scan depuis le dashboard.</div>
             )}
           </div>
         ) : (
@@ -252,7 +255,7 @@ export default function ScanListPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-[13.5px] font-semibold font-mono truncate">{scan.target}</div>
-                      <div className="text-[11px] text-gray-400">
+                      <div className="text-[11px] text-gray-500">
                         {scan.typeLabel} · <RelativeTime date={scan.date} />
                       </div>
                     </div>
@@ -264,7 +267,7 @@ export default function ScanListPage() {
                         {delta !== null && <ScoreDelta value={delta} />}
                       </div>
                     ) : (
-                      <span className="text-xs text-gray-400 flex-shrink-0">—</span>
+                      <span className="text-xs text-gray-500 flex-shrink-0">—</span>
                     )}
                   </div>
 
@@ -295,7 +298,7 @@ export default function ScanListPage() {
                   {COLONNES.map((c, i) => (
                     <th
                       key={i}
-                      className="pb-3 text-[10.5px] font-bold text-gray-400 uppercase tracking-[0.08em]"
+                      className="pb-3 text-[10.5px] font-bold text-gray-500 uppercase tracking-[0.08em]"
                       style={{ textAlign: c.align }}
                     >
                       {c.tri ? (
@@ -335,7 +338,7 @@ export default function ScanListPage() {
                             title={scan.target}>
                             {scan.target}
                           </div>
-                          <div className="text-[11px] text-gray-400">{scan.typeLabel}</div>
+                          <div className="text-[11px] text-gray-500">{scan.typeLabel}</div>
                         </div>
                       </div>
                     </td>
@@ -354,7 +357,7 @@ export default function ScanListPage() {
                           )}
                         </div>
                       ) : (
-                        <span className="text-xs text-gray-400">—</span>
+                        <span className="text-xs text-gray-500">—</span>
                       )}
                     </td>
 
@@ -379,7 +382,7 @@ export default function ScanListPage() {
                     </td>
 
                     {/* Date */}
-                    <td className="py-3.5 text-center text-xs text-slate-400">
+                    <td className="py-3.5 text-center text-xs text-slate-500">
                       <RelativeTime date={scan.date} />
                     </td>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authAPI , statsAPI } from '../lib/api'
+import { ouvrirSession } from '../lib/session'
 import { Button, LabeledInput } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 
@@ -38,8 +39,7 @@ export default function RegisterPage() {
     try {
       const res = await authAPI.register(form.email, form.name, form.password, 'client')
       const { access_token, user } = res.data
-      localStorage.setItem('cg-token', access_token)
-      localStorage.setItem('cg-user', JSON.stringify(user))
+      ouvrirSession(access_token, user, true)
       navigate(HOME_BY_ROLE[user.role] || '/dashboard')
     } catch (err) {
       if (err.response?.status === 400) {
@@ -154,7 +154,7 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowPwd(!showPwd)}
-                className="bg-transparent border-none cursor-pointer p-1 text-gray-400 hover:text-gray-600"
+                className="bg-transparent border-none cursor-pointer p-1 text-gray-500 hover:text-gray-600"
               >
                 {cloneIcon(Icons.eye, { size: 16, color: 'currentColor' })}
               </button>

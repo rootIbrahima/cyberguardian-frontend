@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ASSET_TYPES } from '../lib/constants'
-import { scanAPI } from '../lib/api'
-import { Button } from './ui'
+import { scanAPI, messageErreur } from '../lib/api'
+import { Button, toast } from './ui'
 import { cloneIcon, Icons } from './Icons'
 
 const TYPE_ICONS = {
@@ -27,18 +27,16 @@ export default function ScanForm() {
     setLoading(true)
     setError('')
 
-    let scanId = 'demo'
     try {
       const res = await scanAPI.launch(input.trim(), assetType)
-      scanId = res.data?.id ?? 'demo'
-    } catch {
-      /* demo mode, no backend */
+      navigate(`/scan-progress/${res.data.id}`, {
+        state: { target: input.trim(), assetType },
+      })
+    } catch (err) {
+      setError(messageErreur(err, "Analyse impossible : le serveur n'a pas répondu."))
+      toast.error(messageErreur(err, "Analyse impossible : le serveur n'a pas répondu."))
+      setLoading(false)
     }
-
-    setLoading(false)
-    navigate(`/scan-progress/${scanId}`, {
-      state: { target: input.trim(), assetType },
-    })
   }
 
   return (
@@ -100,9 +98,8 @@ export default function ScanForm() {
           className="accent-blue-700 w-4 h-4"
         />
         <span>
-          Je confirme être <strong>légalement autorisé</strong> à scanner cet actif et j'accepte les{' '}
-          <a href="#" className="text-blue-700 hover:underline">conditions d'utilisation</a>
-          {' '}(Loi sénégalaise 2008-11 sur la cybercriminalité).
+          Je confirme être <strong>légalement autorisé</strong> à scanner cet actif, conformément
+          à la loi sénégalaise 2008-11 sur la cybercriminalité.
         </span>
       </label>
     </div>

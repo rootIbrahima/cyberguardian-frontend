@@ -5,6 +5,7 @@ import { Menu, X } from 'lucide-react'
 import { cloneIcon, Icons } from './Icons'
 import { Avatar, Button } from './ui'
 import { messageAPI, adminAPI } from '../lib/api'
+import { fermerSession, lireUtilisateur } from '../lib/session'
 
 /* ─── Nav definitions per role ─── */
 const NAV_BY_ROLE = {
@@ -85,7 +86,7 @@ export default function Sidebar({ collapsed = false, onToggle, mobile = false, o
   const [unread, setUnread]               = useState(0)
   const [confirmLogout, setConfirmLogout] = useState(false)
 
-  const user = JSON.parse(localStorage.getItem('cg-user') || '{"name":"Ibrahima LY","role":"client"}')
+  const user = lireUtilisateur()
   const role = (user.role || 'client').toLowerCase()
   const nav  = NAV_BY_ROLE[role] || NAV_BY_ROLE.client
 
@@ -127,8 +128,7 @@ export default function Sidebar({ collapsed = false, onToggle, mobile = false, o
 
   const handleLogout = () => {
     setConfirmLogout(false)
-    localStorage.removeItem('cg-token')
-    localStorage.removeItem('cg-user')
+    fermerSession()
     navigate('/login')
   }
 

@@ -77,7 +77,7 @@ export default function ExpertsPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 text-gray-400 text-sm">
+        <div className="text-center py-16 text-gray-500 text-sm">
           Aucun expert trouvé pour ces critères.
         </div>
       )}

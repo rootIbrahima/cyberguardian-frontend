@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, Settings, AlertCircle, AlertTriangle, Info, Minus,
+import { Bell, Settings, AlertCircle, AlertTriangle, Info, Minus, RotateCw,
          CheckCircle2, XCircle, Copy, Check, TrendingUp, TrendingDown } from 'lucide-react'
 import { cloneIcon } from './Icons'
 import { notificationAPI } from '../lib/api'
@@ -96,7 +96,7 @@ export function Card({ children, className = '', style, ...props }) {
    BUTTON : variantes alignées sur la palette brief
 ══════════════════════════════════════════════════════════ */
 const BTN_VARIANTS = {
-  primary:   'bg-[#1F5C99] text-white border-transparent hover:bg-[#1a4f87] disabled:bg-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed',
+  primary:   'bg-[#1F5C99] text-white border-transparent hover:bg-[#1a4f87] disabled:bg-slate-300 disabled:text-slate-500 disabled:cursor-not-allowed',
   secondary: 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed',
   ghost:     'bg-transparent text-[#1F5C99] border-transparent hover:bg-blue-50 disabled:opacity-50',
   danger:    'bg-white text-[#991B1B] border-red-200 hover:bg-red-50 disabled:opacity-50',
@@ -149,7 +149,7 @@ export function LabeledInput({ label, icon, value, onChange, placeholder, type =
       </label>
       <div className="relative flex items-center">
         {icon && (
-          <div className="absolute left-3.5 text-slate-400">
+          <div className="absolute left-3.5 text-slate-500">
             {cloneIcon(icon, { size: 16, color: 'currentColor' })}
           </div>
         )}
@@ -241,7 +241,7 @@ function NotificationBell() {
             </div>
             <div className="max-h-[360px] overflow-auto">
               {items.length === 0 ? (
-                <div className="px-4 py-8 text-center text-[12.5px] text-slate-400">
+                <div className="px-4 py-8 text-center text-[12.5px] text-slate-500">
                   Aucune notification
                 </div>
               ) : (
@@ -260,7 +260,7 @@ function NotificationBell() {
                         {n.title}
                       </span>
                       {n.body && (
-                        <span className="block text-[11px] text-slate-400 truncate">{n.body}</span>
+                        <span className="block text-[11px] text-slate-500 truncate">{n.body}</span>
                       )}
                     </span>
                   </button>
@@ -442,7 +442,7 @@ export function CopyValue({ value, label, className = '' }) {
       >
         {copied
           ? <Check size={12} strokeWidth={2.5} className="text-green-600" />
-          : <Copy size={12} strokeWidth={2} className="text-slate-400" />
+          : <Copy size={12} strokeWidth={2} className="text-slate-500" />
         }
       </button>
     </span>
@@ -523,7 +523,7 @@ export function Toaster() {
 export function ScoreDelta({ value }) {
   if (!value) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-slate-400 font-mono">
+      <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-slate-500 font-mono">
         <Minus size={10} strokeWidth={2.5} />
         0
       </span>
@@ -538,6 +538,35 @@ export function ScoreDelta({ value }) {
       {up ? <TrendingUp size={12} strokeWidth={2.5} /> : <TrendingDown size={12} strokeWidth={2.5} />}
       {up ? '+' : ''}{value}
     </span>
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   SERVEUR INJOIGNABLE
+   Distingue « rien à afficher » de « impossible de charger ».
+   Une liste vide annoncée pendant une panne laisse croire à une
+   perte de données ; l'utilisateur doit savoir laquelle des deux.
+══════════════════════════════════════════════════════════ */
+export function ServeurInjoignable({ quoi = 'les données', onReessayer }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl" style={{ background: '#FEF2F2' }}>
+        <AlertTriangle size={22} strokeWidth={2} style={{ color: '#991B1B' }} />
+      </div>
+      <div className="text-[14px] font-semibold text-slate-700">Serveur injoignable</div>
+      <p className="max-w-sm text-[12.5px] leading-relaxed text-slate-500">
+        Impossible de charger {quoi}. Rien n'est perdu : c'est le serveur qui ne répond pas.
+      </p>
+      {onReessayer && (
+        <button
+          onClick={onReessayer}
+          className="mt-1 inline-flex items-center gap-1.5 rounded-[var(--cg-radius)] border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+        >
+          <RotateCw size={13} strokeWidth={2} />
+          Réessayer
+        </button>
+      )}
+    </div>
   )
 }
 

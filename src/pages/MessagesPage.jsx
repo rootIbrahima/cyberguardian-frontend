@@ -4,6 +4,7 @@ import { cloneIcon, Icons } from '../components/Icons'
 import MessageThread from '../components/MessageThread'
 import { messageAPI } from '../lib/api'
 import useMobile from '../lib/useMobile'
+import { lireUtilisateur } from '../lib/session'
 
 const POLL_INTERVAL = 5000
 
@@ -65,7 +66,7 @@ export default function MessagesPage() {
       <PageHeader
         title="Messagerie"
         subtitle={
-          (JSON.parse(localStorage.getItem('cg-user') || '{}').role || 'client') === 'admin'
+          (lireUtilisateur().role || 'client') === 'admin'
             ? 'Supervision des conversations client-expert, lecture seule'
             : 'Vos échanges avec les experts'
         }
@@ -117,9 +118,9 @@ export default function MessagesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between gap-2">
                       <div className="text-[13.5px] font-semibold truncate">{c.expert.name}</div>
-                      <div className="text-[11px] text-gray-400 flex-shrink-0">{c.last}</div>
+                      <div className="text-[11px] text-gray-500 flex-shrink-0">{c.last}</div>
                     </div>
-                    <div className="text-[11.5px] text-gray-400 font-mono mt-px truncate">{c.subject}</div>
+                    <div className="text-[11.5px] text-gray-500 font-mono mt-px truncate">{c.subject}</div>
                     <div className="flex justify-between items-center mt-1 gap-1.5">
                       <div className="text-xs text-gray-500 truncate flex-1">{c.preview}</div>
                       {c.unread > 0 && (
@@ -133,7 +134,7 @@ export default function MessagesPage() {
               )
             })}
             {loaded && filtered.length === 0 && (
-              <div className="py-12 px-5 text-center text-gray-400 text-xs">
+              <div className="py-12 px-5 text-center text-gray-500 text-xs">
                 {search ? 'Aucune conversation trouvée'
                         : 'Aucune conversation. Contactez un expert depuis la page Experts pour démarrer.'}
               </div>
@@ -168,7 +169,7 @@ export default function MessagesPage() {
               </p>
             </div>
             <div className="mt-1 rounded-[var(--cg-radius)] border border-slate-200 bg-white px-4 py-3 text-left">
-              <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-500">
                 Accès progressif au rapport
               </div>
               <ul className="mt-2 flex flex-col gap-1 text-[12px] text-slate-600">

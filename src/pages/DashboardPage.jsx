@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ScanForm from '../components/ScanForm'
 import ScoreCard from '../components/ScoreCard'
-import { Card, Badge, Button, PageHeader, Avatar, Skeleton, RelativeTime } from '../components/ui'
+import { Card, Badge, Button, PageHeader, Avatar, Skeleton, RelativeTime, ServeurInjoignable } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 import { scanAPI, adminAPI, messageAPI } from '../lib/api'
+import { lireUtilisateur } from '../lib/session'
 
 const STATUS_MAP = {
   completed: { label: 'Terminé',  bg: '#D1FAE5', color: '#059669' },
@@ -65,7 +66,7 @@ function ScanRow({ scan }) {
           </div>
           <div className="min-w-0">
             <div className="text-[13px] font-medium font-mono text-slate-800 truncate max-w-[150px] sm:max-w-none">{scan.target}</div>
-            <div className="text-[11px] text-slate-400">{scan.typeLabel || scan.type}</div>
+            <div className="text-[11px] text-slate-500">{scan.typeLabel || scan.type}</div>
           </div>
         </div>
       </td>
@@ -75,7 +76,7 @@ function ScanRow({ scan }) {
             {scan.score}/{scoreMax}
           </span>
         ) : (
-          <span className="text-xs text-slate-400">—</span>
+          <span className="text-xs text-slate-500">—</span>
         )}
       </td>
       <td className="py-3 text-center hidden sm:table-cell">
@@ -88,7 +89,7 @@ function ScanRow({ scan }) {
         </span>
       </td>
       <td className="py-3 text-right">
-        <RelativeTime date={scan.date} className="text-xs text-slate-400" />
+        <RelativeTime date={scan.date} className="text-xs text-slate-500" />
       </td>
     </tr>
   )
@@ -111,7 +112,7 @@ function ExpertMissions({ conversations }) {
         <Button variant="ghost" size="sm" onClick={() => navigate('/messages')}>Voir messages →</Button>
       </div>
       {missions.length === 0 ? (
-        <div className="py-8 text-center text-gray-400 text-sm">Aucune mission active pour le moment</div>
+        <div className="py-8 text-center text-gray-500 text-sm">Aucune mission active pour le moment</div>
       ) : (
         <div className="flex flex-col gap-2.5">
           {missions.map((c) => (
@@ -144,18 +145,19 @@ function ExpertMissions({ conversations }) {
 
 export default function DashboardPage() {
   const navigate = useNavigate()
-  const user = JSON.parse(localStorage.getItem('cg-user') || '{}')
+  const user = lireUtilisateur()
   const role = (user.role || 'client').toLowerCase()
 
   const [scans, setScans]     = useState([])
   const [loading, setLoading] = useState(true)
+  const [horsLigne, setHorsLigne] = useState(false)
   const [stats, setStats]     = useState(null)         // admin uniquement
   const [convs, setConvs]     = useState([])           // expert uniquement
 
   useEffect(() => {
     scanAPI.list()
-      .then((res) => setScans(res.data || []))
-      .catch(() => setScans([]))
+      .then((res) => { setScans(res.data || []); setHorsLigne(false) })
+      .catch(() => { setScans([]); setHorsLigne(true) })
       .finally(() => setLoading(false))
 
     if (role === 'admin') {
@@ -286,11 +288,13 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+          ) : horsLigne ? (
+            <ServeurInjoignable quoi="vos scans" onReessayer={() => window.location.reload()} />
           ) : displayScans.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-2">
               <div className="text-gray-300 text-4xl mb-1">{cloneIcon(Icons.scan, { size: 36, color: '#D1D5DB' })}</div>
               <div className="text-sm font-medium text-gray-500">Aucun scan effectué</div>
-              <div className="text-xs text-gray-400">Lancez votre premier scan depuis le formulaire ci-dessus.</div>
+              <div className="text-xs text-gray-500">Lancez votre premier scan depuis le formulaire ci-dessus.</div>
             </div>
           ) : (
             <table className="w-full border-collapse">
@@ -299,7 +303,7 @@ export default function DashboardPage() {
                   {['Cible', 'Score', 'Statut', 'Date'].map((h, i) => (
                     <th
                       key={h}
-                      className={`pb-2.5 text-[10.5px] font-bold text-gray-400 uppercase tracking-[0.08em] ${i === 2 ? 'hidden sm:table-cell' : ''}`}
+                      className={`pb-2.5 text-[10.5px] font-bold text-gray-500 uppercase tracking-[0.08em] ${i === 2 ? 'hidden sm:table-cell' : ''}`}
                       style={{ textAlign: i === 0 ? 'left' : i === 3 ? 'right' : 'center' }}
                     >
                       {h}

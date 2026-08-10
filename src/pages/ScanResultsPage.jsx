@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { Card, Badge, Button, PageHeader, SeverityBadge, Skeleton, RelativeTime, CopyValue, toast } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 import { scanAPI, API_BASE } from '../lib/api'
+import { lireJeton } from '../lib/session'
 
 /* ─── Markdown renderer (LLM responses) ─── */
 function parseBold(text) {
@@ -133,13 +134,13 @@ function GitHubSection({ scan }) {
   ].filter((t) => t.show !== false)
 
   const EmptyState = ({ msg }) => (
-    <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-400">
+    <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-500">
       {cloneIcon(Icons.checkCircle, { size: 28, color: '#10B981' })}
       <span className="text-sm">{msg}</span>
     </div>
   )
   const ErrState = ({ err }) => (
-    <div className="text-xs text-slate-400 bg-slate-50 rounded-[var(--cg-radius)] p-4 font-mono">{err}</div>
+    <div className="text-xs text-slate-500 bg-slate-50 rounded-[var(--cg-radius)] p-4 font-mono">{err}</div>
   )
   const NaState = ({ note }) => {
     const detectedLang = (results.langage || info.language || '').trim()
@@ -205,7 +206,7 @@ function GitHubSection({ scan }) {
         banditNote ? <NaState note={banditNote} /> :
         bandit.length === 0 ? <EmptyState msg={`Aucune vulnérabilité détectée${banditLoc ? `, ${banditLoc} lignes analysées` : ''}`} /> :
         <div className="flex flex-col gap-3">
-          {banditLoc > 0 && <div className="text-[11px] text-slate-400 mb-1">{banditLoc} lignes de code analysées</div>}
+          {banditLoc > 0 && <div className="text-[11px] text-slate-500 mb-1">{banditLoc} lignes de code analysées</div>}
           {bandit.map((f, i) => (
             <div key={i} className="p-3.5 rounded-[9px]"
               style={{ background: '#FEF2F2', border: '1px solid #FEE2E2' }}>
@@ -213,7 +214,7 @@ function GitHubSection({ scan }) {
                 <span className="text-[13px] font-semibold text-slate-900">{f.issue}</span>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <SeverityBadge level={f.severity} />
-                  {f.cwe && <span className="text-[10px] text-slate-400 font-mono">{f.cwe}</span>}
+                  {f.cwe && <span className="text-[10px] text-slate-500 font-mono">{f.cwe}</span>}
                 </div>
               </div>
               <div className="font-mono text-[11px] text-slate-500 mb-1.5">
@@ -242,7 +243,7 @@ function GitHubSection({ scan }) {
           } />
         ) : (
           <div className="flex flex-col gap-3">
-            {safetyFile && <div className="text-[11px] text-slate-400 mb-1">{safetyFile} · {safetyPkg} dépendances</div>}
+            {safetyFile && <div className="text-[11px] text-slate-500 mb-1">{safetyFile} · {safetyPkg} dépendances</div>}
             {(() => {
               const PRIO_COLOR = { 'URGENTE': '#DC2626', 'ÉLEVÉE': '#EA580C', 'À SURVEILLER': '#CA8A04', 'FAIBLE': '#6B7280' }
               const PRIO_RANK  = { 'URGENTE': 0, 'ÉLEVÉE': 1, 'À SURVEILLER': 2, 'FAIBLE': 3 }
@@ -268,11 +269,11 @@ function GitHubSection({ scan }) {
                   </div>
                   <div className="text-xs text-slate-600">{f.desc}</div>
                   <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-slate-500">
                       → <span className="font-mono">pip install {f.package} --upgrade</span>
                     </span>
                     {f.epss != null && (
-                      <span className="text-[10.5px] text-slate-400 font-mono"
+                      <span className="text-[10.5px] text-slate-500 font-mono"
                         title="Probabilité d'exploitation dans les 30 jours (EPSS, FIRST.org)">
                         EPSS {(f.epss * 100).toFixed(1)}%
                       </span>
@@ -316,7 +317,7 @@ function GitHubSection({ scan }) {
                     <SeverityBadge level={lvl} />
                   </div>
                   <div className="text-xs text-slate-700 mb-1">{f.issue}</div>
-                  {f.range && <div className="text-[11px] text-slate-400 font-mono">Versions affectées : {f.range}</div>}
+                  {f.range && <div className="text-[11px] text-slate-500 font-mono">Versions affectées : {f.range}</div>}
                   {f.fix && <div className="text-[11px] text-green-600 mt-1 font-semibold">→ Correctif disponible : npm audit fix</div>}
                 </div>
               )
@@ -434,7 +435,7 @@ export default function ScanResultsPage() {
         method:  'POST',
         headers: {
           'Content-Type':  'application/json',
-          Authorization:   `Bearer ${localStorage.getItem('cg-token') || ''}`,
+          Authorization:   `Bearer ${lireJeton() || ''}`,
         },
         body:    JSON.stringify({ question: q }),
       })
@@ -557,7 +558,7 @@ export default function ScanResultsPage() {
           {cloneIcon(Icons.scan, { size: 24, color: '#1F5C99' })}
         </div>
         <div className="text-slate-700 font-semibold">Aucun scan disponible</div>
-        <div className="text-[13px] text-slate-400 text-center max-w-xs">
+        <div className="text-[13px] text-slate-500 text-center max-w-xs">
           Lancez votre premier scan depuis le dashboard pour voir les résultats ici.
         </div>
         <Button variant="primary" onClick={() => navigate('/dashboard')} className="mt-1">
@@ -594,7 +595,7 @@ export default function ScanResultsPage() {
             <span className="text-[30px] font-bold font-mono tracking-[-0.03em]" style={{ color: scoreColor }}>
               {score}
             </span>
-            <span className="text-[10px] text-slate-400">/ {scoreMax}</span>
+            <span className="text-[10px] text-slate-500">/ {scoreMax}</span>
           </div>
         </div>
 
@@ -620,16 +621,16 @@ export default function ScanResultsPage() {
           <div className="flex gap-6 mt-3.5 text-xs flex-wrap">
             {!isGithub && (
               <>
-                <div><span className="text-slate-400">Problèmes</span> <strong className="font-mono ml-1" style={{ color: '#EF4444' }}>{scan?.vulns ?? 0}</strong></div>
-                <div><span className="text-slate-400">CVE</span> <strong className="font-mono ml-1" style={{ color: '#F59E0B' }}>{scan?.cve ?? 0}</strong></div>
+                <div><span className="text-slate-500">Problèmes</span> <strong className="font-mono ml-1" style={{ color: '#EF4444' }}>{scan?.vulns ?? 0}</strong></div>
+                <div><span className="text-slate-500">CVE</span> <strong className="font-mono ml-1" style={{ color: '#F59E0B' }}>{scan?.cve ?? 0}</strong></div>
               </>
             )}
             {isGithub && (
               <>
-                <div><span className="text-slate-400">Bandit</span> <strong className="font-mono ml-1 text-red-500">{scan?.results?.bandit?.findings?.length ?? 0}</strong></div>
-                <div><span className="text-slate-400">Safety CVE</span> <strong className="font-mono ml-1 text-orange-500">{scan?.results?.safety?.findings?.length ?? 0}</strong></div>
-                <div><span className="text-slate-400">Secrets</span> <strong className="font-mono ml-1" style={{ color: '#8B5CF6' }}>{scan?.results?.trufflehog?.findings?.length ?? 0}</strong></div>
-                <div><span className="text-slate-400">Langue</span> <strong className="font-mono ml-1 text-blue-600">{scan?.results?.langage || scan?.results?.github_info?.language || '—'}</strong></div>
+                <div><span className="text-slate-500">Bandit</span> <strong className="font-mono ml-1 text-red-500">{scan?.results?.bandit?.findings?.length ?? 0}</strong></div>
+                <div><span className="text-slate-500">Safety CVE</span> <strong className="font-mono ml-1 text-orange-500">{scan?.results?.safety?.findings?.length ?? 0}</strong></div>
+                <div><span className="text-slate-500">Secrets</span> <strong className="font-mono ml-1" style={{ color: '#8B5CF6' }}>{scan?.results?.trufflehog?.findings?.length ?? 0}</strong></div>
+                <div><span className="text-slate-500">Langue</span> <strong className="font-mono ml-1 text-blue-600">{scan?.results?.langage || scan?.results?.github_info?.language || '—'}</strong></div>
               </>
             )}
           </div>
@@ -664,7 +665,7 @@ export default function ScanResultsPage() {
             {(() => {
               const ssl       = scan?.results?.ssl
               const breakdown = scan?.results?.score_detail?.breakdown ?? []
-              if (!ssl && breakdown.length === 0) return <div className="text-sm text-slate-400">Données non disponibles.</div>
+              if (!ssl && breakdown.length === 0) return <div className="text-sm text-slate-500">Données non disponibles.</div>
 
               const barColor = (pct) => pct >= 80 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444'
 
@@ -711,7 +712,7 @@ export default function ScanResultsPage() {
                             <span className="text-slate-500 font-medium">{r.label}</span>
                             <div className="text-right">
                               <span className="font-mono font-semibold text-slate-800">{r.value}</span>
-                              <span className="text-slate-400 ml-2 text-[11px]">{r.detail}</span>
+                              <span className="text-slate-500 ml-2 text-[11px]">{r.detail}</span>
                             </div>
                           </div>
                         ))}
@@ -752,7 +753,7 @@ export default function ScanResultsPage() {
                               <SeverityBadge level={iss.severity} />
                             </div>
                             <div className="text-xs text-slate-600 leading-relaxed">{iss.desc}</div>
-                            <div className="text-[10.5px] text-slate-400 mt-1.5 font-mono">{iss.tool}</div>
+                            <div className="text-[10.5px] text-slate-500 mt-1.5 font-mono">{iss.tool}</div>
                           </div>
                         )
                       })}
@@ -816,7 +817,7 @@ export default function ScanResultsPage() {
                       <SeverityBadge level={cve.severity} />
                     </div>
                   </div>
-                  <div className="mt-1.5 flex items-center gap-2.5 font-mono text-[11px] text-slate-400">
+                  <div className="mt-1.5 flex items-center gap-2.5 font-mono text-[11px] text-slate-500">
                     <span>{cve.id}</span>
                     {cve.epss != null && (
                       <span title="Probabilité d'exploitation dans les 30 jours (EPSS, FIRST.org)">
@@ -1077,9 +1078,9 @@ export default function ScanResultsPage() {
                     style={{ background: '#F3F8FD', border: '1px solid #E8F1FA' }}>
                     {c.answer
                       ? <>{renderMd(c.answer)}{askingAI && i === conversations.length - 1 && <span className="inline-block w-[2px] h-[13px] bg-blue-400 ml-0.5 animate-pulse" />}</>
-                      : <span className="flex items-center gap-1.5 text-slate-400"><span className="spinner" style={{ width: 12, height: 12, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }} />Analyse en cours…</span>
+                      : <span className="flex items-center gap-1.5 text-slate-500"><span className="spinner" style={{ width: 12, height: 12, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }} />Analyse en cours…</span>
                     }
-                    {c.date && <div className="text-[10px] text-slate-400 mt-1.5">{c.date}</div>}
+                    {c.date && <div className="text-[10px] text-slate-500 mt-1.5">{c.date}</div>}
                   </div>
                 </div>
               </div>

@@ -75,6 +75,7 @@ export default function ScanProgressPage() {
   const [phase, setPhase]     = useState('scan')
   const [elapsed, setElapsed] = useState(0)
   const [apiDone, setApiDone] = useState(false)
+  const [echec, setEchec]     = useState('')
 
   const pollRef   = useRef(null)
   const timerRef  = useRef(null)
@@ -117,37 +118,48 @@ export default function ScanProgressPage() {
       const reportTool = relevantTools.find((t) => t.group === 'report')
       if (reportTool) {
         setToolStatuses((prev) => ({ ...prev, [reportTool.name]: 'running' }))
-        setTimeout(() => {
-          setToolStatuses((prev) => ({ ...prev, [reportTool.name]: 'done' }))
-          setPhase('done')
-        }, 2200)
       }
     }, reportOffset))
 
     return () => timeouts.forEach(clearTimeout)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /* État réel du scan côté serveur. Deux secondes : l'analyse dure de quelques
+     dizaines de secondes à plus d'une minute, attendre cinq secondes de plus
+     après la fin serait perceptible. */
   useEffect(() => {
-    if (!id || id === 'demo') return
+    if (!id) return
+    let echecs = 0
     pollRef.current = setInterval(async () => {
       try {
         const res = await scanAPI.status(id)
-        if (res.data?.status === 'completed' || res.data?.status === 'critical') {
-          setApiDone(true)
+        echecs = 0
+        if (res.data?.status === 'completed' || res.data?.status === 'critical') setApiDone(true)
+        if (res.data?.status === 'failed') {
+          setEchec("L'analyse s'est interrompue. La cible est peut-être injoignable.")
+          clearInterval(pollRef.current)
         }
-      } catch { /* backend might not be running */ }
-    }, 5000)
+      } catch {
+        // Quelques échecs consécutifs valent une coupure, pas un hoquet réseau
+        if (++echecs >= 5) {
+          setEchec("Le serveur ne répond plus. L'analyse se poursuit peut-être de son côté.")
+          clearInterval(pollRef.current)
+        }
+      }
+    }, 2000)
     return () => clearInterval(pollRef.current)
   }, [id])
 
+  /* Le serveur a fini : la séquence se referme, puis on bascule sur le rapport */
   useEffect(() => {
-    if (phase === 'done' || apiDone) {
-      const t = setTimeout(() => {
-        navigate(`/scan-results/${id}`, { state: { target, assetType } })
-      }, 800)
-      return () => clearTimeout(t)
-    }
-  }, [phase, apiDone]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!apiDone) return
+    setToolStatuses((prev) => Object.fromEntries(Object.keys(prev).map((k) => [k, 'done'])))
+    setPhase('done')
+    const t = setTimeout(() => {
+      navigate(`/scan-results/${id}`, { state: { target, assetType } })
+    }, 800)
+    return () => clearTimeout(t)
+  }, [apiDone]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const doneCount = Object.values(toolStatuses).filter((s) => s === 'done').length
   const progress  = Math.round((doneCount / relevantTools.length) * 100)
@@ -175,7 +187,7 @@ export default function ScanProgressPage() {
           <div className="ml-auto text-right flex-shrink-0">
             <div className="font-mono text-[13px] text-white">{elapsed}s</div>
             <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              {isGithub ? 'estimé : 20-30s' : 'estimé : 3-5s'}
+              {echec ? 'interrompu' : phase === 'done' ? 'terminé' : 'analyse en cours'}
             </div>
           </div>
         </div>
@@ -238,12 +250,25 @@ export default function ScanProgressPage() {
             <ToolLine key={tool.name} tool={tool} status={toolStatuses[tool.name] || 'pending'} />
           ))}
 
-          {phase === 'report' && (
+          {phase === 'report' && !echec && (
             <div className="mt-3 text-[11px]" style={{ color: '#6AADE6' }}>
               <div className="flex items-center gap-2">
                 <span className="spinner" style={{ width: 10, height: 10, borderTopColor: '#6AADE6', borderColor: 'rgba(106,173,230,0.3)' }} />
-                Génération du rapport d'analyse…
+                Analyse en cours sur le serveur, la durée dépend de la cible…
               </div>
+            </div>
+          )}
+
+          {echec && (
+            <div className="mt-4 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="text-[12px]" style={{ color: '#FCA5A5' }}>{echec}</div>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="mt-3 rounded-lg border px-3 py-1.5 text-[12px] font-semibold"
+                style={{ borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)', background: 'transparent' }}
+              >
+                Revenir au tableau de bord
+              </button>
             </div>
           )}
 

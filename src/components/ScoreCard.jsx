@@ -33,7 +33,7 @@ export default function ScoreCard({ score = 0, breakdown = null, sslScore = null
 
   return (
     <div className="flex flex-col items-center text-center">
-      <div className="text-[11px] font-bold text-gray-400 mb-[18px] uppercase tracking-[0.1em]">Score de sécurité</div>
+      <div className="text-[11px] font-bold text-gray-500 mb-[18px] uppercase tracking-[0.1em]">Score de sécurité</div>
 
       <div className="relative mb-[18px]" style={{ width: 140, height: 140 }}>
         <ScoreRing score={score} size={140} stroke={10} />
@@ -41,7 +41,7 @@ export default function ScoreCard({ score = 0, breakdown = null, sslScore = null
           <span className="font-bold font-mono tracking-[-0.03em]" style={{ fontSize: 36, lineHeight: 1 }}>
             {score}
           </span>
-          <span className="text-[11px] text-gray-400 mt-[-2px]">/ 100</span>
+          <span className="text-[11px] text-gray-500 mt-[-2px]">/ 100</span>
         </div>
       </div>
 
@@ -55,7 +55,7 @@ export default function ScoreCard({ score = 0, breakdown = null, sslScore = null
 
       {bars.length > 0 && (
         <div className="w-full mt-[18px] p-3 rounded-lg bg-gray-50 border border-gray-100 text-left flex flex-col gap-2.5">
-          <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Dernier scan</div>
+          <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Dernier scan</div>
           {bars.map((b) => {
             const pct = (b.pts / b.max) * 100
             const color = pct >= 80 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444'

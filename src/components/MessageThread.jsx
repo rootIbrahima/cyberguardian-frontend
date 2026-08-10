@@ -4,6 +4,7 @@ import { Check, CheckCheck, ChevronLeft, Download, FileText, Paperclip } from 'l
 import { Avatar, Badge, Button, toast } from './ui'
 import { cloneIcon, Icons } from './Icons'
 import { messageAPI, messageErreur } from '../lib/api'
+import { lireUtilisateur } from '../lib/session'
 
 const TYPES_JOINTS = 'image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain'
 const TAILLE_MAX   = 5 * 1024 * 1024
@@ -55,7 +56,7 @@ function PieceJointe({ convId, piece, sombre }) {
         className="block w-full cursor-pointer overflow-hidden rounded-[10px] border-none bg-transparent p-0">
         {apercu
           ? <img src={apercu} alt={piece.nom} className="max-h-[240px] w-full rounded-[10px] object-cover" />
-          : <div className="flex h-24 items-center justify-center rounded-[10px] bg-gray-100 text-[11.5px] text-gray-400">
+          : <div className="flex h-24 items-center justify-center rounded-[10px] bg-gray-100 text-[11.5px] text-gray-500">
               Chargement de l'image…
             </div>}
       </button>
@@ -197,7 +198,7 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
   const dernierId  = useRef(null)   // dernier message connu, pour ne demander que la suite
   const colleEnBas = useRef(true)   // la lecture suit-elle le bas du fil ?
 
-  const role     = (JSON.parse(localStorage.getItem('cg-user') || '{}').role || 'client').toLowerCase()
+  const role     = (lireUtilisateur().role || 'client').toLowerCase()
   const isClient = role === 'client'
   const isAdmin  = role === 'admin'
 
@@ -364,7 +365,7 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
         className="flex-1 overflow-auto p-4 sm:p-6 flex flex-col gap-3.5"
         style={{ background: '#F5F6FA' }}>
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center flex-1 gap-2 text-gray-400">
+          <div className="flex flex-col items-center justify-center flex-1 gap-2 text-gray-500">
             {cloneIcon(Icons.message, { size: 28, color: '#D1D5DB' })}
             <span className="text-[13px]">Aucun message pour le moment</span>
             <span className="text-[11.5px]">
@@ -410,12 +411,12 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
                   )}
                   {m.text}
                 </div>
-                <div className="text-[10.5px] text-gray-400 mt-1 flex items-center gap-1"
+                <div className="text-[10.5px] text-gray-500 mt-1 flex items-center gap-1"
                   style={{ justifyContent: aDroite ? 'flex-end' : 'flex-start', paddingLeft: 4, paddingRight: 4 }}>
                   {m.time}
                   {/* Accusé de lecture, sur ses propres messages uniquement */}
                   {m.lu === true  && <CheckCheck size={13} strokeWidth={2.5} className="text-blue-600" />}
-                  {m.lu === false && <Check      size={13} strokeWidth={2.5} className="text-gray-400" />}
+                  {m.lu === false && <Check      size={13} strokeWidth={2.5} className="text-gray-500" />}
                 </div>
               </div>
             </div>

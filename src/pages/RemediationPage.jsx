@@ -40,7 +40,7 @@ export default function RemediationPage() {
           <thead>
             <tr className="border-b border-gray-200">
               {['Client', 'Dépôt', 'Vulnérabilités', 'Dernier scan', 'Action'].map((h, i) => (
-                <th key={h} className="pb-3 text-[11px] font-semibold text-gray-400 uppercase tracking-[0.06em] px-3"
+                <th key={h} className="pb-3 text-[11px] font-semibold text-gray-500 uppercase tracking-[0.06em] px-3"
                   style={{ textAlign: i >= 2 ? 'center' : 'left' }}>
                   {h}
                 </th>
@@ -55,7 +55,7 @@ export default function RemediationPage() {
                     <Avatar name={r.client} color="#6B7280" size={34} />
                     <div>
                       <div className="text-[13.5px] font-medium">{r.client}</div>
-                      <div className="text-[11px] text-gray-400">{r.email}</div>
+                      <div className="text-[11px] text-gray-500">{r.email}</div>
                     </div>
                   </div>
                 </td>
@@ -69,7 +69,7 @@ export default function RemediationPage() {
                   {r.problemes > 0 ? (
                     <div className="flex flex-col items-center gap-0.5">
                       <Badge color="red">{r.problemes} problème{r.problemes > 1 ? 's' : ''}</Badge>
-                      <span className="text-[10.5px] text-gray-400">
+                      <span className="text-[10.5px] text-gray-500">
                         {r.corrigeables > 0
                           ? `dont ${r.corrigeables} dépendance${r.corrigeables > 1 ? 's' : ''} auto-corrigeable${r.corrigeables > 1 ? 's' : ''}`
                           : (r.secrets > 0 ? 'secret, expert / agent requis' : 'expert / agent requis')}
@@ -96,7 +96,7 @@ export default function RemediationPage() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-12 text-center text-gray-400 text-[13px]">
+                <td colSpan={5} className="py-12 text-center text-gray-500 text-[13px]">
                   Aucun dépôt autorisé pour l'instant, le client autorise la correction depuis ses paramètres.
                 </td>
               </tr>

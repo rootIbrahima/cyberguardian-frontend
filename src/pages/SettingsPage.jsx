@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Card, Badge, Button, PageHeader, Avatar, toast } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 import { authAPI, telegramAPI, githubAPI, messageErreur } from '../lib/api'
+import { lireUtilisateur } from '../lib/session'
 
 const ROLE_LABELS = { client: 'Client', expert: 'Expert validé', admin: 'Administrateur' }
 const ROLE_COLORS = { client: 'blue', expert: 'green', admin: 'orange' }
@@ -62,7 +63,7 @@ function TelegramSection() {
 
   return (
     <Card className="p-5 sm:p-7">
-      <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
+      <div className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.08em] mb-4">
         Notifications Telegram
       </div>
 
@@ -112,7 +113,7 @@ function TelegramSection() {
                   {cloneIcon(Icons.copy, { size: 15 })}
                 </button>
               </div>
-              <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mb-3">
+              <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mb-3">
                 {cloneIcon(Icons.clock, { size: 12, color: '#9CA3AF' })}
                 Expire dans {code.expire_dans}
               </div>
@@ -192,7 +193,7 @@ function GitHubSection() {
 
   return (
     <Card className="p-5 sm:p-7">
-      <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
+      <div className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.08em] mb-4">
         Correction assistée GitHub
       </div>
 
@@ -241,14 +242,14 @@ function GitHubSection() {
                     {d.slug}
                   </div>
                   <button onClick={() => revoquer(d.id)}
-                    className="text-[12px] font-medium text-gray-400 hover:text-red-600 cursor-pointer">
+                    className="text-[12px] font-medium text-gray-500 hover:text-red-600 cursor-pointer">
                     Révoquer
                   </button>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-[12px] text-gray-400">Aucun dépôt autorisé pour le moment.</div>
+            <div className="text-[12px] text-gray-500">Aucun dépôt autorisé pour le moment.</div>
           )}
         </div>
       ) : (
@@ -269,7 +270,7 @@ function GitHubSection() {
 }
 
 export default function SettingsPage() {
-  const user = JSON.parse(localStorage.getItem('cg-user') || '{}')
+  const user = lireUtilisateur()
   const role = (user.role || 'client').toLowerCase()
 
   const [form, setForm] = useState({ current: '', next: '', confirm: '' })
@@ -314,7 +315,7 @@ export default function SettingsPage() {
         <div className="flex flex-col gap-5">
           {/* Compte */}
           <Card className="p-5 sm:p-7">
-            <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
+            <div className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.08em] mb-4">
               Compte
             </div>
             <div className="flex items-center gap-4">
@@ -330,7 +331,7 @@ export default function SettingsPage() {
           {/* Mot de passe */}
           <form onSubmit={handleSubmit}>
             <Card className="p-5 sm:p-7">
-              <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
+              <div className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.08em] mb-4">
                 Changer le mot de passe
               </div>
               <div className="flex flex-col gap-4">
@@ -348,7 +349,7 @@ export default function SettingsPage() {
                 ))}
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-6 pt-5 border-t border-gray-100">
-                <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-gray-400">
+                <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-gray-500">
                   {cloneIcon(Icons.lock, { size: 12, color: '#9CA3AF' })}
                   Hachage côté serveur · jamais stocké en clair
                 </div>

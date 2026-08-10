@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar'
 import { Toaster, HeaderTools } from './components/ui'
 import { cloneIcon, Icons } from './components/Icons'
 import useMobile from './lib/useMobile'
+import { lireJeton, lireUtilisateur } from './lib/session'
 
 import LoginPage          from './pages/LoginPage'
 import RegisterPage       from './pages/RegisterPage'
@@ -21,7 +22,7 @@ import SettingsPage       from './pages/SettingsPage'
 
 /* ─── Helpers ─── */
 function getUser() {
-  try { return JSON.parse(localStorage.getItem('cg-user') || '{}') } catch { return {} }
+  return lireUtilisateur()
 }
 function getRole() {
   return (getUser().role || 'client').toLowerCase()
@@ -32,7 +33,7 @@ const HOME_BY_ROLE = { client: '/dashboard', expert: '/dashboard', admin: '/admi
 
 /* ─── Auth guard ─── */
 function RequireAuth() {
-  const token = localStorage.getItem('cg-token')
+  const token = lireJeton()
   const location = useLocation()
   if (!token) return <Navigate to="/login" state={{ from: location }} replace />
   return <Outlet />
@@ -46,7 +47,7 @@ function RequireRole({ roles }) {
       <div className="flex items-center justify-center h-[60vh] flex-col gap-3 px-4">
         {cloneIcon(Icons.lock, { size: 32, color: '#9CA3AF' })}
         <div className="text-gray-700 font-semibold text-lg">Accès non autorisé</div>
-        <div className="text-sm text-gray-400 text-center max-w-xs">
+        <div className="text-sm text-gray-500 text-center max-w-xs">
           Votre rôle <strong>{role}</strong> ne permet pas d'accéder à cette page.
         </div>
         <button

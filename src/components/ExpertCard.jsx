@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { Avatar, Button } from './ui'
 import { cloneIcon, Icons } from './Icons'
 import { messageAPI } from '../lib/api'
+import { lireUtilisateur } from '../lib/session'
 
 export default function ExpertCard({ expert }) {
   const navigate = useNavigate()
   const [contacting, setContacting] = useState(false)
-  const isClient = (JSON.parse(localStorage.getItem('cg-user') || '{}').role || 'client') === 'client'
+  const isClient = (lireUtilisateur().role || 'client') === 'client'
 
   const contact = async () => {
     setContacting(true)
@@ -38,7 +39,7 @@ export default function ExpertCard({ expert }) {
             <span className="text-gray-700 font-mono">{expert.rating.toFixed(1)}</span>
           </div>
         ) : (
-          <span className="text-[11px] text-gray-400 flex-shrink-0">Nouveau</span>
+          <span className="text-[11px] text-gray-500 flex-shrink-0">Nouveau</span>
         )}
       </div>
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { authAPI , statsAPI } from '../lib/api'
+import { authAPI , statsAPI, messageErreur } from '../lib/api'
+import { ouvrirSession } from '../lib/session'
 import { Badge, Button, LabeledInput } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 
@@ -9,7 +10,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [pwd, setPwd] = useState('')
   const [showPwd, setShowPwd] = useState(false)
+  const [rester, setRester]   = useState(true)
   const [loading, setLoading] = useState(false)
+  const [aide, setAide]       = useState(false)
 
   // Agrégats réels affichés sous le titre ; l'échec est silencieux, la page
   // de connexion doit s'afficher même si l'API est injoignable.
@@ -22,12 +25,6 @@ export default function LoginPage() {
 
   const HOME_BY_ROLE = { client: '/dashboard', expert: '/dashboard', admin: '/admin' }
 
-  const ROLE_MAP = {
-    'admin@cyberguardian.sn':    { name: 'Admin CyberGuardian', role: 'admin' },
-    'expert@cyberguardian.sn':   { name: 'Mamadou Diallo',      role: 'expert' },
-    'ibrahima.ly@ec2lt.sn':      { name: 'Ibrahima LY',         role: 'client' },
-  }
-
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -39,20 +36,17 @@ export default function LoginPage() {
         const payload = JSON.parse(atob(access_token.split('.')[1]))
         return { name: payload.name || email.split('@')[0], role: payload.role || 'client' }
       })()
-      localStorage.setItem('cg-token', access_token)
-      localStorage.setItem('cg-user', JSON.stringify(userInfo))
+      ouvrirSession(access_token, userInfo, rester)
       navigate(HOME_BY_ROLE[userInfo.role] || '/dashboard')
     } catch (err) {
       if (err.response?.status === 401) {
         setError('Email ou mot de passe incorrect.')
+      } else if (err.response?.status === 403) {
+        setError("Ce compte est désactivé. Contactez l'administrateur.")
       } else if (!err.response) {
-        // Backend hors ligne, fallback offline pour la démo
-        const fallbackUser = ROLE_MAP[email.toLowerCase()] || { name: email.split('@')[0], role: 'client' }
-        localStorage.setItem('cg-token', 'offline-token')
-        localStorage.setItem('cg-user', JSON.stringify(fallbackUser))
-        navigate(HOME_BY_ROLE[fallbackUser.role] || '/dashboard')
+        setError('Serveur injoignable. Vérifiez votre connexion, puis réessayez.')
       } else {
-        setError('Erreur de connexion. Veuillez réessayer.')
+        setError(messageErreur(err, 'Erreur de connexion. Veuillez réessayer.'))
       }
     } finally {
       setLoading(false)
@@ -98,7 +92,7 @@ export default function LoginPage() {
           <div>
             <div className="text-white font-bold text-[19px] tracking-[-0.02em]">CyberGuardian</div>
             <div className="text-[11px] uppercase tracking-[0.1em] mt-0.5" style={{ color: 'rgba(255,255,255,0.5)', fontFamily: 'JetBrains Mono, monospace' }}>
-              EASM Platform · v8.0
+              EASM Platform 
             </div>
           </div>
         </div>
@@ -151,7 +145,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPwd(!showPwd)}
-                className="bg-transparent border-none cursor-pointer p-1 text-gray-400 hover:text-gray-600"
+                className="bg-transparent border-none cursor-pointer p-1 text-gray-500 hover:text-gray-600"
               >
                 {cloneIcon(Icons.eye, { size: 16, color: 'currentColor' })}
               </button>
@@ -162,18 +156,39 @@ export default function LoginPage() {
 
           <div className="flex justify-between items-center text-[13px] mt-1">
             <label className="flex items-center gap-1.5 cursor-pointer text-gray-600">
-              <input type="checkbox" defaultChecked className="accent-blue-700" />
+              <input
+                type="checkbox"
+                checked={rester}
+                onChange={(e) => setRester(e.target.checked)}
+                className="accent-blue-700"
+              />
               Rester connecté
             </label>
-            <a href="#" className="text-blue-700 no-underline font-medium hover:underline">Mot de passe oublié ?</a>
+            <button
+              type="button"
+              onClick={() => setAide((a) => !a)}
+              className="text-blue-700 font-medium hover:underline bg-transparent border-none cursor-pointer p-0"
+            >
+              Mot de passe oublié ?
+            </button>
           </div>
+
+          {/* La réinitialisation en autonomie n'existe pas encore : mieux vaut
+              indiquer la marche à suivre qu'un lien qui ne mène nulle part. */}
+          {aide && (
+            <div className="rounded-[var(--cg-radius)] border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[12.5px] leading-relaxed text-slate-600">
+              La réinitialisation se fait par l'administrateur. Écrivez à{' '}
+              <span className="font-medium text-slate-800">admin@cyberguardian.sn</span> depuis
+              l'adresse du compte concerné.
+            </div>
+          )}
 
           <Button variant="primary" size="lg" type="submit" disabled={loading} className="mt-2 w-full">
             {loading ? 'Connexion…' : 'Se connecter →'}
           </Button>
         </form>
 
-        <div className="flex items-center gap-3 my-6 text-gray-400 text-xs">
+        <div className="flex items-center gap-3 my-6 text-gray-500 text-xs">
           <div className="flex-1 h-px bg-gray-200" />
           OU
           <div className="flex-1 h-px bg-gray-200" />

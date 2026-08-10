@@ -101,7 +101,7 @@ export default function RegisterExpertPage() {
             moitié de sa largeur vide. */}
         <div className="grid items-start gap-5 min-[1160px]:grid-cols-2">
           <Card className="p-5 sm:p-7">
-            <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
+            <div className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.08em] mb-4">
               Informations personnelles
             </div>
 
@@ -148,7 +148,7 @@ export default function RegisterExpertPage() {
           </Card>
 
           <Card className="p-5 sm:p-7">
-            <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-1.5">
+            <div className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.08em] mb-1.5">
               Pièces justificatives
             </div>
             <p className="text-[12.5px] text-gray-500 mb-4 leading-relaxed">
@@ -176,8 +176,8 @@ export default function RegisterExpertPage() {
           <label className="flex items-start gap-2.5 text-[12.5px] text-gray-600 leading-relaxed cursor-pointer">
             <input type="checkbox" className="accent-blue-700 mt-0.5" required />
             <span>
-              Je certifie l'authenticité des documents fournis et j'accepte la{' '}
-              <a href="#" className="text-blue-700 hover:underline">charte des experts CyberGuardian</a>.
+              Je certifie l'authenticité des documents fournis et j'accepte les engagements
+              déontologiques attendus d'un expert CyberGuardian.
             </span>
           </label>
 
