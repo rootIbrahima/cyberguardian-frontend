@@ -1,9 +1,85 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { Check, CheckCheck, ChevronLeft, Download, FileText, Paperclip } from 'lucide-react'
 import { Avatar, Badge, Button, toast } from './ui'
 import { cloneIcon, Icons } from './Icons'
 import { messageAPI, messageErreur } from '../lib/api'
+
+const TYPES_JOINTS = 'image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain'
+const TAILLE_MAX   = 5 * 1024 * 1024
+
+function poids(octets) {
+  if (octets < 1024)    return `${octets} o`
+  if (octets < 1048576) return `${Math.round(octets / 1024)} Ko`
+  return `${(octets / 1048576).toFixed(1)} Mo`
+}
+
+/* ─── Pièce jointe d'un message ───
+   Le téléchargement passe par l'API authentifiée : une balise <img> classique
+   n'emporterait pas le jeton, et la pièce est réservée aux participants. */
+function PieceJointe({ convId, piece, sombre }) {
+  const [apercu, setApercu] = useState(null)
+  const estImage = (piece.type || '').startsWith('image/')
+
+  useEffect(() => {
+    if (!estImage) return
+    let url = null
+    let monte = true
+    messageAPI.piece(convId, piece.id)
+      .then((res) => {
+        if (!monte) return
+        url = URL.createObjectURL(res.data)
+        setApercu(url)
+      })
+      .catch(() => {})
+    return () => { monte = false; if (url) URL.revokeObjectURL(url) }
+  }, [convId, piece.id, estImage])
+
+  const telecharger = async () => {
+    try {
+      const res = await messageAPI.piece(convId, piece.id)
+      const url = URL.createObjectURL(res.data)
+      const lien = document.createElement('a')
+      lien.href = url
+      lien.download = piece.nom
+      lien.click()
+      URL.revokeObjectURL(url)
+    } catch {
+      toast.error('Pièce jointe indisponible.')
+    }
+  }
+
+  if (estImage) {
+    return (
+      <button onClick={telecharger} title={`${piece.nom} · ${poids(piece.taille)}`}
+        className="block w-full cursor-pointer overflow-hidden rounded-[10px] border-none bg-transparent p-0">
+        {apercu
+          ? <img src={apercu} alt={piece.nom} className="max-h-[240px] w-full rounded-[10px] object-cover" />
+          : <div className="flex h-24 items-center justify-center rounded-[10px] bg-gray-100 text-[11.5px] text-gray-400">
+              Chargement de l'image…
+            </div>}
+      </button>
+    )
+  }
+
+  return (
+    <button onClick={telecharger}
+      className="flex w-full items-center gap-2.5 rounded-[10px] border px-3 py-2 text-left transition-opacity hover:opacity-80"
+      style={{
+        background:  sombre ? 'rgba(255,255,255,0.12)' : '#F8FAFC',
+        borderColor: sombre ? 'rgba(255,255,255,0.2)'  : '#E2E8F0',
+      }}>
+      <FileText size={17} strokeWidth={2} style={{ color: sombre ? '#fff' : '#1F5C99', flexShrink: 0 }} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[12.5px] font-medium"
+          style={{ color: sombre ? '#fff' : '#1E293B' }}>{piece.nom}</span>
+        <span className="block text-[10.5px]"
+          style={{ color: sombre ? 'rgba(255,255,255,0.65)' : '#94A3B8' }}>{poids(piece.taille)}</span>
+      </span>
+      <Download size={14} strokeWidth={2} style={{ color: sombre ? 'rgba(255,255,255,0.8)' : '#64748B', flexShrink: 0 }} />
+    </button>
+  )
+}
 
 /* ─── Compte à rebours 48h depuis la signature du contrat ─── */
 function useCountdown(isoStart) {
@@ -117,6 +193,7 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
   const [rated, setRated]       = useState(0)
   const [envoi, setEnvoi]       = useState(false)
   const scrollRef  = useRef(null)
+  const fichierRef = useRef(null)
   const dernierId  = useRef(null)   // dernier message connu, pour ne demander que la suite
   const colleEnBas = useRef(true)   // la lecture suit-elle le bas du fil ?
 
@@ -188,6 +265,30 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
       // envoyé est pire que de demander à l'utilisateur de réessayer.
       setInput(text)
       toast.error(messageErreur(err, "Message non envoyé : vérifiez votre connexion et réessayez."))
+    } finally {
+      setEnvoi(false)
+    }
+  }
+
+  const choisirFichier = () => fichierRef.current?.click()
+
+  const envoyerFichier = async (e) => {
+    const fichier = e.target.files?.[0]
+    e.target.value = ''   // permet de renvoyer deux fois le même fichier
+    if (!fichier || envoi) return
+    if (fichier.size > TAILLE_MAX) {
+      toast.error(`Fichier trop volumineux : ${poids(fichier.size)} pour 5 Mo autorisés.`)
+      return
+    }
+    const legende = input.trim()
+    setEnvoi(true)
+    colleEnBas.current = true
+    try {
+      await messageAPI.sendPiece(conversation.id, fichier, legende)
+      setInput('')
+      await chargerSuite()
+    } catch (err) {
+      toast.error(messageErreur(err, 'Pièce jointe non envoyée : réessayez.'))
     } finally {
       setEnvoi(false)
     }
@@ -272,6 +373,9 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
           </div>
         )}
         {messages.map((m, i) => {
+          // Côté droit : ce que le lecteur a écrit lui-même. L'admin ne participe
+          // pas, il regarde l'échange avec le client à gauche et l'expert à droite.
+          const aDroite = isAdmin ? m.from === 'expert' : m.from === (isClient ? 'client' : 'expert')
           if (m.from === 'system') {
             return (
               <div key={i} className="text-center">
@@ -285,25 +389,33 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
             <div key={i}
               className="flex gap-2.5 max-w-[88%] sm:max-w-[75%]"
               style={{
-                flexDirection: m.from === 'client' ? 'row-reverse' : 'row',
-                alignSelf: m.from === 'client' ? 'flex-end' : 'flex-start',
+                flexDirection: aDroite ? 'row-reverse' : 'row',
+                alignSelf: aDroite ? 'flex-end' : 'flex-start',
               }}>
-              {m.from === 'expert' && (
+              {!aDroite && (
                 <Avatar name={conversation.expert.name} color={conversation.expert.color} size={32} />
               )}
-              <div>
+              <div className="min-w-0">
                 <div className="px-3.5 py-2.5 text-[13.5px] leading-relaxed"
                   style={{
-                    borderRadius: m.from === 'client' ? '14px 14px 3px 14px' : '14px 14px 14px 3px',
-                    background: m.from === 'client' ? '#1F5C99' : '#fff',
-                    color: m.from === 'client' ? '#fff' : '#111827',
-                    border: m.from === 'expert' ? '1px solid #E5E7EB' : 'none',
+                    borderRadius: aDroite ? '14px 14px 3px 14px' : '14px 14px 14px 3px',
+                    background: aDroite ? '#1F5C99' : '#fff',
+                    color: aDroite ? '#fff' : '#111827',
+                    border: aDroite ? 'none' : '1px solid #E5E7EB',
                   }}>
+                  {m.piece && (
+                    <div className={m.text ? 'mb-2' : ''}>
+                      <PieceJointe convId={conversation.id} piece={m.piece} sombre={aDroite} />
+                    </div>
+                  )}
                   {m.text}
                 </div>
-                <div className="text-[10.5px] text-gray-400 mt-1"
-                  style={{ textAlign: m.from === 'client' ? 'right' : 'left', paddingLeft: 4, paddingRight: 4 }}>
+                <div className="text-[10.5px] text-gray-400 mt-1 flex items-center gap-1"
+                  style={{ justifyContent: aDroite ? 'flex-end' : 'flex-start', paddingLeft: 4, paddingRight: 4 }}>
                   {m.time}
+                  {/* Accusé de lecture, sur ses propres messages uniquement */}
+                  {m.lu === true  && <CheckCheck size={13} strokeWidth={2.5} className="text-blue-600" />}
+                  {m.lu === false && <Check      size={13} strokeWidth={2.5} className="text-gray-400" />}
                 </div>
               </div>
             </div>
@@ -321,6 +433,21 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
           </div>
         ) : (
           <div className="flex gap-2.5 items-center">
+            <input
+              ref={fichierRef}
+              type="file"
+              accept={TYPES_JOINTS}
+              onChange={envoyerFichier}
+              className="hidden"
+            />
+            <button
+              onClick={choisirFichier}
+              disabled={envoi}
+              title="Joindre une image, un PDF ou un fichier texte (5 Mo max)"
+              className="flex h-[42px] w-[42px] flex-shrink-0 items-center justify-center rounded-[10px] border border-gray-300 bg-white text-gray-500 transition-colors hover:bg-gray-50 disabled:opacity-40"
+            >
+              <Paperclip size={16} strokeWidth={2} />
+            </button>
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}

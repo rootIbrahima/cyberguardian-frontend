@@ -85,6 +85,15 @@ export const messageAPI = {
   messages:      (convId)       => api.get(`/conversations/${convId}/messages`),
   messagesApres: (convId, id)   => api.get(`/conversations/${convId}/messages?apres=${id}`),
   send:          (convId, text) => api.post(`/conversations/${convId}/messages`, { text }),
+  sendPiece:     (convId, fichier, text = '') => {
+    const form = new FormData()
+    form.append('fichier', fichier)
+    form.append('text', text)
+    return api.post(`/conversations/${convId}/messages/piece-jointe`, form,
+                    { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  piece:         (convId, pieceId) =>
+    api.get(`/conversations/${convId}/pieces-jointes/${pieceId}`, { responseType: 'blob' }),
   signContract:  (convId)       => api.post(`/conversations/${convId}/contract/sign`),
 }
 
