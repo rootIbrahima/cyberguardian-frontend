@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { scanAPI } from '../lib/api'
 import { Card, PageHeader, RelativeTime, toast, SkeletonCard, ScoreDelta } from '../components/ui'
@@ -9,6 +10,20 @@ const STATUS_MAP = {
   running:   { label: 'En cours', bg: '#E8F1FA', color: '#1F5C99' },
   critical:  { label: 'Critique', bg: '#FEE2E2', color: '#EF4444' },
 }
+
+// Colonnes triables du tableau. Le tri par date s'appuie sur l'identifiant,
+// strictement croissant, plutôt que sur la date d'affichage qu'il faudrait
+// analyser à chaque comparaison.
+const COLONNES = [
+  { cle: 'cible', label: 'Cible',  align: 'left',   tri: (a, b) => (a.scan.target || '').localeCompare(b.scan.target || '') },
+  { cle: 'score', label: 'Score',  align: 'center', tri: (a, b) => (a.scan.score ?? -1) - (b.scan.score ?? -1) },
+  { cle: 'cve',   label: 'CVE',    align: 'center', tri: (a, b) => (a.scan.cve ?? 0) - (b.scan.cve ?? 0) },
+  { cle: null,    label: 'Statut', align: 'center' },
+  { cle: 'date',  label: 'Date',   align: 'center', tri: (a, b) => a.scan.id - b.scan.id },
+  { cle: null,    label: '',       align: 'right'  },
+]
+
+const TAILLES_PAGE = [10, 25, 50]
 
 const TYPE_ICONS = {
   Domaine: Icons.domain,
@@ -70,6 +85,9 @@ export default function ScanListPage() {
   const [loading, setLoading]       = useState(true)
   const [search, setSearch]         = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [tri, setTri]         = useState({ cle: 'date', sens: 'desc' })
+  const [page, setPage]       = useState(1)
+  const [parPage, setParPage] = useState(TAILLES_PAGE[0])
   const [rerunningId, setRerunningId]         = useState(null)
   const [deletingId, setDeletingId]           = useState(null)
 
@@ -82,6 +100,10 @@ export default function ScanListPage() {
   }, [])
 
   useEffect(() => { loadScans() }, [loadScans])
+
+  // Rester en page 4 après une recherche qui ne rend que trois résultats
+  // afficherait une liste vide sans explication.
+  useEffect(() => { setPage(1) }, [search, tri, parPage])
 
   // Click outside cancels pending delete confirmation
   useEffect(() => {
@@ -155,6 +177,22 @@ export default function ScanListPage() {
     }
   })
 
+  const colonneTriee = COLONNES.find((c) => c.cle === tri.cle)
+  const triees = colonneTriee
+    ? [...lignes].sort((a, b) => (tri.sens === 'asc' ? 1 : -1) * colonneTriee.tri(a, b))
+    : lignes
+
+  const pages   = Math.max(1, Math.ceil(triees.length / parPage))
+  const courante = Math.min(page, pages)
+  const debut   = (courante - 1) * parPage
+  const visibles = triees.slice(debut, debut + parPage)
+
+  const trierPar = (cle) => setTri((t) => ({
+    cle,
+    // Un nouveau critère part du plus pertinent : le plus récent, le plus haut.
+    sens: t.cle === cle && t.sens === 'desc' ? 'asc' : 'desc',
+  }))
+
   const actionsCommunes = {
     deletingId, rerunningId, confirmDeleteId,
     onRerun: handleRerun, onDelete: handleDelete,
@@ -202,7 +240,7 @@ export default function ScanListPage() {
             {/* Liste en cartes sous 640 px : quatre colonnes ne tiennent pas dans
                 les 296 px utiles d'un téléphone de 360 px, même en en masquant deux */}
             <div className="flex flex-col gap-2 sm:hidden">
-              {lignes.map(({ scan, statut, typeIcon, scoreMax, scoreColor, delta }) => (
+              {visibles.map(({ scan, statut, typeIcon, scoreMax, scoreColor, delta }) => (
                 <div
                   key={scan.id}
                   onClick={() => navigate(`/scan-results/${scan.id}`)}
@@ -254,19 +292,33 @@ export default function ScanListPage() {
             <table className="hidden w-full border-collapse sm:table">
               <thead>
                 <tr className="border-b border-gray-200">
-                  {['Cible', 'Score', 'CVE', 'Statut', 'Date', ''].map((h, i) => (
+                  {COLONNES.map((c, i) => (
                     <th
                       key={i}
                       className="pb-3 text-[10.5px] font-bold text-gray-400 uppercase tracking-[0.08em]"
-                      style={{ textAlign: i === 0 ? 'left' : i === 5 ? 'right' : 'center' }}
+                      style={{ textAlign: c.align }}
                     >
-                      {h}
+                      {c.tri ? (
+                        <button
+                          onClick={() => trierPar(c.cle)}
+                          title={`Trier par ${c.label.toLowerCase()}`}
+                          className="inline-flex items-center gap-1 border-none bg-transparent p-0 uppercase tracking-[0.08em] text-[10.5px] font-bold transition-colors hover:text-gray-600"
+                          style={{ color: tri.cle === c.cle ? '#1F5C99' : 'inherit', cursor: 'pointer' }}
+                        >
+                          {c.label}
+                          {tri.cle !== c.cle
+                            ? <ChevronsUpDown size={12} strokeWidth={2.5} className="opacity-40" />
+                            : tri.sens === 'asc'
+                              ? <ChevronUp   size={12} strokeWidth={2.5} />
+                              : <ChevronDown size={12} strokeWidth={2.5} />}
+                        </button>
+                      ) : c.label}
                     </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {lignes.map(({ scan, statut, typeIcon, scoreMax, scoreColor, delta }) => (
+                {visibles.map(({ scan, statut, typeIcon, scoreMax, scoreColor, delta }) => (
                   <tr
                     key={scan.id}
                     onClick={() => navigate(`/scan-results/${scan.id}`)}
@@ -279,7 +331,10 @@ export default function ScanListPage() {
                           {cloneIcon(typeIcon, { size: 17, color: '#1F5C99' })}
                         </div>
                         <div className="min-w-0">
-                          <div className="text-[13.5px] font-semibold font-mono">{scan.target}</div>
+                          <div className="text-[13.5px] font-semibold font-mono truncate max-w-[240px] xl:max-w-[420px]"
+                            title={scan.target}>
+                            {scan.target}
+                          </div>
                           <div className="text-[11px] text-gray-400">{scan.typeLabel}</div>
                         </div>
                       </div>
@@ -336,6 +391,51 @@ export default function ScanListPage() {
                 ))}
               </tbody>
             </table>
+
+            {/* Pagination : la liste s'allonge d'un scan à chaque relance, et
+                dérouler cent lignes pour retrouver un actif n'a pas de sens. */}
+            <div className="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-[12px] text-gray-500">
+                <span>
+                  {debut + 1}–{Math.min(debut + parPage, triees.length)} sur {triees.length}
+                </span>
+                <span className="text-gray-300">·</span>
+                <label className="flex items-center gap-1.5">
+                  <select
+                    value={parPage}
+                    onChange={(e) => setParPage(Number(e.target.value))}
+                    className="rounded-md border border-gray-200 bg-white px-1.5 py-1 text-[12px] outline-none focus:border-blue-600"
+                  >
+                    {TAILLES_PAGE.map((n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                  par page
+                </label>
+              </div>
+
+              {pages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage(courante - 1)}
+                    disabled={courante === 1}
+                    title="Page précédente"
+                    className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-35"
+                  >
+                    <ChevronLeft size={15} strokeWidth={2} />
+                  </button>
+                  <span className="px-2 text-[12.5px] text-gray-600">
+                    Page <strong className="font-mono">{courante}</strong> sur <span className="font-mono">{pages}</span>
+                  </span>
+                  <button
+                    onClick={() => setPage(courante + 1)}
+                    disabled={courante === pages}
+                    title="Page suivante"
+                    className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-35"
+                  >
+                    <ChevronRight size={15} strokeWidth={2} />
+                  </button>
+                </div>
+              )}
+            </div>
           </>
         )}
       </Card>

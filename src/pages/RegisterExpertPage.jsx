@@ -75,12 +75,12 @@ export default function RegisterExpertPage() {
   }
 
   return (
-    <div style={{ maxWidth: 720 }}>
+    <div>
       <PageHeader title="Devenir expert CyberGuardian" subtitle="Rejoignez notre réseau d'experts certifiés au Sénégal" />
 
       {/* Info banner */}
       <div
-        className="flex gap-3.5 items-start p-4 rounded-xl mb-6"
+        className="flex gap-3.5 items-start p-4 rounded-xl mb-5"
         style={{ background: 'linear-gradient(135deg, #F3F8FD, #fff)', border: '1px solid #E8F1FA' }}
       >
         <div className="w-10 h-10 rounded-[10px] bg-blue-700 flex items-center justify-center flex-shrink-0">
@@ -88,7 +88,7 @@ export default function RegisterExpertPage() {
         </div>
         <div>
           <div className="text-sm font-semibold text-blue-700">Dossier vérifié sous 48h</div>
-          <div className="text-[12.5px] text-gray-600 mt-0.5 leading-relaxed">
+          <div className="text-[12.5px] text-gray-600 mt-0.5 leading-relaxed max-w-[76ch]">
             L'administrateur CyberGuardian contrôle manuellement votre pièce d'identité et votre dernier diplôme.
             Vous recevrez un email de confirmation.
           </div>
@@ -96,56 +96,64 @@ export default function RegisterExpertPage() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <Card className="p-5 sm:p-7">
-          <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
-            Informations personnelles
-          </div>
-
-          <div className="flex flex-col gap-[18px]">
-            <LabeledInput
-              label="Numéro de Carte Nationale d'Identité (CNI)"
-              icon={Icons.badge}
-              placeholder="ex: 1 789 1985 0 0421"
-              value={form.cni}
-              onChange={(v) => setForm({ ...form, cni: v })}
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Niveau d'études</label>
-                <select
-                  value={form.level}
-                  onChange={(e) => setForm({ ...form, level: e.target.value })}
-                  className="w-full px-4 py-3 rounded-[10px] border border-gray-300 text-sm outline-none bg-white cursor-pointer focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
-                  style={{ color: form.level ? '#111827' : '#9CA3AF' }}
-                >
-                  <option value="">Sélectionnez…</option>
-                  {['Licence', 'Master 1', 'Master 2', 'Ingénieur', 'Doctorat'].map((l) => (
-                    <option key={l}>{l}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Spécialité</label>
-                <select
-                  value={form.specialty}
-                  onChange={(e) => setForm({ ...form, specialty: e.target.value })}
-                  className="w-full px-4 py-3 rounded-[10px] border border-gray-300 text-sm outline-none bg-white cursor-pointer focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
-                  style={{ color: form.specialty ? '#111827' : '#9CA3AF' }}
-                >
-                  <option value="">Sélectionnez…</option>
-                  {['DNS & Email', 'Sécurité Web', 'Audit sécurité', 'Réseau & Pentest', 'Cloud Security', 'DevSecOps', 'Cryptographie'].map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
+        {/* Identité d'un côté, justificatifs de l'autre au-delà de 1160 px :
+            deux étapes distinctes du dossier, et la page cesse de laisser la
+            moitié de sa largeur vide. */}
+        <div className="grid items-start gap-5 min-[1160px]:grid-cols-2">
+          <Card className="p-5 sm:p-7">
+            <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-4">
+              Informations personnelles
             </div>
 
-            <div className="h-px bg-gray-100 my-1.5" />
+            <div className="flex flex-col gap-[18px]">
+              <LabeledInput
+                label="Numéro de Carte Nationale d'Identité (CNI)"
+                icon={Icons.badge}
+                placeholder="ex: 1 789 1985 0 0421"
+                value={form.cni}
+                onChange={(v) => setForm({ ...form, cni: v })}
+              />
 
-            <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Niveau d'études</label>
+                  <select
+                    value={form.level}
+                    onChange={(e) => setForm({ ...form, level: e.target.value })}
+                    className="w-full px-4 py-3 rounded-[10px] border border-gray-300 text-sm outline-none bg-white cursor-pointer focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
+                    style={{ color: form.level ? '#111827' : '#9CA3AF' }}
+                  >
+                    <option value="">Sélectionnez…</option>
+                    {['Licence', 'Master 1', 'Master 2', 'Ingénieur', 'Doctorat'].map((l) => (
+                      <option key={l}>{l}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">Spécialité</label>
+                  <select
+                    value={form.specialty}
+                    onChange={(e) => setForm({ ...form, specialty: e.target.value })}
+                    className="w-full px-4 py-3 rounded-[10px] border border-gray-300 text-sm outline-none bg-white cursor-pointer focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
+                    style={{ color: form.specialty ? '#111827' : '#9CA3AF' }}
+                  >
+                    <option value="">Sélectionnez…</option>
+                    {['DNS & Email', 'Sécurité Web', 'Audit sécurité', 'Réseau & Pentest', 'Cloud Security', 'DevSecOps', 'Cryptographie'].map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-5 sm:p-7">
+            <div className="text-[13px] font-semibold text-gray-400 uppercase tracking-[0.08em] mb-1.5">
               Pièces justificatives
             </div>
+            <p className="text-[12.5px] text-gray-500 mb-4 leading-relaxed">
+              Documents lisibles et en cours de validité. Ils ne servent qu'à la vérification de votre identité.
+            </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FileUpload
@@ -161,15 +169,19 @@ export default function RegisterExpertPage() {
                 onChange={(f) => setForm({ ...form, diplomaFile: f })}
               />
             </div>
+          </Card>
+        </div>
 
-            <label className="flex items-start gap-2.5 text-[12.5px] text-gray-600 leading-relaxed cursor-pointer mt-2">
-              <input type="checkbox" className="accent-blue-700 mt-0.5" required />
+        <Card className="p-5 sm:p-7 mt-5">
+          <label className="flex items-start gap-2.5 text-[12.5px] text-gray-600 leading-relaxed cursor-pointer">
+            <input type="checkbox" className="accent-blue-700 mt-0.5" required />
+            <span>
               Je certifie l'authenticité des documents fournis et j'accepte la{' '}
               <a href="#" className="text-blue-700 hover:underline">charte des experts CyberGuardian</a>.
-            </label>
-          </div>
+            </span>
+          </label>
 
-          <div className="flex flex-col-reverse gap-2.5 mt-6 pt-5 border-t border-gray-100 sm:flex-row [&>button]:w-full sm:[&>button]:w-auto">
+          <div className="flex flex-col-reverse gap-2.5 mt-5 pt-5 border-t border-gray-100 sm:flex-row [&>button]:w-full sm:[&>button]:w-auto">
             <Button variant="secondary" type="button" onClick={() => window.history.back()}>Annuler</Button>
             <div className="hidden flex-1 sm:block" />
             <Button variant="primary" icon={Icons.send} type="submit" disabled={loading}>
