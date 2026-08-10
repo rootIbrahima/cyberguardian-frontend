@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Card, Badge, Button, PageHeader, Avatar, toast } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
-import { authAPI, telegramAPI, githubAPI } from '../lib/api'
+import { authAPI, telegramAPI, githubAPI, messageErreur } from '../lib/api'
 
 const ROLE_LABELS = { client: 'Client', expert: 'Expert validé', admin: 'Administrateur' }
 const ROLE_COLORS = { client: 'blue', expert: 'green', admin: 'orange' }
@@ -161,7 +161,7 @@ function GitHubSection() {
       const res = await githubAPI.connect()
       window.location.href = res.data.url
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Connexion GitHub indisponible.')
+      toast.error(messageErreur(err, 'Connexion GitHub indisponible.'))
       setBusy(false)
     }
   }
@@ -175,7 +175,7 @@ function GitHubSection() {
       setRepo('')
       await fetchStatut()
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Autorisation impossible.')
+      toast.error(messageErreur(err, 'Autorisation impossible.'))
     }
     setBusy(false)
   }
@@ -291,7 +291,7 @@ export default function SettingsPage() {
       toast.success('Mot de passe mis à jour.')
       setForm({ current: '', next: '', confirm: '' })
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Changement impossible : backend hors ligne.')
+      toast.error(messageErreur(err, 'Changement impossible : backend hors ligne.'))
     }
     setSaving(false)
   }

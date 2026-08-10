@@ -34,6 +34,18 @@ api.interceptors.response.use(
   }
 )
 
+/* Message d'erreur lisible par un humain.
+   FastAPI renvoie « detail » sous forme de chaîne pour une erreur métier, mais
+   sous forme de liste d'objets pour une erreur de validation (422). Passer
+   cette liste à un composant fait planter le rendu React, et l'écran devient
+   blanc au lieu d'afficher une alerte. */
+export function messageErreur(err, defaut) {
+  const detail = err?.response?.data?.detail
+  if (typeof detail === 'string' && detail) return detail
+  if (Array.isArray(detail) && detail.length) return detail[0]?.msg || defaut
+  return defaut
+}
+
 export const authAPI = {
   login: (email, password) =>
     api.post('/auth/token', new URLSearchParams({ username: email, password }), {
@@ -71,7 +83,7 @@ export const messageAPI = {
   scanPreview:   (convId)       => api.get(`/conversations/${convId}/scan`),
   rate:          (convId, stars) => api.post(`/conversations/${convId}/rate`, { stars }),
   messages:      (convId)       => api.get(`/conversations/${convId}/messages`),
-  messagesSince: (convId, iso)  => api.get(`/conversations/${convId}/messages?since=${iso}`),
+  messagesApres: (convId, id)   => api.get(`/conversations/${convId}/messages?apres=${id}`),
   send:          (convId, text) => api.post(`/conversations/${convId}/messages`, { text }),
   signContract:  (convId)       => api.post(`/conversations/${convId}/contract/sign`),
 }

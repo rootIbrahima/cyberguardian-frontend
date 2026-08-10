@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft } from 'lucide-react'
 import { Avatar, Badge, Button, toast } from './ui'
 import { cloneIcon, Icons } from './Icons'
-import { messageAPI } from '../lib/api'
+import { messageAPI, messageErreur } from '../lib/api'
 
 /* ─── Compte à rebours 48h depuis la signature du contrat ─── */
 function useCountdown(isoStart) {
@@ -115,7 +115,10 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
   const [input, setInput]       = useState('')
   const [signing, setSigning]   = useState(false)
   const [rated, setRated]       = useState(0)
-  const scrollRef = useRef(null)
+  const [envoi, setEnvoi]       = useState(false)
+  const scrollRef  = useRef(null)
+  const dernierId  = useRef(null)   // dernier message connu, pour ne demander que la suite
+  const colleEnBas = useRef(true)   // la lecture suit-elle le bas du fil ?
 
   const role     = (JSON.parse(localStorage.getItem('cg-user') || '{}').role || 'client').toLowerCase()
   const isClient = role === 'client'
@@ -129,33 +132,64 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
       .catch(() => setPreview(null))
   }, [conversation.id, conversation.level])
 
-  /* Recharge le fil complet, au montage, toutes les 5s, et après envoi */
-  const fetchMessages = useCallback(async () => {
+  /* Fil complet au montage */
+  const chargerTout = useCallback(async () => {
     try {
       const res = await messageAPI.messages(conversation.id)
-      if (Array.isArray(res.data)) setMessages(res.data)
+      if (Array.isArray(res.data)) {
+        setMessages(res.data)
+        dernierId.current = res.data.length ? res.data[res.data.length - 1].id : 0
+      }
     } catch { /* backend hors ligne, on conserve l'état courant */ }
   }, [conversation.id])
 
-  useEffect(() => {
-    fetchMessages()
-    const t = setInterval(fetchMessages, 5000)
-    return () => clearInterval(t)
-  }, [fetchMessages])
+  /* Rafraîchissement : seulement ce qui est arrivé depuis. Sans nouveau message,
+     l'état n'est pas remplacé, donc pas de rendu ni de saut de défilement. */
+  const chargerSuite = useCallback(async () => {
+    if (dernierId.current === null) return chargerTout()
+    try {
+      const res = await messageAPI.messagesApres(conversation.id, dernierId.current)
+      if (Array.isArray(res.data) && res.data.length) {
+        setMessages((prev) => [...prev, ...res.data])
+        dernierId.current = res.data[res.data.length - 1].id
+      }
+    } catch { /* backend hors ligne, on conserve l'état courant */ }
+  }, [conversation.id, chargerTout])
 
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    chargerTout()
+    const t = setInterval(chargerSuite, 5000)
+    return () => clearInterval(t)
+  }, [chargerTout, chargerSuite])
+
+  /* Suit la position de lecture : le rafraîchissement ne doit pas arracher
+     l'utilisateur au passage de l'historique qu'il est en train de relire. */
+  const surDefilement = () => {
+    const el = scrollRef.current
+    if (el) colleEnBas.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+  }
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (el && colleEnBas.current) el.scrollTop = el.scrollHeight
   }, [messages])
 
   const send = async () => {
-    if (!input.trim()) return
-    const text = input
+    const text = input.trim()
+    if (!text || envoi) return
     setInput('')
+    setEnvoi(true)
+    colleEnBas.current = true   // on suit toujours son propre message
     try {
       await messageAPI.send(conversation.id, text)
-      await fetchMessages()
-    } catch {
-      setMessages((prev) => [...prev, { from: 'client', time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }), text }])
+      await chargerSuite()
+    } catch (err) {
+      // Le texte revient dans le champ : le perdre en le faisant passer pour
+      // envoyé est pire que de demander à l'utilisateur de réessayer.
+      setInput(text)
+      toast.error(messageErreur(err, "Message non envoyé : vérifiez votre connexion et réessayez."))
+    } finally {
+      setEnvoi(false)
     }
   }
 
@@ -164,7 +198,7 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
     setSigning(true)
     try {
       await messageAPI.signContract(conversation.id)
-      await fetchMessages()
+      await chargerSuite()
       if (onLevelUp) onLevelUp(conversation.id, 3)
     } catch {
       toast.error('Signature impossible : seul le client peut signer le contrat.')
@@ -177,9 +211,9 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
       await messageAPI.rate(conversation.id, stars)
       setRated(stars)
       toast.success(`Note ${stars}/5 enregistrée : la réputation de l'expert est mise à jour.`)
-      fetchMessages()
+      chargerSuite()
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Notation impossible.')
+      toast.error(messageErreur(err, 'Notation impossible.'))
     }
   }
 
@@ -225,6 +259,7 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
 
       {/* Fil de messages */}
       <div ref={scrollRef}
+        onScroll={surDefilement}
         className="flex-1 overflow-auto p-4 sm:p-6 flex flex-col gap-3.5"
         style={{ background: '#F5F6FA' }}>
         {messages.length === 0 && (
@@ -293,7 +328,7 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
               placeholder="Écrire un message…"
               className="flex-1 min-w-0 px-4 py-[11px] rounded-[10px] border border-gray-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
             />
-            <Button variant="primary" icon={Icons.send} onClick={send} disabled={!input.trim()} className="flex-shrink-0">
+            <Button variant="primary" icon={Icons.send} onClick={send} disabled={!input.trim() || envoi} className="flex-shrink-0">
               <span className="hidden sm:inline">Envoyer</span>
             </Button>
           </div>

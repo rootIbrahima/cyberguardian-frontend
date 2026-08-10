@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, Badge, Button, PageHeader, Avatar, toast } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 import { MOCK_PENDING_EXPERTS } from '../lib/constants'
-import { adminAPI } from '../lib/api'
+import { adminAPI, messageErreur } from '../lib/api'
 
 export default function AdminPage() {
   const [pending, setPending]   = useState(MOCK_PENDING_EXPERTS)
@@ -53,7 +53,7 @@ export default function AdminPage() {
       const res = await adminAPI.toggleUser(id)
       setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, is_active: res.data.is_active } : u)))
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Action impossible.')
+      toast.error(messageErreur(err, 'Action impossible.'))
     }
     setLoading(null)
   }

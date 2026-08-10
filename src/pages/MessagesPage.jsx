@@ -32,14 +32,11 @@ export default function MessagesPage() {
 
   /* ─── Keep activeConv in sync with conversations list ─── */
   useEffect(() => {
-    setActiveConv((prev) => {
-      const encore = prev && conversations.find((c) => c.id === prev.id)
-      if (encore) return encore
-      // Sur téléphone, liste et fil se partagent le même espace : on affiche la
-      // liste tant qu'aucune conversation n'a été choisie explicitement.
-      return mobile ? null : conversations[0] || null
-    })
-  }, [conversations, mobile])
+    // Aucune conversation n'est ouverte d'office : le volet de droite reste sur
+    // son écran d'accueil tant que l'utilisateur n'a pas choisi. Ouvrir la
+    // première à sa place la marquerait lue sans qu'il l'ait vue.
+    setActiveConv((prev) => (prev && conversations.find((c) => c.id === prev.id)) || null)
+  }, [conversations])
 
   /* ─── Level upgrade from MessageThread (contract signed) ─── */
   const handleLevelUp = (convId, newLevel) => {
@@ -153,11 +150,33 @@ export default function MessagesPage() {
             onBack={mobile ? () => setActiveConv(null) : null}
           />
         ) : (
-          <div className={`flex-col items-center justify-center gap-2 text-gray-400 ${mobile ? 'hidden' : 'flex'}`}>
-            {cloneIcon(Icons.message, { size: 30, color: '#D1D5DB' })}
-            <span className="text-sm">
-              {conversations.length === 0 ? 'Aucune conversation pour le moment' : 'Sélectionnez une conversation'}
-            </span>
+          <div
+            className={`flex-col items-center justify-center gap-4 px-8 text-center ${mobile ? 'hidden' : 'flex'}`}
+            style={{ background: '#FAFBFC' }}
+          >
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: '#EFF6FF' }}>
+              {cloneIcon(Icons.message, { size: 26, color: '#1F5C99' })}
+            </div>
+            <div>
+              <div className="text-[15px] font-semibold text-slate-800">
+                {conversations.length === 0 ? 'Aucune conversation' : 'Sélectionnez une conversation'}
+              </div>
+              <p className="mt-1.5 max-w-[340px] text-[12.5px] leading-relaxed text-slate-500">
+                {conversations.length === 0
+                  ? "Contactez un expert depuis la page Experts : l'échange s'ouvrira ici."
+                  : 'Choisissez un échange dans la liste pour afficher les messages.'}
+              </p>
+            </div>
+            <div className="mt-1 rounded-[var(--cg-radius)] border border-slate-200 bg-white px-4 py-3 text-left">
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                Accès progressif au rapport
+              </div>
+              <ul className="mt-2 flex flex-col gap-1 text-[12px] text-slate-600">
+                <li>Niveau 1 · score global et nombre de failles</li>
+                <li>Niveau 2 · score détaillé par catégorie</li>
+                <li>Niveau 3 · rapport complet pendant 48 h</li>
+              </ul>
+            </div>
           </div>
         )}
       </Card>

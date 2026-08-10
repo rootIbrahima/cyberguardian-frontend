@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, Badge, Button, PageHeader, Avatar, toast } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
-import { adminAPI } from '../lib/api'
+import { adminAPI, messageErreur } from '../lib/api'
 
 export default function RemediationPage() {
   const [rows, setRows]       = useState([])
@@ -22,7 +22,7 @@ export default function RemediationPage() {
       if (res.data?.pr_url) window.open(res.data.pr_url, '_blank')
       refresh()
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Correction impossible.')
+      toast.error(messageErreur(err, 'Correction impossible.'))
     }
     setLoading(null)
   }
