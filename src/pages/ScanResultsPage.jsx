@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { Card, Badge, Button, PageHeader, SeverityBadge, Skeleton, RelativeTime, CopyValue, toast } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
-import { scanAPI, API_BASE } from '../lib/api'
+import { scanAPI, API_BASE, messageErreur } from '../lib/api'
 import { lireJeton } from '../lib/session'
 
 /* ─── Markdown renderer (LLM responses) ─── */
@@ -401,10 +401,12 @@ export default function ScanResultsPage() {
   const [question, setQuestion] = useState('')
   const [conversations, setConversations] = useState([])
   const [askingAI, setAskingAI] = useState(false)
+  const [attenteIA, setAttenteIA] = useState(0)
+  const abortIA = useRef(null)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfStep, setPdfStep]   = useState(0)
 
-  const PDF_STEPS = ['Connexion…', 'Analyse IA en cours…', 'Rédaction du rapport…', 'Mise en forme du PDF…']
+  const DELAI_PDF = 180000   // le modèle est mutualisé, sa latence varie de 1 à 5
 
   useEffect(() => {
     if (!id || id === 'demo') { setLoading(false); return }
@@ -424,6 +426,14 @@ export default function ScanResultsPage() {
     const q = question
     setQuestion('')
 
+    // Le serveur d'inférence est mutualisé : la réponse arrive entre 30 s et
+    // plus d'une minute. Sans compteur ni sortie de secours, l'écran paraît figé.
+    const debut = Date.now()
+    const compteur = setInterval(() => setAttenteIA(Math.floor((Date.now() - debut) / 1000)), 1000)
+    const arret = new AbortController()
+    abortIA.current = arret
+    const expiration = setTimeout(() => arret.abort(), 180000)
+
     // Ajoute l'entrée immédiatement avec réponse vide
     setConversations((prev) => [...prev, { question: q, answer: '', date: '' }])
 
@@ -438,6 +448,7 @@ export default function ScanResultsPage() {
           Authorization:   `Bearer ${lireJeton() || ''}`,
         },
         body:    JSON.stringify({ question: q }),
+        signal:  arret.signal,
       })
       if (!resp.ok) {
         throw new Error(resp.status === 401
@@ -489,17 +500,28 @@ export default function ScanResultsPage() {
       }
     } catch (err) {
       // Le message précis évite un « indisponible » opaque : une session
-      // expirée et un service injoignable n'appellent pas la même réaction.
+      // expirée, une annulation et un service muet n'appellent pas la même
+      // réaction de la part du lecteur.
+      const texte =
+        err?.name === 'AbortError'
+          ? (Date.now() - debut > 175000
+              ? "L'assistant n'a pas répondu dans le délai imparti. Réessayez dans un instant."
+              : 'Question abandonnée.')
+          : (err?.message || "Assistant injoignable pour le moment. Réessayez dans un instant.")
       setConversations((prev) => {
         const updated = [...prev]
         updated[updated.length - 1] = {
           ...updated[updated.length - 1],
-          answer: err?.message || "Assistant injoignable, vérifiez que le serveur est démarré.",
+          answer: texte,
           date:   new Date().toLocaleString('fr-FR'),
         }
         return updated
       })
     } finally {
+      clearInterval(compteur)
+      clearTimeout(expiration)
+      abortIA.current = null
+      setAttenteIA(0)
       setAskingAI(false)
     }
   }
@@ -507,23 +529,24 @@ export default function ScanResultsPage() {
   const handleDownloadPDF = async () => {
     setPdfLoading(true)
     setPdfStep(0)
-    const timers = [
-      setTimeout(() => setPdfStep(1), 1500),
-      setTimeout(() => setPdfStep(2), 6000),
-      setTimeout(() => setPdfStep(3), 14000),
-    ]
+    // Secondes écoulées, à la place d'étapes simulées : le temps réel est la
+    // seule information dont on dispose, et elle suffit à rassurer.
+    const debut = Date.now()
+    const compteur = setInterval(() => setPdfStep(Math.floor((Date.now() - debut) / 1000)), 1000)
     try {
-      const res = await scanAPI.downloadPDF(id || 1)
+      const res = await scanAPI.downloadPDF(id || 1, DELAI_PDF)
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
       const a   = document.createElement('a')
       a.href    = url
       a.download = `cyberguardian-rapport-${scan?.target || 'scan'}.pdf`
       a.click()
       URL.revokeObjectURL(url)
-    } catch {
-      toast.error('Rapport PDF non disponible : backend hors ligne.')
+    } catch (err) {
+      toast.error(err?.code === 'ECONNABORTED'
+        ? 'Le rapport met trop de temps à se générer. Réessayez dans un instant.'
+        : messageErreur(err, 'Rapport indisponible pour le moment. Réessayez dans un instant.'))
     } finally {
-      timers.forEach(clearTimeout)
+      clearInterval(compteur)
       setPdfLoading(false)
       setPdfStep(0)
     }
@@ -639,7 +662,7 @@ export default function ScanResultsPage() {
         <div className="flex flex-col gap-2 w-full sm:w-auto [&>button]:w-full sm:[&>button]:w-auto">
           <Button variant="primary" icon={pdfLoading ? null : Icons.download} onClick={handleDownloadPDF} disabled={pdfLoading}>
             {pdfLoading
-              ? <><span className="spinner mr-2" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />{PDF_STEPS[pdfStep]}</>
+              ? <><span className="spinner mr-2" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />Génération{pdfStep > 2 ? ` · ${pdfStep} s` : '…'}</>
               : 'Télécharger PDF'}
           </Button>
           <Button variant="secondary" icon={Icons.experts} onClick={() => navigate('/experts')}>
@@ -1078,7 +1101,18 @@ export default function ScanResultsPage() {
                     style={{ background: '#F3F8FD', border: '1px solid #E8F1FA' }}>
                     {c.answer
                       ? <>{renderMd(c.answer)}{askingAI && i === conversations.length - 1 && <span className="inline-block w-[2px] h-[13px] bg-blue-400 ml-0.5 animate-pulse" />}</>
-                      : <span className="flex items-center gap-1.5 text-slate-500"><span className="spinner" style={{ width: 12, height: 12, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }} />Analyse en cours…</span>
+                      : <span className="flex items-center gap-2 text-slate-500">
+                          <span className="spinner" style={{ width: 12, height: 12, borderTopColor: '#1F5C99', borderColor: 'rgba(31,92,153,0.2)' }} />
+                          L'assistant rédige{attenteIA > 2 ? ` · ${attenteIA} s` : '…'}
+                          {attenteIA > 4 && (
+                            <button
+                              onClick={() => abortIA.current?.abort()}
+                              className="border-none bg-transparent p-0 text-[12px] font-semibold text-slate-500 underline cursor-pointer hover:text-slate-700"
+                            >
+                              Abandonner
+                            </button>
+                          )}
+                        </span>
                     }
                     {c.date && <div className="text-[10px] text-slate-500 mt-1.5">{c.date}</div>}
                   </div>
