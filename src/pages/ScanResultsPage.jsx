@@ -658,7 +658,7 @@ export default function ScanResultsPage() {
 
       {/* Breakdown + Issues (EASM only) */}
       {!isGithub && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[18px] mb-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 items-start gap-[18px] mb-5">
           {/* Détail du score pondéré + SSL, données réelles du backend */}
           <Card className="p-4 sm:p-[22px_24px]">
             <div className="text-sm font-semibold mb-4">Détail du score</div>

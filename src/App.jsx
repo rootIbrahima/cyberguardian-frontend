@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Menu } from 'lucide-react'
 import Sidebar from './components/Sidebar'
 import { Toaster, HeaderTools } from './components/ui'
@@ -102,6 +102,7 @@ function ProgressLayout() {
    La barre latérale y est escamotée : sans ce point d'entrée permanent,
    la navigation deviendrait inaccessible une fois le tiroir refermé. */
 function MobileBar({ onMenu }) {
+  const navigate = useNavigate()
   return (
     <header className="sticky top-0 z-[15] flex h-[52px] items-center gap-3 border-b border-slate-200 bg-white px-4">
       <button
@@ -111,15 +112,19 @@ function MobileBar({ onMenu }) {
       >
         <Menu size={20} strokeWidth={2} />
       </button>
-      <div className="flex items-center gap-2">
-        <div
+      <button
+        onClick={() => navigate('/dashboard')}
+        title="Retour au tableau de bord"
+        className="flex items-center gap-2 border-none bg-transparent p-0 cursor-pointer"
+      >
+        <span
           className="flex h-7 w-7 items-center justify-center rounded-md"
           style={{ background: 'linear-gradient(135deg, #2A7ACC, #1F5C99)' }}
         >
           {cloneIcon(Icons.shield, { color: '#fff', size: 15 })}
-        </div>
+        </span>
         <span className="text-[14px] font-bold tracking-[-0.02em] text-slate-900">CyberGuardian</span>
-      </div>
+      </button>
       <div className="ml-auto flex items-center gap-2">
         <HeaderTools />
       </div>

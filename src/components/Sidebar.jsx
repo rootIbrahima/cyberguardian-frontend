@@ -161,27 +161,33 @@ export default function Sidebar({ collapsed = false, onToggle, mobile = false, o
     >
       {/* Marque, puis commande de repli */}
       <div className={`flex pb-5 ${collapsed ? 'flex-col items-center gap-2.5 px-0' : 'items-center gap-2.5 pl-[26px] pr-3'}`}>
-        <div
-          className="flex items-center justify-center rounded-[9px] flex-shrink-0"
-          style={{
-            width: 34, height: 34,
-            background: 'linear-gradient(135deg, #2A7ACC, #1F5C99)',
-            boxShadow: '0 0 0 1px rgba(255,255,255,0.1) inset',
-          }}
+        <button
+          onClick={() => handleNav('/dashboard')}
+          title="Retour au tableau de bord"
+          className={`flex items-center gap-2.5 border-none bg-transparent p-0 text-left cursor-pointer ${collapsed ? '' : 'min-w-0 flex-1'}`}
         >
-          {cloneIcon(Icons.shield, { color: '#fff', size: 19 })}
-        </div>
-        {!collapsed && (
-          <div className="min-w-0 flex-1">
-            <div className="text-white text-[14px] font-bold tracking-[-0.02em] leading-tight">
-              CyberGuardian
-            </div>
-            <div className="text-[9.5px] uppercase tracking-[0.09em] leading-tight mt-px"
-              style={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'JetBrains Mono, monospace' }}>
-              EASM Platform
-            </div>
-          </div>
-        )}
+          <span
+            className="flex items-center justify-center rounded-[9px] flex-shrink-0"
+            style={{
+              width: 34, height: 34,
+              background: 'linear-gradient(135deg, #2A7ACC, #1F5C99)',
+              boxShadow: '0 0 0 1px rgba(255,255,255,0.1) inset',
+            }}
+          >
+            {cloneIcon(Icons.shield, { color: '#fff', size: 19 })}
+          </span>
+          {!collapsed && (
+            <span className="min-w-0 flex-1">
+              <span className="block text-white text-[14px] font-bold tracking-[-0.02em] leading-tight">
+                CyberGuardian
+              </span>
+              <span className="block text-[9.5px] uppercase tracking-[0.09em] leading-tight mt-px"
+                style={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'JetBrains Mono, monospace' }}>
+                EASM Platform
+              </span>
+            </span>
+          )}
+        </button>
         <button
           onClick={onToggle}
           title={mobile ? 'Fermer le menu' : collapsed ? 'Déplier le menu' : 'Replier le menu'}

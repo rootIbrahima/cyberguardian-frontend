@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Card, Badge, Button, LabeledInput, PageHeader } from '../components/ui'
+import { Card, Button, LabeledInput, PageHeader } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 import { expertAPI } from '../lib/api'
 
