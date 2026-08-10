@@ -141,7 +141,7 @@ export function Input({ value, onChange, placeholder, type = 'text', className =
   )
 }
 
-export function LabeledInput({ label, icon, value, onChange, placeholder, type = 'text', action }) {
+export function LabeledInput({ label, icon, value, onChange, placeholder, type = 'text', action, autoComplete }) {
   return (
     <div>
       <label className="block text-xs font-semibold text-slate-600 mb-1.5 tracking-[0.01em]">
@@ -158,6 +158,7 @@ export function LabeledInput({ label, icon, value, onChange, placeholder, type =
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          autoComplete={autoComplete}
           className={`w-full py-2.5 rounded-[var(--cg-radius)] border border-slate-300 text-sm outline-none transition-all focus:border-[#1F5C99] focus:ring-2 focus:ring-[#1F5C99]/10 bg-white text-slate-900 placeholder-slate-400 ${icon ? 'pl-10 pr-10' : 'px-3.5'}`}
         />
         {action && <div className="absolute right-2.5">{action}</div>}

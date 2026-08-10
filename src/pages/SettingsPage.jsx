@@ -298,9 +298,9 @@ export default function SettingsPage() {
   }
 
   const fields = [
-    { key: 'current', label: 'Mot de passe actuel' },
-    { key: 'next',    label: 'Nouveau mot de passe' },
-    { key: 'confirm', label: 'Confirmer le nouveau mot de passe' },
+    { key: 'current', label: 'Mot de passe actuel',               auto: 'current-password' },
+    { key: 'next',    label: 'Nouveau mot de passe',              auto: 'new-password' },
+    { key: 'confirm', label: 'Confirmer le nouveau mot de passe', auto: 'new-password' },
   ]
 
   return (
@@ -342,6 +342,7 @@ export default function SettingsPage() {
                       type="password"
                       value={form[f.key]}
                       onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+                      autoComplete={f.auto}
                       required
                       className="w-full px-4 py-3 rounded-[10px] border border-gray-300 text-sm outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
                     />

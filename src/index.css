@@ -109,8 +109,21 @@ body {
 /* Button active scale */
 button:active { transform: scale(0.98); }
 
+/* Repère de focus clavier. Les champs de saisie ont déjà leur propre halo ;
+   boutons et liens n'en avaient aucun, si bien qu'une navigation à la
+   tabulation se faisait à l'aveugle. :focus-visible n'apparaît qu'au clavier,
+   la souris ne déclenche rien. */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--cg-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* Input placeholder */
-input::placeholder { color: #9CA3AF; }
+input::placeholder { color: #6B7280; }
 
 /* Table row hover is handled by Tailwind */
 

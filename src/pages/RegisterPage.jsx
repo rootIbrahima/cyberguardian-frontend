@@ -30,8 +30,8 @@ export default function RegisterPage() {
       setError('Les mots de passe ne correspondent pas.')
       return
     }
-    if (form.password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères.')
+    if (form.password.length < 8) {
+      setError('Le mot de passe doit contenir au moins 8 caractères.')
       return
     }
     setLoading(true)
@@ -45,7 +45,7 @@ export default function RegisterPage() {
       if (err.response?.status === 400) {
         setError('Cet email est déjà utilisé.')
       } else if (!err.response) {
-        setError('Impossible de joindre le serveur. Vérifiez que le backend est démarré.')
+        setError('Serveur injoignable. Vérifiez votre connexion, puis réessayez.')
       } else {
         setError("Erreur lors de la création du compte.")
       }
@@ -134,6 +134,7 @@ export default function RegisterPage() {
             value={form.name}
             onChange={set('name')}
             placeholder="Ibrahima LY"
+            autoComplete="name"
           />
           <LabeledInput
             label="Email professionnel"
@@ -142,6 +143,7 @@ export default function RegisterPage() {
             onChange={set('email')}
             placeholder="vous@entreprise.sn"
             type="email"
+            autoComplete="username"
           />
           <LabeledInput
             label="Mot de passe"
@@ -149,7 +151,8 @@ export default function RegisterPage() {
             value={form.password}
             onChange={set('password')}
             type={showPwd ? 'text' : 'password'}
-            placeholder="Minimum 6 caractères"
+            autoComplete="new-password"
+            placeholder="Minimum 8 caractères"
             action={
               <button
                 type="button"
@@ -166,6 +169,7 @@ export default function RegisterPage() {
             value={form.confirm}
             onChange={set('confirm')}
             type={showPwd ? 'text' : 'password'}
+            autoComplete="new-password"
             placeholder="Répétez le mot de passe"
           />
 

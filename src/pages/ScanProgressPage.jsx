@@ -156,7 +156,7 @@ export default function ScanProgressPage() {
     setToolStatuses((prev) => Object.fromEntries(Object.keys(prev).map((k) => [k, 'done'])))
     setPhase('done')
     const t = setTimeout(() => {
-      navigate(`/scan-results/${id}`, { state: { target, assetType } })
+      navigate(`/scan-results/${id}`, { state: { target, assetType }, replace: true })
     }, 800)
     return () => clearTimeout(t)
   }, [apiDone]) // eslint-disable-line react-hooks/exhaustive-deps

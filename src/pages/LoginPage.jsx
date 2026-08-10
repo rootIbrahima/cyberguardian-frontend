@@ -134,13 +134,14 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
-          <LabeledInput label="Email" icon={Icons.mail} value={email} onChange={setEmail} placeholder="vous@entreprise.sn" type="email" />
+          <LabeledInput label="Email" icon={Icons.mail} value={email} onChange={setEmail} placeholder="vous@entreprise.sn" type="email" autoComplete="username" />
           <LabeledInput
             label="Mot de passe"
             icon={Icons.lock}
             value={pwd}
             onChange={setPwd}
             type={showPwd ? 'text' : 'password'}
+            autoComplete="current-password"
             action={
               <button
                 type="button"

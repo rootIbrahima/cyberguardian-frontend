@@ -163,6 +163,34 @@ function AppLayout() {
   )
 }
 
+/* ─── Titre de l'onglet ───
+   Un titre unique pour toute l'application rend l'historique du navigateur
+   illisible et deux onglets impossibles à distinguer. */
+const TITRES = {
+  '/login':           'Connexion',
+  '/register':        'Créer un compte',
+  '/dashboard':       'Tableau de bord',
+  '/scan-results':    'Tous les scans',
+  '/experts':         'Experts',
+  '/messages':        'Messagerie',
+  '/settings':        'Paramètres',
+  '/register-expert': 'Devenir expert',
+  '/admin':           'Administration',
+  '/remediation':     'Correction GitHub',
+}
+
+function TitreDocument() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    const section =
+      TITRES[pathname] ||
+      (pathname.startsWith('/scan-results/')  ? 'Résultats du scan' :
+       pathname.startsWith('/scan-progress/') ? 'Analyse en cours'  : null)
+    document.title = section ? `${section} · CyberGuardian` : 'CyberGuardian — EASM Platform'
+  }, [pathname])
+  return null
+}
+
 /* ─── Smart home redirect ─── */
 function HomeRedirect() {
   const role = getRole()
@@ -172,6 +200,7 @@ function HomeRedirect() {
 export default function App() {
   return (
     <BrowserRouter>
+      <TitreDocument />
       <Toaster />
       <Routes>
         {/* Public */}
