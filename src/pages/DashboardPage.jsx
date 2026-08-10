@@ -184,7 +184,7 @@ export default function DashboardPage() {
   const lastGrade = lastScan?.results?.ssl?.grade ?? null
   const totalVulns = scans.reduce((sum, s) => sum + (s.vulns || 0), 0)
 
-  const PAGE_TITLE = { client: 'Dashboard', expert: 'Mes missions', admin: 'Tableau de bord' }
+  const PAGE_TITLE = { client: 'Tableau de bord', expert: 'Mes missions', admin: 'Tableau de bord' }
   const PAGE_SUB   = {
     client: "Vue d'ensemble de votre posture de sécurité externe",
     expert: "Missions actives et rapports clients assignés",

@@ -11,8 +11,8 @@ import { fermerSession, lireUtilisateur } from '../lib/session'
 const NAV_BY_ROLE = {
   client: {
     principal: [
-      { path: '/dashboard',       label: 'Dashboard',       icon: Icons.dashboard },
-      { path: '/scan-results',    label: 'Résultats scan',  icon: Icons.results },
+      { path: '/dashboard',       label: 'Tableau de bord', icon: Icons.dashboard },
+      { path: '/scan-results',    label: 'Mes scans',       icon: Icons.results },
       { path: '/experts',         label: 'Experts',         icon: Icons.experts },
       { path: '/messages',        label: 'Messagerie',      icon: Icons.message },
     ],
@@ -35,7 +35,7 @@ const NAV_BY_ROLE = {
       { path: '/experts',         label: 'Experts',          icon: Icons.experts },
       { path: '/scan-results',    label: 'Tous les scans',   icon: Icons.results },
       { path: '/remediation',     label: 'Correction GitHub', icon: Icons.github },
-      { path: '/messages',        label: 'Messages',         icon: Icons.message },
+      { path: '/messages',        label: 'Messagerie',       icon: Icons.message },
     ],
     compte: [],
   },
@@ -159,36 +159,39 @@ export default function Sidebar({ collapsed = false, onToggle, mobile = false, o
         transition: 'width 0.2s ease, transform 0.22s ease, visibility 0.22s',
       }}
     >
-      {/* Hamburger + logo */}
-      <div className={`flex items-center pb-5 ${collapsed ? 'flex-col gap-3 px-0' : 'gap-2 px-4'}`}>
-        <button
-          onClick={onToggle}
-          title={mobile ? 'Fermer le menu' : collapsed ? 'Déplier le menu' : 'Replier le menu'}
-          className="flex items-center justify-center rounded-lg border-none cursor-pointer flex-shrink-0 transition-colors"
-          style={{ width: 36, height: 36, background: 'transparent', color: 'rgba(255,255,255,0.6)' }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-        >
-          {mobile ? <X size={19} strokeWidth={2} /> : <Menu size={19} strokeWidth={2} />}
-        </button>
+      {/* Marque, puis commande de repli */}
+      <div className={`flex pb-5 ${collapsed ? 'flex-col items-center gap-2.5 px-0' : 'items-center gap-2.5 pl-[26px] pr-3'}`}>
         <div
           className="flex items-center justify-center rounded-[9px] flex-shrink-0"
           style={{
-            width: 36, height: 36,
+            width: 34, height: 34,
             background: 'linear-gradient(135deg, #2A7ACC, #1F5C99)',
             boxShadow: '0 0 0 1px rgba(255,255,255,0.1) inset',
           }}
         >
-          {cloneIcon(Icons.shield, { color: '#fff', size: 20 })}
+          {cloneIcon(Icons.shield, { color: '#fff', size: 19 })}
         </div>
         {!collapsed && (
-          <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-[0.08em]"
+          <div className="min-w-0 flex-1">
+            <div className="text-white text-[14px] font-bold tracking-[-0.02em] leading-tight">
+              CyberGuardian
+            </div>
+            <div className="text-[9.5px] uppercase tracking-[0.09em] leading-tight mt-px"
               style={{ color: 'rgba(255,255,255,0.4)', fontFamily: 'JetBrains Mono, monospace' }}>
               EASM Platform
             </div>
           </div>
         )}
+        <button
+          onClick={onToggle}
+          title={mobile ? 'Fermer le menu' : collapsed ? 'Déplier le menu' : 'Replier le menu'}
+          className="flex items-center justify-center rounded-lg border-none cursor-pointer flex-shrink-0 transition-colors"
+          style={{ width: 32, height: 32, background: 'transparent', color: 'rgba(255,255,255,0.55)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+        >
+          {mobile ? <X size={18} strokeWidth={2} /> : <Menu size={18} strokeWidth={2} />}
+        </button>
       </div>
 
       {/* Principal nav */}
@@ -243,11 +246,13 @@ export default function Sidebar({ collapsed = false, onToggle, mobile = false, o
             </span>
             <button
               onClick={() => setConfirmLogout(true)}
-              className="bg-transparent border-none cursor-pointer p-1 transition-opacity hover:opacity-70"
-              style={{ opacity: 0.45, color: '#fff' }}
-              title="Déconnexion"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border cursor-pointer transition-colors"
+              style={{ borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+              title="Se déconnecter"
             >
-              {cloneIcon(Icons.logout, { size: 17, color: '#fff' })}
+              {cloneIcon(Icons.logout, { size: 16, color: 'currentColor' })}
             </button>
           </>
         ) : (
@@ -265,11 +270,13 @@ export default function Sidebar({ collapsed = false, onToggle, mobile = false, o
             </div>
             <button
               onClick={() => setConfirmLogout(true)}
-              className="bg-transparent border-none cursor-pointer p-1 transition-opacity hover:opacity-70"
-              style={{ opacity: 0.45, color: '#fff' }}
-              title="Déconnexion"
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border cursor-pointer transition-colors"
+              style={{ borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+              title="Se déconnecter"
             >
-              {cloneIcon(Icons.logout, { size: 18, color: '#fff' })}
+              {cloneIcon(Icons.logout, { size: 16, color: 'currentColor' })}
             </button>
           </div>
         )}
