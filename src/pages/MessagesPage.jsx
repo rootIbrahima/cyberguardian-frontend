@@ -100,7 +100,7 @@ export default function MessagesPage() {
         />
       )}
 
-      <Card className="overflow-hidden flex-1 p-0 grid min-h-0 lg:grid-cols-[320px_1fr]">
+      <Card className="overflow-hidden flex-1 p-0 grid min-h-0 lg:grid-cols-[320px_minmax(0,1fr)]">
         {/* ─── Conversation list ─── */}
         <div
           className={`border-r border-gray-200 flex-col ${mobile && activeConv ? 'hidden' : 'flex'}`}

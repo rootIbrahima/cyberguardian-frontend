@@ -246,7 +246,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Score + Recent scans */}
-      <div className={`grid gap-[18px] ${role === 'client' ? 'lg:grid-cols-[300px_1fr]' : ''}`}>
+      <div className={`grid gap-[18px] ${role === 'client' ? 'lg:grid-cols-[300px_minmax(0,1fr)]' : ''}`}>
         {role === 'client' && (
           <Card className="p-5 sm:p-[26px]">
             <ScoreCard

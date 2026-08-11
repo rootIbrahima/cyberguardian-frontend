@@ -125,7 +125,7 @@ function ContextBar({ conversation, preview, isClient, isAdmin, signing, onSign,
       .join(' · ')
     return (
       <div className="px-4 sm:px-[22px] py-2 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border-b border-gray-100 bg-white text-xs text-gray-500">
-        <span className="flex-1 sm:truncate">
+        <span className="flex-1 leading-snug">
           {detail ? <>Partagé avec l'expert : <span className="font-mono text-gray-700">{detail}</span></>
                   : "L'expert voit le score détaillé par catégorie."}
         </span>
@@ -141,7 +141,7 @@ function ContextBar({ conversation, preview, isClient, isAdmin, signing, onSign,
   if (conversation.level === 3 && preview?.access === 'full' && preview.scan_id) {
     return (
       <div className="px-4 sm:px-[22px] py-2 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 border-b border-gray-100 bg-white text-xs text-gray-500">
-        <span className="flex-1 sm:truncate">
+        <span className="flex-1 leading-snug">
           Rapport complet partagé : score <span className="font-mono text-gray-700">{preview.scan.score}/100</span>
           {countdown && countdown !== 'Expiré' && <> · expire dans <span className="font-mono text-gray-700">{countdown}</span></>}
         </span>
