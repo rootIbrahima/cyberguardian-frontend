@@ -63,14 +63,19 @@ export default function MessagesPage() {
       className={`flex flex-col ${mobile ? 'cg-hauteur-messagerie' : ''}`}
       style={mobile ? undefined : { height: 'calc(100vh - 40px)' }}
     >
-      <PageHeader
-        title="Messagerie"
-        subtitle={
-          (lireUtilisateur().role || 'client') === 'admin'
-            ? 'Supervision des conversations client-expert, lecture seule'
-            : 'Vos échanges avec les experts'
-        }
-      />
+      {/* Une fois la conversation ouverte sur téléphone, le fil porte déjà le
+          nom de l'interlocuteur et le bouton de retour : le titre de page ne
+          fait que consommer la hauteur dont le clavier a besoin. */}
+      {!(mobile && activeConv) && (
+        <PageHeader
+          title="Messagerie"
+          subtitle={
+            (lireUtilisateur().role || 'client') === 'admin'
+              ? 'Supervision des conversations client-expert, lecture seule'
+              : 'Vos échanges avec les experts'
+          }
+        />
+      )}
 
       <Card className="overflow-hidden flex-1 p-0 grid min-h-0 lg:grid-cols-[320px_1fr]">
         {/* ─── Conversation list ─── */}
