@@ -4,12 +4,17 @@ import { cloneIcon, Icons } from '../components/Icons'
 import MessageThread from '../components/MessageThread'
 import { messageAPI } from '../lib/api'
 import useMobile from '../lib/useMobile'
+import useHauteurVisible from '../lib/useHauteurVisible'
 import { lireUtilisateur } from '../lib/session'
 
 const POLL_INTERVAL = 5000
 
+// Barre supérieure (52) plus les marges verticales du gabarit (12 + 16).
+const CHROME_MOBILE = 80
+
 export default function MessagesPage() {
   const mobile = useMobile()
+  const hauteurVisible = useHauteurVisible()
   const [conversations, setConversations] = useState([])
   const [activeConv, setActiveConv]       = useState(null)
   const [search, setSearch]               = useState('')
@@ -60,8 +65,10 @@ export default function MessagesPage() {
 
   return (
     <div
-      className={`flex flex-col ${mobile ? 'cg-hauteur-messagerie' : ''}`}
-      style={mobile ? undefined : { height: 'calc(100vh - 40px)' }}
+      className="flex flex-col"
+      // La hauteur suit la fenêtre visuelle plutôt qu'une unité de mise en page :
+      // sur iOS, seule la première rétrécit à l'ouverture du clavier.
+      style={{ height: mobile ? hauteurVisible - CHROME_MOBILE : 'calc(100vh - 40px)' }}
     >
       {/* Une fois la conversation ouverte sur téléphone, le fil porte déjà le
           nom de l'interlocuteur et le bouton de retour : le titre de page ne

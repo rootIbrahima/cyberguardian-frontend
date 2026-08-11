@@ -4,6 +4,7 @@ import { Check, CheckCheck, ChevronLeft, Download, FileText, Paperclip } from 'l
 import { Avatar, Badge, Button, toast } from './ui'
 import { cloneIcon, Icons } from './Icons'
 import { messageAPI, messageErreur } from '../lib/api'
+import useHauteurVisible from '../lib/useHauteurVisible'
 import { lireUtilisateur } from '../lib/session'
 
 const TYPES_JOINTS = 'image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain'
@@ -188,6 +189,7 @@ function RatingPrompt({ onRate }) {
 /* ─── Composant principal ─── */
 export default function MessageThread({ conversation, onLevelUp, onBack }) {
   const navigate = useNavigate()
+  const hauteurVisible = useHauteurVisible()
   const [messages, setMessages] = useState([])
   const [input, setInput]       = useState('')
   const [signing, setSigning]   = useState(false)
@@ -251,6 +253,13 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
     const el = scrollRef.current
     if (el && colleEnBas.current) el.scrollTop = el.scrollHeight
   }, [messages])
+
+  /* L'ouverture du clavier réduit le fil : sans ce recalage, le dernier message
+     sort par le haut au moment précis où l'on s'apprête à y répondre. */
+  useEffect(() => {
+    const el = scrollRef.current
+    if (el && colleEnBas.current) el.scrollTop = el.scrollHeight
+  }, [hauteurVisible])
 
   const send = async () => {
     const text = input.trim()

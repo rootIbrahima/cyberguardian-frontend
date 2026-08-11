@@ -156,11 +156,12 @@ function AppLayout() {
     return () => { document.body.style.overflow = '' }
   }, [mobile, tiroir])
 
-  // La messagerie occupe tout l'espace disponible, sans bride de largeur
+  // La messagerie occupe tout l'espace disponible, sans bride de largeur, et
+  // se dimensionne elle-même sur la zone réellement visible.
   const isMessages = location.pathname === '/messages'
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className={`flex bg-gray-50 ${isMessages ? '' : 'min-h-screen'}`}>
       <Sidebar
         collapsed={!mobile && collapsed}
         onToggle={mobile ? () => setTiroir(false) : toggleSidebar}
@@ -177,7 +178,7 @@ function AppLayout() {
       )}
 
       <main
-        className="flex-1 min-h-screen w-full min-w-0"
+        className={`flex-1 w-full min-w-0 ${isMessages ? '' : 'min-h-screen'}`}
         style={{
           marginLeft: mobile ? 0 : collapsed ? 68 : 240,
           maxWidth: isMessages ? 'none' : 1440,
