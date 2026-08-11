@@ -1,30 +1,35 @@
 import { useState, useEffect } from 'react'
 
-/* Hauteur réellement visible de la fenêtre.
+/* Géométrie de la fenêtre réellement visible.
 
-   Safari iOS n'honore pas « interactive-widget » : à l'ouverture du clavier, la
-   hauteur de mise en page ne bouge pas, seule la fenêtre visuelle rétrécit. Un
-   écran dimensionné en dvh dépasse alors la zone visible et Safari fait défiler
-   la page pour révéler le champ de saisie, ce qui escamote la barre supérieure
-   et donne l'impression que la conversation occupe tout l'écran.
+   À l'ouverture du clavier, iOS ne redimensionne pas la fenêtre de mise en
+   page : il rétrécit la fenêtre visuelle et la décale à l'intérieur. Un élément
+   en position fixe, positionné par rapport à la fenêtre de mise en page, se
+   retrouve alors hors du champ. « decalage » compense ce glissement.
 
-   visualViewport est la seule source qui suive le clavier sur les deux
-   plateformes. Repli sur innerHeight pour les navigateurs qui ne l'exposent
-   pas, où le comportement reste celui d'avant. */
+   Repli sur innerHeight là où l'API manque : le comportement y reste celui
+   d'avant, aucune plateforme n'est pénalisée. */
 export default function useHauteurVisible() {
-  const mesurer = () => window.visualViewport?.height ?? window.innerHeight
-  const [hauteur, setHauteur] = useState(mesurer)
+  const mesurer = () => ({
+    hauteur:  window.visualViewport?.height ?? window.innerHeight,
+    decalage: window.visualViewport?.offsetTop ?? 0,
+  })
+  const [geometrie, setGeometrie] = useState(mesurer)
 
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) {
-      const surRedimension = () => setHauteur(window.innerHeight)
+      const surRedimension = () => setGeometrie({ hauteur: window.innerHeight, decalage: 0 })
       window.addEventListener('resize', surRedimension)
       return () => window.removeEventListener('resize', surRedimension)
     }
     // « scroll » autant que « resize » : iOS décale la fenêtre visuelle avant
-    // d'en changer la hauteur, les deux événements doivent être suivis.
-    const surChangement = () => setHauteur(vv.height)
+    // d'en changer la hauteur, les deux événements comptent.
+    const surChangement = () => setGeometrie((precedent) => (
+      precedent.hauteur === vv.height && precedent.decalage === vv.offsetTop
+        ? precedent                                  // même géométrie, pas de rendu
+        : { hauteur: vv.height, decalage: vv.offsetTop }
+    ))
     vv.addEventListener('resize', surChangement)
     vv.addEventListener('scroll', surChangement)
     return () => {
@@ -33,5 +38,5 @@ export default function useHauteurVisible() {
     }
   }, [])
 
-  return hauteur
+  return geometrie
 }

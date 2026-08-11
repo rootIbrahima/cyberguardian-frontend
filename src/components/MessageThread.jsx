@@ -189,7 +189,7 @@ function RatingPrompt({ onRate }) {
 /* ─── Composant principal ─── */
 export default function MessageThread({ conversation, onLevelUp, onBack }) {
   const navigate = useNavigate()
-  const hauteurVisible = useHauteurVisible()
+  const { hauteur: hauteurVisible } = useHauteurVisible()
   const [messages, setMessages] = useState([])
   const [input, setInput]       = useState('')
   const [signing, setSigning]   = useState(false)
@@ -462,6 +462,11 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && send()}
+              onFocus={() => {
+                colleEnBas.current = true
+                const el = scrollRef.current
+                if (el) setTimeout(() => { el.scrollTop = el.scrollHeight }, 250)
+              }}
               placeholder="Écrire un message…"
               className="flex-1 min-w-0 px-4 py-[11px] rounded-[10px] border border-gray-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
             />

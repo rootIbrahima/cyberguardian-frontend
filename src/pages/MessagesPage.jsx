@@ -14,7 +14,7 @@ const CHROME_MOBILE = 80
 
 export default function MessagesPage() {
   const mobile = useMobile()
-  const hauteurVisible = useHauteurVisible()
+  const { hauteur: hauteurVisible, decalage } = useHauteurVisible()
   const [conversations, setConversations] = useState([])
   const [activeConv, setActiveConv]       = useState(null)
   const [search, setSearch]               = useState('')
@@ -62,6 +62,22 @@ export default function MessagesPage() {
   )
 
   const LEVEL_COLORS = { 1: '#9CA3AF', 2: '#F59E0B', 3: '#10B981' }
+
+  if (mobile && activeConv) {
+    return (
+      <div
+        className="fixed inset-x-0 z-30 flex flex-col bg-white"
+        style={{ top: decalage, height: hauteurVisible }}
+      >
+        <MessageThread
+          key={activeConv.id}
+          conversation={activeConv}
+          onLevelUp={handleLevelUp}
+          onBack={() => setActiveConv(null)}
+        />
+      </div>
+    )
+  }
 
   return (
     <div
