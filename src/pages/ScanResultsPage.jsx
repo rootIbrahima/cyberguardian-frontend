@@ -635,8 +635,8 @@ export default function ScanResultsPage() {
             </Badge>
           </div>
           <CopyValue value={scan?.target} className="text-[24px] font-bold font-mono tracking-[-0.02em] text-slate-900 break-all" />
-          <div className="text-[13px] text-slate-500 mt-1 flex items-center gap-1.5">
-            Analysé <RelativeTime date={scan?.date} /> · {isGithub
+          <div className="text-[13px] text-slate-500 mt-1">
+            Analysé <RelativeTime date={scan?.date} className="whitespace-nowrap" /> · {isGithub
               ? 'Bandit · Safety · TruffleHog'
               : ['DNS', 'SSL/TLS', 'Headers', 'Ports', 'Réputation']
                   .filter((_, i) => [scan?.results?.dns, scan?.results?.ssl, scan?.results?.headers,
@@ -1130,13 +1130,15 @@ export default function ScanResultsPage() {
             className="flex-1 min-w-0 px-4 py-[11px] rounded-[var(--cg-radius)] border border-slate-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
           />
           {askingAI ? (
-            <Button variant="secondary" onClick={() => abortIA.current?.abort()} className="flex-shrink-0">
+            <Button variant="secondary" onClick={() => abortIA.current?.abort()}
+              title="Arrêter la réponse" className="flex-shrink-0">
               <Square size={12} strokeWidth={3} fill="currentColor" />
-              Arrêter
+              <span className="hidden sm:inline">Arrêter</span>
             </Button>
           ) : (
-            <Button variant="primary" icon={Icons.send} onClick={handleAskAI} disabled={!question.trim()} className="flex-shrink-0">
-              Envoyer
+            <Button variant="primary" icon={Icons.send} onClick={handleAskAI} disabled={!question.trim()}
+              title="Envoyer la question" className="flex-shrink-0">
+              <span className="hidden sm:inline">Envoyer</span>
             </Button>
           )}
         </div>

@@ -456,7 +456,8 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
               placeholder="Écrire un message…"
               className="flex-1 min-w-0 px-4 py-[11px] rounded-[10px] border border-gray-300 text-[13.5px] outline-none transition-all focus:border-blue-700 focus:ring-2 focus:ring-blue-700/10"
             />
-            <Button variant="primary" icon={Icons.send} onClick={send} disabled={!input.trim() || envoi} className="flex-shrink-0">
+            <Button variant="primary" icon={Icons.send} onClick={send} disabled={!input.trim() || envoi}
+              title="Envoyer le message" className="flex-shrink-0">
               <span className="hidden sm:inline">Envoyer</span>
             </Button>
           </div>

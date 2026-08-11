@@ -111,13 +111,16 @@ const BTN_SIZES = {
   lg: 'px-5 py-2.5 text-[15px] gap-2 rounded-[var(--cg-radius)]',
 }
 
-export function Button({ children, variant = 'primary', icon, size = 'md', onClick, disabled, className = '', type = 'button', style }) {
+export function Button({ children, variant = 'primary', icon, size = 'md', onClick, disabled,
+                         className = '', type = 'button', style, title, ariaLabel }) {
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
       style={style}
+      title={title}
+      aria-label={ariaLabel || title}
       className={`inline-flex items-center justify-center font-semibold border transition-all duration-150 active:scale-[0.98] ${BTN_VARIANTS[variant]} ${BTN_SIZES[size]} ${className}`}
     >
       {icon && cloneIcon(icon, { size: size === 'sm' ? 13 : 15, color: 'currentColor' })}
@@ -240,7 +243,7 @@ function NotificationBell() {
         <>
           {/* clic à l'extérieur pour fermer */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-2 w-[min(380px,calc(100vw-32px))] bg-white border border-slate-200 rounded-[10px] shadow-lg z-50 overflow-hidden">
+          <div className="fixed left-3 right-3 top-[58px] z-50 max-h-[75vh] overflow-hidden rounded-[10px] border border-slate-200 bg-white shadow-lg sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[380px]">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
               <span className="text-[12.5px] font-semibold text-slate-800">
                 Notifications

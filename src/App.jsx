@@ -60,7 +60,8 @@ function SynchroProfil() {
       .then((res) => {
         if (!monte || !res.data) return
         const local = lireUtilisateur()
-        if (local.role === res.data.role && local.name === res.data.name) return
+        if (local.role === res.data.role && local.name === res.data.name
+            && local.email === res.data.email) return
         majUtilisateur({ name: res.data.name, email: res.data.email, role: res.data.role })
         window.location.reload()
       })
