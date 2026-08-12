@@ -56,6 +56,8 @@ export const authAPI = {
   me:             () => api.get('/auth/me'),
   changePassword: (current_password, new_password) =>
     api.put('/auth/me/password', { current_password, new_password }),
+  setAlertesEmail: (alertes_email) =>
+    api.put('/auth/me/preferences', { alertes_email }),
 }
 
 export const scanAPI = {

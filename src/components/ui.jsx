@@ -176,6 +176,7 @@ export function LabeledInput({ label, icon, value, onChange, placeholder, type =
    PAGE HEADER
 ══════════════════════════════════════════════════════════ */
 const NOTIF_TYPES = {
+  alerte_securite: { Icon: AlertTriangle,  bg: '#FEF2F2', fg: '#991B1B' },
   message:         { Icon: MessageSquare,  bg: '#EFF6FF', fg: '#1D4ED8' },
   mission_level:   { Icon: Handshake,      bg: '#FFF7ED', fg: '#854F0B' },
   contract:        { Icon: ShieldCheck,    bg: '#F0FDF4', fg: '#1A7A4A' },

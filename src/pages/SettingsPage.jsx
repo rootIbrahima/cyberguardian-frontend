@@ -7,6 +7,75 @@ import { lireUtilisateur } from '../lib/session'
 const ROLE_LABELS = { client: 'Client', expert: 'Expert validé', admin: 'Administrateur' }
 const ROLE_COLORS = { client: 'blue', expert: 'green', admin: 'orange' }
 
+/* ─── Section Alertes par e-mail ─── */
+function EmailSection() {
+  const [actif, setActif]     = useState(null)   // null tant que l'état réel est inconnu
+  const [adresse, setAdresse] = useState('')
+  const [envoi, setEnvoi]     = useState(false)
+
+  useEffect(() => {
+    authAPI.me()
+      .then(({ data }) => { setActif(!!data.alertes_email); setAdresse(data.email || '') })
+      .catch(() => setActif(false))
+  }, [])
+
+  const basculer = async () => {
+    const cible = !actif
+    setActif(cible)          // bascule immédiate, l'aller-retour serveur est invisible
+    setEnvoi(true)
+    try {
+      await authAPI.setAlertesEmail(cible)
+      toast.success(cible ? 'Alertes par e-mail activées.' : 'Alertes par e-mail désactivées.')
+    } catch (err) {
+      setActif(!cible)       // l'interrupteur doit refléter la base, pas l'intention
+      toast.error(messageErreur(err, 'Préférence non enregistrée : backend hors ligne.'))
+    }
+    setEnvoi(false)
+  }
+
+  return (
+    <Card className="p-5 sm:p-7">
+      <div className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.08em] mb-4">
+        Alertes par e-mail
+      </div>
+
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-[14px] font-semibold mb-1">
+            {actif ? 'Alertes activées' : 'Alertes désactivées'}
+          </div>
+          <div className="text-[12.5px] text-gray-500 truncate">
+            {adresse || '—'}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          role="switch"
+          aria-checked={!!actif}
+          aria-label="Recevoir les alertes de sécurité par e-mail"
+          onClick={basculer}
+          disabled={actif === null || envoi}
+          className="relative flex-shrink-0 w-[46px] h-[26px] rounded-full transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/30"
+          style={{ background: actif ? 'var(--cg-primary)' : '#CBD5E1' }}
+        >
+          <span
+            className="absolute top-[3px] w-5 h-5 rounded-full bg-white shadow-sm transition-all"
+            style={{ left: actif ? 23 : 3 }}
+          />
+        </button>
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-gray-100 text-[12.5px] text-gray-600 leading-relaxed">
+        Un message part à la fin d'un scan lorsqu'un écart est constaté depuis le
+        précédent : secret exposé, port sensible ouvert, vulnérabilité grave,
+        certificat proche de son terme, chute de score. Un scan qui ne change rien
+        n'envoie rien.
+      </div>
+    </Card>
+  )
+}
+
 /* ─── Section Notifications Telegram ─── */
 function TelegramSection() {
   const [statut, setStatut]   = useState(null)   // { lie, chat_id, lie_depuis }
@@ -81,8 +150,11 @@ function TelegramSection() {
               </div>
             </div>
           </div>
-          <div className="text-[12.5px] text-gray-600 mb-4">
-            Alertes activées : chute de score, expiration SSL, secrets détectés.
+          <div className="text-[12.5px] text-gray-600 mb-4 leading-relaxed">
+            À chaque scan, vous êtes prévenu de ce qui a changé depuis le
+            précédent : secret exposé, port sensible ouvert, vulnérabilité
+            grave, certificat proche de son terme, chute de score. Les
+            messages, missions et contrats vous parviennent également ici.
           </div>
           <Button variant="danger" size="sm" icon={Icons.trash} onClick={delier}>
             Délier le compte
@@ -364,6 +436,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="flex flex-col gap-5">
+          <EmailSection />
           <TelegramSection />
           <GitHubSection />
         </div>
