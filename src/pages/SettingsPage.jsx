@@ -7,80 +7,36 @@ import { lireUtilisateur } from '../lib/session'
 const ROLE_LABELS = { client: 'Client', expert: 'Expert validé', admin: 'Administrateur' }
 const ROLE_COLORS = { client: 'blue', expert: 'green', admin: 'orange' }
 
-/* ─── Section Alertes par e-mail ─── */
-function EmailSection() {
-  const [actif, setActif]     = useState(null)   // null tant que l'état réel est inconnu
-  const [adresse, setAdresse] = useState('')
-  const [envoi, setEnvoi]     = useState(false)
+/* ─── Section Notifications ─── */
+/* L'e-mail et Telegram répondaient à la même question — où partent mes alertes —
+   dans deux cartes distinctes, chacune avec son paragraphe d'explication. Ils
+   forment ici une liste de canaux : un canal supplémentaire y sera une ligne de
+   plus, pas une carte de plus. Le flux de liaison Telegram ne se déplie qu'à la
+   demande ; il ne sert qu'une fois dans la vie d'un compte et occupait à lui
+   seul la moitié de la page. */
 
-  useEffect(() => {
-    authAPI.me()
-      .then(({ data }) => { setActif(!!data.alertes_email); setAdresse(data.email || '') })
-      .catch(() => setActif(false))
-  }, [])
-
-  const basculer = async () => {
-    const cible = !actif
-    setActif(cible)          // bascule immédiate, l'aller-retour serveur est invisible
-    setEnvoi(true)
-    try {
-      await authAPI.setAlertesEmail(cible)
-      toast.success(cible ? 'Alertes par e-mail activées.' : 'Alertes par e-mail désactivées.')
-    } catch (err) {
-      setActif(!cible)       // l'interrupteur doit refléter la base, pas l'intention
-      toast.error(messageErreur(err, 'Préférence non enregistrée : backend hors ligne.'))
-    }
-    setEnvoi(false)
-  }
-
+function LigneCanal({ icone, nom, detail, children }) {
   return (
-    <Card className="p-5 sm:p-7">
-      <div className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.08em] mb-4">
-        Alertes par e-mail
+    <div className="flex items-center gap-3 py-4">
+      <div className="w-9 h-9 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
+        {cloneIcon(icone, { size: 17, color: '#475569' })}
       </div>
-
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="text-[14px] font-semibold mb-1">
-            {actif ? 'Alertes activées' : 'Alertes désactivées'}
-          </div>
-          <div className="text-[12.5px] text-gray-500 truncate">
-            {adresse || '—'}
-          </div>
-        </div>
-
-        <button
-          type="button"
-          role="switch"
-          aria-checked={!!actif}
-          aria-label="Recevoir les alertes de sécurité par e-mail"
-          onClick={basculer}
-          disabled={actif === null || envoi}
-          className="relative flex-shrink-0 w-[46px] h-[26px] rounded-full transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/30"
-          style={{ background: actif ? 'var(--cg-primary)' : '#CBD5E1' }}
-        >
-          <span
-            className="absolute top-[3px] w-5 h-5 rounded-full bg-white shadow-sm transition-all"
-            style={{ left: actif ? 23 : 3 }}
-          />
-        </button>
+      <div className="flex-1 min-w-0">
+        <div className="text-[14px] font-semibold">{nom}</div>
+        <div className="text-[12.5px] text-gray-500 truncate">{detail}</div>
       </div>
-
-      <div className="mt-4 pt-4 border-t border-gray-100 text-[12.5px] text-gray-600 leading-relaxed">
-        Un message part à la fin d'un scan lorsqu'un écart est constaté depuis le
-        précédent : secret exposé, port sensible ouvert, vulnérabilité grave,
-        certificat proche de son terme, chute de score. Un scan qui ne change rien
-        n'envoie rien.
-      </div>
-    </Card>
+      <div className="flex-shrink-0">{children}</div>
+    </div>
   )
 }
 
-/* ─── Section Notifications Telegram ─── */
-function TelegramSection() {
-  const [statut, setStatut]   = useState(null)   // { lie, chat_id, lie_depuis }
-  const [code, setCode]       = useState(null)   // { code, lien, expire_dans }
-  const [loading, setLoading] = useState(false)
+function NotificationsSection() {
+  const [emailActif, setEmailActif] = useState(null)   // null tant que l'état réel est inconnu
+  const [adresse, setAdresse]       = useState('')
+  const [envoi, setEnvoi]           = useState(false)
+  const [statut, setStatut]         = useState(null)   // { lie, chat_id, lie_depuis }
+  const [code, setCode]             = useState(null)   // { code, lien, expire_dans }
+  const [loading, setLoading]       = useState(false)
   const pollRef = useRef(null)
 
   const fetchStatut = async () => {
@@ -97,9 +53,26 @@ function TelegramSection() {
   }
 
   useEffect(() => {
+    authAPI.me()
+      .then(({ data }) => { setEmailActif(!!data.alertes_email); setAdresse(data.email || '') })
+      .catch(() => setEmailActif(false))
     fetchStatut()
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [])
+
+  const basculerEmail = async () => {
+    const cible = !emailActif
+    setEmailActif(cible)     // bascule immédiate, l'aller-retour serveur est invisible
+    setEnvoi(true)
+    try {
+      await authAPI.setAlertesEmail(cible)
+      toast.success(cible ? 'Alertes par e-mail activées.' : 'Alertes par e-mail désactivées.')
+    } catch (err) {
+      setEmailActif(!cible)  // l'interrupteur doit refléter la base, pas l'intention
+      toast.error(messageErreur(err, 'Préférence non enregistrée : backend hors ligne.'))
+    }
+    setEnvoi(false)
+  }
 
   const genererCode = async () => {
     setLoading(true)
@@ -132,56 +105,66 @@ function TelegramSection() {
 
   return (
     <Card className="p-5 sm:p-7">
-      <div className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.08em] mb-4">
-        Notifications Telegram
+      <div className="text-[13px] font-semibold text-gray-500 uppercase tracking-[0.08em] mb-1">
+        Notifications
       </div>
+      <p className="text-[12.5px] text-gray-500 leading-relaxed">
+        Vos alertes de sécurité et les messages de la plateforme partent sur les
+        canaux actifs ci-dessous.
+      </p>
 
-      {/* État 2, lié */}
-      {statut?.lie ? (
-        <div className="rounded-xl p-5" style={{ background: '#F0FDF4', border: '1px solid #D1FAE5' }}>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-              {cloneIcon(Icons.checkCircle, { size: 20, color: '#059669' })}
-            </div>
-            <div>
-              <div className="text-[14px] font-semibold text-green-800">Telegram connecté</div>
-              <div className="text-[12px] text-gray-500">
-                Lié le {statut.lie_depuis || '—'} · ID {statut.chat_id || '—'}
-              </div>
-            </div>
-          </div>
-          <div className="text-[12.5px] text-gray-600 mb-4 leading-relaxed">
-            À chaque scan, vous êtes prévenu de ce qui a changé depuis le
-            précédent : secret exposé, port sensible ouvert, vulnérabilité
-            grave, certificat proche de son terme, chute de score. Les
-            messages, missions et contrats vous parviennent également ici.
-          </div>
-          <Button variant="danger" size="sm" icon={Icons.trash} onClick={delier}>
-            Délier le compte
-          </Button>
-        </div>
-      ) : (
-        /* État 1, non lié */
-        <div className={`grid gap-5 ${code ? 'lg:grid-cols-2' : ''}`}>
-          <div>
-            <div className="text-[14px] font-semibold mb-1.5">Lier votre compte Telegram</div>
-            <p className="text-[12.5px] text-gray-500 mb-4 leading-relaxed">
-              Recevez vos alertes de sécurité directement sur Telegram.
-            </p>
-            <Button variant="primary" icon={Icons.send} onClick={genererCode} disabled={loading}>
-              {loading ? 'Génération…' : 'Générer un code de liaison'}
-            </Button>
-          </div>
+      <div className="mt-2 divide-y divide-gray-100">
+        <LigneCanal
+          icone={Icons.mail}
+          nom="E-mail"
+          detail={adresse || '—'}
+        >
+          <button
+            type="button"
+            role="switch"
+            aria-checked={!!emailActif}
+            aria-label="Recevoir les alertes de sécurité par e-mail"
+            onClick={basculerEmail}
+            disabled={emailActif === null || envoi}
+            className="relative w-[46px] h-[26px] rounded-full transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700/30"
+            style={{ background: emailActif ? 'var(--cg-primary)' : '#CBD5E1' }}
+          >
+            <span
+              className="absolute top-[3px] w-5 h-5 rounded-full bg-white shadow-sm transition-all"
+              style={{ left: emailActif ? 23 : 3 }}
+            />
+          </button>
+        </LigneCanal>
 
-          {code && (
-            <div className="rounded-xl p-4" style={{ background: '#F5F6FA', border: '1px solid #E5E7EB' }}>
+        <div>
+          <LigneCanal
+            icone={Icons.send}
+            nom="Telegram"
+            detail={statut?.lie
+              ? `Lié le ${statut.lie_depuis || '—'} · ID ${statut.chat_id || '—'}`
+              : 'Non lié'}
+          >
+            {statut?.lie ? (
+              <Button variant="danger" size="sm" icon={Icons.trash} onClick={delier}>
+                Délier
+              </Button>
+            ) : (
+              <Button variant="secondary" size="sm" icon={Icons.send}
+                onClick={genererCode} disabled={loading}>
+                {loading ? 'Génération…' : 'Lier'}
+              </Button>
+            )}
+          </LigneCanal>
+
+          {code && !statut?.lie && (
+            <div className="rounded-xl p-4 mb-4" style={{ background: '#F5F6FA', border: '1px solid #E5E7EB' }}>
               <div className="text-[11px] text-gray-500 mb-1.5">Votre code de liaison :</div>
               <div className="flex items-center gap-2 mb-2">
                 <code className="flex-1 min-w-0 text-[15px] font-bold font-mono tracking-wider bg-white px-3 py-2 rounded-lg border border-gray-200">
                   {code.code}
                 </code>
                 <button onClick={() => copier(code.code)}
-                  className="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 cursor-pointer">
+                  className="w-9 h-9 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 cursor-pointer flex-shrink-0">
                   {cloneIcon(Icons.copy, { size: 15 })}
                 </button>
               </div>
@@ -204,7 +187,14 @@ function TelegramSection() {
             </div>
           )}
         </div>
-      )}
+      </div>
+
+      <div className="pt-4 border-t border-gray-100 text-[12.5px] text-gray-600 leading-relaxed">
+        Une alerte part à la fin d'un scan lorsqu'un écart est constaté depuis le
+        précédent : secret exposé, port sensible ouvert, vulnérabilité grave,
+        certificat proche de son terme, chute de score. Un scan qui ne change rien
+        n'envoie rien.
+      </div>
     </Card>
   )
 }
@@ -436,8 +426,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="flex flex-col gap-5">
-          <EmailSection />
-          <TelegramSection />
+          <NotificationsSection />
           <GitHubSection />
         </div>
       </div>
