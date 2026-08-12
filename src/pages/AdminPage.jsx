@@ -118,7 +118,28 @@ function PostureSection() {
     adminAPI.posture().then(({ data }) => setLignes(data)).catch(() => setLignes([]))
   }, [])
 
-  if (!lignes?.length) return null
+  if (!lignes) {
+    return (
+      <Card className="p-4 sm:p-[22px_26px] flex items-center gap-3">
+        <span className="spinner" />
+        <span className="text-[13px] text-gray-500">Calcul de la posture…</span>
+      </Card>
+    )
+  }
+
+  if (!lignes.length) {
+    return (
+      <Card className="p-8 text-center">
+        <div className="text-[14px] font-semibold text-slate-700 mb-1">
+          Aucun client n'a encore scanné d'actif
+        </div>
+        <div className="text-[13px] text-gray-500 max-w-md mx-auto leading-relaxed">
+          La posture se calcule à partir des scans terminés des comptes clients.
+          Les scans lancés par des experts ou par vous-même n'y figurent pas.
+        </div>
+      </Card>
+    )
+  }
 
   const ENTETES = ['Compte', 'Actifs', 'Score moyen', 'Pire actif', 'Tendance',
                    'Vulnérabilités graves', 'Dernier scan']
@@ -204,6 +225,7 @@ export default function AdminPage() {
   const [users, setUsers]       = useState([])
   const [stats, setStats]       = useState(null)
   const [loading, setLoading]   = useState(null)
+  const [onglet, setOnglet]     = useState('posture')
   const [confirmRevokeId, setConfirmRevokeId] = useState(null)
 
   const refresh = () => {
@@ -322,11 +344,26 @@ export default function AdminPage() {
     { l: 'Scans réalisés',       v: stats?.scans ?? '—',    c: '#8B5CF6', i: Icons.scan },
   ]
 
+  /* La page réunissait quatre sujets sans rapport les uns avec les autres, et
+     l'on descendait quatre tableaux pour atteindre le dernier. Ils passent en
+     onglets. L'état des services et les compteurs restent au-dessus, toujours
+     visibles : une panne ou une candidature en attente ne doit jamais se
+     cacher derrière un onglet fermé. */
+  const ONGLETS = [
+    { cle: 'posture',  label: 'Posture des clients' },
+    // La pastille signale une action attendue, jamais un simple dénombrement :
+    // sans quoi elle attirerait l'œil sur des onglets où il n'y a rien à faire.
+    { cle: 'experts',  label: 'Experts', compte: pending.length },
+    { cle: 'comptes',  label: 'Comptes' },
+  ]
+
   return (
     <div>
       <PageHeader
-        title="Administration : Validation experts"
-        subtitle={`${pending.length} candidature${pending.length > 1 ? 's' : ''} en attente de vérification`}
+        title="Administration"
+        subtitle={pending.length
+          ? `${pending.length} candidature${pending.length > 1 ? 's' : ''} en attente de vérification`
+          : 'Supervision de la plateforme et des comptes'}
       />
 
       <SanteSection />
@@ -349,6 +386,33 @@ export default function AdminPage() {
         ))}
       </div>
 
+      <div className="flex gap-1 border-b border-gray-200 mb-5 overflow-x-auto">
+        {ONGLETS.map((o) => {
+          const choisi = onglet === o.cle
+          return (
+            <button key={o.cle} onClick={() => setOnglet(o.cle)}
+              aria-current={choisi ? 'page' : undefined}
+              className="relative flex items-center gap-2 px-4 py-2.5 text-[13.5px] font-semibold whitespace-nowrap cursor-pointer transition-colors hover:text-slate-900"
+              style={{ color: choisi ? 'var(--cg-primary)' : '#64748B' }}>
+              {o.label}
+              {o.compte > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10.5px] font-bold"
+                  style={{ background: '#FEF3C7', color: '#854F0B' }}>
+                  {o.compte}
+                </span>
+              )}
+              {choisi && (
+                <span className="absolute left-0 right-0 -bottom-px h-[2px]"
+                  style={{ background: 'var(--cg-primary)' }} />
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {onglet === 'posture' && <PostureSection />}
+
+      {onglet === 'experts' && (<>
       {/* Table */}
       <Card className="p-4 sm:p-[22px_26px]">
         <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
@@ -484,11 +548,11 @@ export default function AdminPage() {
         </table>
         </div>
       </Card>
+      </>)}
 
-      <PostureSection />
-
-      {/* Utilisateurs, activation / désactivation des comptes */}
-      <Card className="p-4 sm:p-[22px_26px] mt-5">
+      {onglet === 'comptes' && (
+      /* Utilisateurs, activation / désactivation des comptes */
+      <Card className="p-4 sm:p-[22px_26px]">
         <div className="text-[15px] font-semibold mb-4">Utilisateurs ({users.length})</div>
         <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
           <table className="w-full min-w-[900px] border-collapse sm:min-w-0">
@@ -543,6 +607,7 @@ export default function AdminPage() {
         </table>
         </div>
       </Card>
+      )}
 
       {/* Pièce justificative, consultée sans quitter la page de validation */}
       {piece && (
