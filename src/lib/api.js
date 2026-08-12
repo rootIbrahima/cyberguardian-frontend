@@ -108,6 +108,7 @@ export const adminAPI = {
   users:           ()    => api.get('/admin/users'),
   toggleUser:      (id)  => api.put(`/admin/users/${id}/toggle`),
   stats:           ()    => api.get('/admin/stats'),
+  sante:           ()    => api.get('/admin/sante'),
   document:        (id, kind) => api.get(`/admin/experts/${id}/document/${kind}`, { responseType: 'blob' }),
   remediationCandidates: ()      => api.get('/admin/remediation/candidats'),
   proposeRemediation:    (scanId) => api.post(`/admin/scans/${scanId}/remediation`),

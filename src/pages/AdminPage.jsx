@@ -4,6 +4,101 @@ import { cloneIcon, Icons } from '../components/Icons'
 import { MOCK_PENDING_EXPERTS } from '../lib/constants'
 import { adminAPI, messageErreur } from '../lib/api'
 
+/* ─── État des services ─── */
+/* Un webhook déclaré sur la mauvaise URL, un canal e-mail non configuré, un
+   serveur d'inférence injoignable : ces pannes ne se voyaient nulle part depuis
+   la plateforme, et se diagnostiquaient en SSH. Le bloc reste sur une ligne
+   tant que tout va bien — un panneau qui crie en permanence cesse d'être lu —
+   et se déploie dès qu'un service manque à l'appel. */
+
+const ETATS = {
+  alerte: { fond: '#FEF2F2', bord: '#FECACA', teinte: '#991B1B', icone: 'alertCircle' },
+  absent: { fond: '#F8FAFC', bord: '#E2E8F0', teinte: '#475569', icone: 'minus' },
+  ok:     { fond: '#F0FDF4', bord: '#D1FAE5', teinte: '#1A7A4A', icone: 'checkCircle' },
+}
+
+function SanteSection() {
+  const [sante, setSante] = useState(null)
+  const [erreur, setErreur] = useState(false)
+  const [deplie, setDeplie] = useState(false)
+
+  const charger = () => {
+    setSante(null)
+    setErreur(false)
+    adminAPI.sante()
+      .then(({ data }) => { setSante(data); setDeplie(data.alertes > 0) })
+      .catch(() => setErreur(true))
+  }
+
+  // Chargé à part du reste de la page : les sondes réseau prennent une à deux
+  // secondes, les tableaux n'ont pas à les attendre.
+  useEffect(charger, [])
+
+  if (erreur) return null
+  if (!sante) {
+    return (
+      <Card className="p-3.5 sm:p-4 mb-6 flex items-center gap-3">
+        <span className="spinner" />
+        <span className="text-[13px] text-gray-500">Contrôle des services…</span>
+      </Card>
+    )
+  }
+
+  const pire = sante.alertes ? 'alerte' : sante.absents ? 'absent' : 'ok'
+  const t = ETATS[pire]
+  const resume = sante.alertes
+    ? `${sante.alertes} service${sante.alertes > 1 ? 's' : ''} en défaut`
+    : sante.absents
+      ? `Tous les services actifs fonctionnent · ${sante.absents} non configuré${sante.absents > 1 ? 's' : ''}`
+      : `Tous les services fonctionnent · ${sante.controles.length} contrôles`
+
+  return (
+    <Card className="mb-6 overflow-hidden" style={{ background: t.fond, borderColor: t.bord }}>
+      <div className="flex items-center gap-3 p-3.5 sm:p-4">
+        {cloneIcon(Icons[t.icone], { size: 18, color: t.teinte })}
+        <div className="flex-1 min-w-0 text-[13.5px] font-semibold" style={{ color: t.teinte }}>
+          {resume}
+        </div>
+        <button onClick={charger} title="Relancer les contrôles" aria-label="Relancer les contrôles"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-white/60 cursor-pointer">
+          {cloneIcon(Icons.refresh, { size: 15 })}
+        </button>
+        <button onClick={() => setDeplie(!deplie)}
+          className="text-[12px] font-semibold px-2.5 py-1 rounded-lg hover:bg-white/60 cursor-pointer flex-shrink-0"
+          style={{ color: t.teinte }}>
+          {deplie ? 'Masquer' : 'Détail'}
+        </button>
+      </div>
+
+      {deplie && (
+        <div className="bg-white border-t divide-y divide-gray-100" style={{ borderColor: t.bord }}>
+          {sante.controles.map((c) => {
+            const e = ETATS[c.etat]
+            return (
+              <div key={c.cle} className="flex items-start gap-3 px-4 py-3">
+                {cloneIcon(Icons[e.icone], { size: 15, color: e.teinte, className: 'mt-0.5 flex-shrink-0' })}
+                <div className="min-w-0">
+                  <div className="text-[13px] font-semibold">{c.titre}</div>
+                  <div className="text-[12.5px] text-gray-600 leading-relaxed">{c.detail}</div>
+                  {c.anomalies?.length > 0 && (
+                    <ul className="mt-1.5 space-y-0.5">
+                      {c.anomalies.map((a) => (
+                        <li key={`${a.cause}-${a.id}`} className="text-[12px] text-gray-500 font-mono">
+                          scan {a.id} · {a.cible} · {a.cause}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </Card>
+  )
+}
+
 export default function AdminPage() {
   const [pending, setPending]   = useState(MOCK_PENDING_EXPERTS)
   const [approved, setApproved] = useState([])
@@ -134,6 +229,8 @@ export default function AdminPage() {
         title="Administration : Validation experts"
         subtitle={`${pending.length} candidature${pending.length > 1 ? 's' : ''} en attente de vérification`}
       />
+
+      <SanteSection />
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5 mb-6">
