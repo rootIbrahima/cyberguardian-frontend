@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { Card, Badge, Button, PageHeader, SeverityBadge, Skeleton, RelativeTime, CopyValue, toast } from '../components/ui'
 import { Square } from 'lucide-react'
 import { cloneIcon, Icons } from '../components/Icons'
-import { scanAPI, API_BASE, messageErreur } from '../lib/api'
+import { scanAPI, githubAPI, API_BASE, messageErreur } from '../lib/api'
 import { lireJeton } from '../lib/session'
 
 /* ─── Markdown renderer (LLM responses) ─── */
@@ -404,6 +404,7 @@ export default function ScanResultsPage() {
   const [askingAI, setAskingAI] = useState(false)
   const abortIA = useRef(null)
   const [pdfLoading, setPdfLoading] = useState(false)
+  const [demandeEnCours, setDemandeEnCours] = useState(false)
   const [pdfStep, setPdfStep]   = useState(0)
 
   const DELAI_PDF = 180000   // le modèle est mutualisé, sa latence varie de 1 à 5
@@ -555,6 +556,31 @@ export default function ScanResultsPage() {
     }
   }
 
+  /* Le bouton se contentait de rediriger vers les paramètres : aucune demande
+     n'était enregistrée, aucun administrateur prévenu, et le client se
+     retrouvait sur une page de réglages sans savoir ce qu'on attendait de lui.
+     Le dépôt étant la cible du scan, la demande peut partir d'ici. */
+  const demanderRemediation = async () => {
+    setDemandeEnCours(true)
+    try {
+      const { data: gh } = await githubAPI.status()
+      if (!gh?.connecte) {
+        // La demande suppose un jeton OAuth : sans lui, rien à faire ici.
+        toast.info('Connectez votre compte GitHub pour autoriser la correction de ce dépôt.')
+        navigate('/settings')
+        return
+      }
+      const { data } = await githubAPI.authorize(scan.target)
+      toast.success(data?.deja
+        ? 'Ce dépôt était déjà autorisé. Un correctif vous sera proposé.'
+        : 'Demande enregistrée. Un administrateur analysera ce dépôt et vous proposera un correctif par Pull Request.')
+    } catch (err) {
+      toast.error(messageErreur(err, 'Demande impossible pour le moment. Réessayez dans un instant.'))
+    } finally {
+      setDemandeEnCours(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -676,8 +702,11 @@ export default function ScanResultsPage() {
             Contacter un expert
           </Button>
           {isGithub && (
-            <Button variant="secondary" icon={Icons.github} onClick={() => navigate('/settings')}>
-              Demander une remédiation assistée
+            <Button variant="secondary" icon={demandeEnCours ? null : Icons.github}
+              onClick={demanderRemediation} disabled={demandeEnCours}>
+              {demandeEnCours
+                ? <><span className="spinner mr-2" />Envoi de la demande…</>
+                : 'Demander une remédiation assistée'}
             </Button>
           )}
         </div>
