@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Card, Badge, Button, PageHeader, Avatar, toast } from '../components/ui'
+import { Card, Badge, Button, PageHeader, Avatar, ScoreDelta, toast } from '../components/ui'
 import { cloneIcon, Icons } from '../components/Icons'
 import { MOCK_PENDING_EXPERTS } from '../lib/constants'
 import { adminAPI, messageErreur } from '../lib/api'
@@ -95,6 +95,105 @@ function SanteSection() {
           })}
         </div>
       )}
+    </Card>
+  )
+}
+
+/* ─── Posture de sécurité des comptes ─── */
+/* La console savait dire combien de scans avaient été lancés, jamais ce qu'ils
+   avaient révélé. Ce tableau répond à la question du prestataire : qui se
+   dégrade, et qui va mal sans bouger. Les comptes ayant au moins un actif en
+   recul viennent en tête, les autres suivent par score croissant. */
+
+function couleurScore(score) {
+  if (score >= 70) return '#1A7A4A'
+  if (score >= 45) return '#854F0B'
+  return '#991B1B'
+}
+
+function PostureSection() {
+  const [lignes, setLignes] = useState(null)
+
+  useEffect(() => {
+    adminAPI.posture().then(({ data }) => setLignes(data)).catch(() => setLignes([]))
+  }, [])
+
+  if (!lignes?.length) return null
+
+  const ENTETES = ['Compte', 'Actifs', 'Score moyen', 'Pire actif', 'Tendance',
+                   'Vulnérabilités graves', 'Dernier scan']
+
+  return (
+    <Card className="p-4 sm:p-[22px_26px] mt-5">
+      <div className="text-[15px] font-semibold mb-1">Posture de sécurité ({lignes.length})</div>
+      <p className="text-[12.5px] text-gray-500 mb-4">
+        Scores ramenés sur cent, un actif comptant une fois par son dernier scan.
+      </p>
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <table className="w-full min-w-[900px] border-collapse sm:min-w-0">
+          <thead>
+            <tr className="border-b border-gray-200">
+              {ENTETES.map((h, i) => (
+                <th key={h} className="pb-3 text-[11px] font-semibold text-gray-500 uppercase tracking-[0.06em] px-3"
+                  style={{ textAlign: i === 0 ? 'left' : 'center' }}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {lignes.map((l) => (
+              <tr key={l.user_id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                style={{ opacity: l.actif ? 1 : 0.55 }}>
+                <td className="py-3.5 px-3">
+                  <div className="flex items-center gap-2.5">
+                    <Avatar name={l.nom} color="#6B7280" size={34} />
+                    <div>
+                      <div className="text-[13.5px] font-medium whitespace-nowrap">{l.nom}</div>
+                      <div className="text-[11px] text-gray-500">{l.email}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-3.5 px-3 text-center text-[13px] font-mono">{l.actifs}</td>
+                <td className="py-3.5 px-3 text-center text-[15px] font-bold font-mono"
+                  style={{ color: couleurScore(l.score) }}>
+                  {l.score}
+                </td>
+                <td className="py-3.5 px-3 text-center text-[13px] font-mono"
+                  style={{ color: couleurScore(l.pire_score) }}>
+                  {l.pire_score}
+                </td>
+                <td className="py-3.5 px-3 text-center">
+                  {l.tendance === null ? (
+                    <span className="text-[12px] text-gray-400" title="Aucun actif réanalysé">—</span>
+                  ) : (
+                    <div className="flex flex-col items-center gap-0.5">
+                      <ScoreDelta value={l.tendance} />
+                      {l.degrades > 0 && (
+                        <span className="text-[10.5px]" style={{ color: '#991B1B' }}>
+                          {l.degrades} actif{l.degrades > 1 ? 's' : ''} en recul
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </td>
+                <td className="py-3.5 px-3 text-center text-[13px] font-mono"
+                  style={{ color: l.graves ? '#991B1B' : '#64748B' }}>
+                  {l.graves}
+                </td>
+                <td className="py-3.5 px-3 text-center">
+                  <div className="text-[12.5px] whitespace-nowrap">{l.dernier_scan || '—'}</div>
+                  {l.jours_depuis > 30 && (
+                    <div className="text-[10.5px]" style={{ color: '#854F0B' }}>
+                      il y a {l.jours_depuis} jours
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </Card>
   )
 }
@@ -385,6 +484,8 @@ export default function AdminPage() {
         </table>
         </div>
       </Card>
+
+      <PostureSection />
 
       {/* Utilisateurs, activation / désactivation des comptes */}
       <Card className="p-4 sm:p-[22px_26px] mt-5">
