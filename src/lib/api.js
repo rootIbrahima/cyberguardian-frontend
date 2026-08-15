@@ -132,6 +132,13 @@ export const telegramAPI = {
   unlink:       () => api.delete('/telegram/delier'),
 }
 
+export const surveillanceAPI = {
+  list:   ()                          => api.get('/surveillance'),
+  add:    (target, assetType, freq='hebdomadaire') =>
+    api.post('/surveillance', { target, asset_type: assetType, frequence: freq }),
+  remove: (id)                        => api.delete(`/surveillance/${id}`),
+}
+
 export const githubAPI = {
   connect:    ()        => api.get('/github/connect'),
   status:     ()        => api.get('/github/statut'),

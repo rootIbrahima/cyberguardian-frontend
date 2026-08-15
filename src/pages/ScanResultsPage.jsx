@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { Card, Badge, Button, PageHeader, SeverityBadge, Skeleton, RelativeTime, CopyValue, toast } from '../components/ui'
 import { Square } from 'lucide-react'
 import { cloneIcon, Icons } from '../components/Icons'
-import { scanAPI, githubAPI, API_BASE, messageErreur } from '../lib/api'
+import { scanAPI, githubAPI, surveillanceAPI, API_BASE, messageErreur } from '../lib/api'
 import { lireJeton } from '../lib/session'
 
 /* ─── Markdown renderer (LLM responses) ─── */
@@ -405,6 +405,8 @@ export default function ScanResultsPage() {
   const abortIA = useRef(null)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [demandeEnCours, setDemandeEnCours] = useState(false)
+  const [surveillance, setSurveillance] = useState(null)
+  const [surveillanceEnCours, setSurveillanceEnCours] = useState(false)
   const [pdfStep, setPdfStep]   = useState(0)
 
   const DELAI_PDF = 180000   // le modèle est mutualisé, sa latence varie de 1 à 5
@@ -425,6 +427,15 @@ export default function ScanResultsPage() {
       .catch(() => setScan(null))
       .finally(() => setLoading(false))
   }, [id])
+
+  // L'état de surveillance porte sur la cible, pas sur le scan : deux analyses
+  // du même actif partagent la même surveillance.
+  useEffect(() => {
+    if (!scan?.target) return
+    surveillanceAPI.list()
+      .then(({ data }) => setSurveillance(data.find((s) => s.target === scan.target) || null))
+      .catch(() => setSurveillance(null))
+  }, [scan?.target])
 
   const handleAskAI = async () => {
     if (!question.trim() || askingAI) return
@@ -553,6 +564,30 @@ export default function ScanResultsPage() {
       clearInterval(compteur)
       setPdfLoading(false)
       setPdfStep(0)
+    }
+  }
+
+  /* La surveillance est ce qui distingue un scanner d'une plateforme EASM :
+     sans passage régulier, un port qui s'ouvre en août n'est découvert qu'au
+     prochain scan manuel, c'est-à-dire souvent jamais. Le premier passage n'est
+     pas immédiat, ce scan-ci servant de point de comparaison. */
+  const basculerSurveillance = async () => {
+    setSurveillanceEnCours(true)
+    try {
+      if (surveillance) {
+        await surveillanceAPI.remove(surveillance.id)
+        setSurveillance(null)
+        toast.info('Surveillance retirée. Cet actif ne sera plus réanalysé automatiquement.')
+      } else {
+        const { data } = await surveillanceAPI.add(scan.target, scan.type)
+        setSurveillance(data)
+        toast.success("Surveillance activée. Cet actif sera réanalysé chaque semaine, "
+                    + 'et vous serez prévenu de tout changement.')
+      }
+    } catch (err) {
+      toast.error(messageErreur(err, 'Surveillance indisponible pour le moment.'))
+    } finally {
+      setSurveillanceEnCours(false)
     }
   }
 
@@ -700,6 +735,16 @@ export default function ScanResultsPage() {
           </Button>
           <Button variant="secondary" icon={Icons.experts} onClick={() => navigate('/experts')}>
             Contacter un expert
+          </Button>
+          <Button variant={surveillance ? 'success' : 'secondary'}
+            icon={surveillanceEnCours ? null : (surveillance ? Icons.checkCircle : Icons.refresh)}
+            onClick={basculerSurveillance} disabled={surveillanceEnCours}
+            title={surveillance
+              ? `Prochaine analyse automatique : ${surveillance.prochain_passage?.slice(0, 10) || '—'}`
+              : "Réanalyser cet actif chaque semaine et être prévenu de tout changement"}>
+            {surveillanceEnCours
+              ? <><span className="spinner mr-2" />Enregistrement…</>
+              : surveillance ? 'Sous surveillance' : 'Surveiller cet actif'}
           </Button>
           {isGithub && (
             <Button variant="secondary" icon={demandeEnCours ? null : Icons.github}
