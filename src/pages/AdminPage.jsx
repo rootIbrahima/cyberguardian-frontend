@@ -350,7 +350,9 @@ export default function AdminPage() {
      visibles : une panne ou une candidature en attente ne doit jamais se
      cacher derrière un onglet fermé. */
   const ONGLETS = [
-    { cle: 'posture',  label: 'Posture des clients' },
+    // Libellés courts : « Posture des clients » portait la barre à 337 px pour
+    // 328 px utiles sur un écran de 360, et le dernier onglet se coupait.
+    { cle: 'posture',  label: 'Posture' },
     // La pastille signale une action attendue, jamais un simple dénombrement :
     // sans quoi elle attirerait l'œil sur des onglets où il n'y a rien à faire.
     { cle: 'experts',  label: 'Experts', compte: pending.length },
