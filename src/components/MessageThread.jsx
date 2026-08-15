@@ -331,7 +331,7 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
   const canRate = isClient && conversation.level === 3 && !conversation.rating && !rated
 
   return (
-    <div className="flex flex-col min-h-0 h-full">
+    <div className="flex flex-col min-h-0 min-w-0 h-full">
       {/* En-tête */}
       <div className="flex items-center gap-3 px-4 sm:px-[22px] py-3.5 border-b border-gray-200">
         {onBack && (

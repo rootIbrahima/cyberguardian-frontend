@@ -79,7 +79,7 @@ export default function MessagesPage() {
       ['Évaluation',        conv.rating ? `${conv.rating} / 5` : 'Non notée'],
     ]
     return (
-      <div className="flex flex-col overflow-y-auto" style={{ background: '#FAFBFC' }}>
+      <div className="flex flex-col min-w-0 overflow-y-auto" style={{ background: '#FAFBFC' }}>
         <div className="border-b border-gray-200 bg-white px-5 py-4">
           <div className="text-[15px] font-semibold">Supervision de la conversation</div>
           <p className="mt-1 text-[12.5px] leading-relaxed text-slate-500">
@@ -153,8 +153,13 @@ export default function MessagesPage() {
 
       <Card className="overflow-hidden flex-1 p-0 grid min-h-0 lg:grid-cols-[320px_minmax(0,1fr)]">
         {/* ─── Conversation list ─── */}
+        {/* min-w-0 est indispensable : un élément de grille conserve
+            min-width:auto et refuse de descendre sous la largeur minimale de son
+            contenu — ici celle du champ de recherche. La liste débordait alors
+            de 86 px sur un téléphone. minmax(0,1fr) ne suffit pas : il borne la
+            piste, pas l'élément qu'elle contient. */}
         <div
-          className={`border-r border-gray-200 flex-col ${mobile && activeConv ? 'hidden' : 'flex'}`}
+          className={`border-r border-gray-200 flex-col min-w-0 ${mobile && activeConv ? 'hidden' : 'flex'}`}
           style={{ minHeight: 0 }}
         >
           {/* Search */}
@@ -231,7 +236,7 @@ export default function MessagesPage() {
           />
         ) : (
           <div
-            className={`flex-col items-center justify-center gap-4 px-8 text-center ${mobile ? 'hidden' : 'flex'}`}
+            className={`flex-col items-center justify-center gap-4 px-8 text-center min-w-0 ${mobile ? 'hidden' : 'flex'}`}
             style={{ background: '#FAFBFC' }}
           >
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: '#EFF6FF' }}>
