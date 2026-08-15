@@ -63,18 +63,69 @@ export default function MessagesPage() {
 
   const LEVEL_COLORS = { 1: '#9CA3AF', 2: '#F59E0B', 3: '#10B981' }
 
+  /* Un superviseur voit la conversation, pas ce qui s'y dit : les échanges
+     portent les rapports de vulnérabilités des actifs du client. Le panneau
+     rend les métadonnées lisibles plutôt que d'afficher un fil vide ou une
+     erreur d'autorisation. */
+  const rendreSupervision = (conv) => {
+    const p = conv.parties || {}
+    const faits = [
+      ['Client',            p.client?.nom, p.client?.email],
+      ['Expert',            p.expert?.nom, p.expert?.email],
+      ['Actif concerné',    conv.subject],
+      ['Niveau de mission', `Niveau ${conv.level}`],
+      ['Messages échangés', p.messages],
+      ['Dernière activité', conv.last],
+      ['Évaluation',        conv.rating ? `${conv.rating} / 5` : 'Non notée'],
+    ]
+    return (
+      <div className="flex flex-col overflow-y-auto" style={{ background: '#FAFBFC' }}>
+        <div className="border-b border-gray-200 bg-white px-5 py-4">
+          <div className="text-[15px] font-semibold">Supervision de la conversation</div>
+          <p className="mt-1 text-[12.5px] leading-relaxed text-slate-500">
+            Le contenu des échanges est réservé aux deux interlocuteurs. Ils portent
+            les failles des actifs du client, ports ouverts et secrets exposés compris.
+          </p>
+        </div>
+        <dl className="divide-y divide-gray-100">
+          {faits.map(([libelle, valeur, complement]) => (
+            <div key={libelle} className="flex items-baseline gap-4 px-5 py-3">
+              <dt className="w-[150px] flex-shrink-0 text-[12px] font-semibold uppercase tracking-[0.05em] text-slate-500">
+                {libelle}
+              </dt>
+              <dd className="min-w-0 text-[13.5px]">
+                <span className="font-medium">{valeur ?? '—'}</span>
+                {complement && <span className="ml-2 text-[12px] text-slate-500">{complement}</span>}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    )
+  }
+
   if (mobile && activeConv) {
     return (
       <div
         className="fixed inset-x-0 z-30 flex flex-col bg-white"
         style={{ top: decalage, height: hauteurVisible }}
       >
-        <MessageThread
-          key={activeConv.id}
-          conversation={activeConv}
-          onLevelUp={handleLevelUp}
-          onBack={() => setActiveConv(null)}
-        />
+        {activeConv.supervision ? (
+          <>
+            <button onClick={() => setActiveConv(null)}
+              className="flex items-center gap-2 border-b border-gray-200 px-4 py-3 text-[13px] font-semibold text-slate-600">
+              {cloneIcon(Icons.arrowLeft, { size: 16 })} Retour
+            </button>
+            {rendreSupervision(activeConv)}
+          </>
+        ) : (
+          <MessageThread
+            key={activeConv.id}
+            conversation={activeConv}
+            onLevelUp={handleLevelUp}
+            onBack={() => setActiveConv(null)}
+          />
+        )}
       </div>
     )
   }
@@ -171,7 +222,7 @@ export default function MessagesPage() {
         </div>
 
         {/* ─── Thread ─── */}
-        {activeConv ? (
+        {activeConv?.supervision ? rendreSupervision(activeConv) : activeConv ? (
           <MessageThread
             key={activeConv.id}
             conversation={activeConv}

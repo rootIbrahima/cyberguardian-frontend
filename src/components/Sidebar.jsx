@@ -35,7 +35,9 @@ const NAV_BY_ROLE = {
       { path: '/experts',         label: 'Experts',          icon: Icons.experts },
       { path: '/scan-results',    label: 'Tous les scans',   icon: Icons.results },
       { path: '/remediation',     label: 'Correction GitHub', icon: Icons.github },
-      { path: '/messages',        label: 'Messagerie',       icon: Icons.message },
+      // « Messagerie » laissait croire à un accès aux échanges : l'admin voit
+      // qui parle à qui et sur quoi, jamais le contenu.
+      { path: '/messages',        label: 'Conversations',    icon: Icons.message },
     ],
     compte: [],
   },
