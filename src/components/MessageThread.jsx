@@ -406,7 +406,13 @@ export default function MessageThread({ conversation, onLevelUp, onBack }) {
                 <Avatar name={conversation.expert.name} color={conversation.expert.color} size={32} />
               )}
               <div className="min-w-0">
-                <div className="px-3.5 py-2.5 text-[13.5px] leading-relaxed"
+                {/* overflow-wrap:anywhere plutôt que break-words : ce dernier ne
+                    coupe qu'entre deux mots et laisse déborder une chaîne d'un
+                    seul tenant. Or dans une messagerie de sécurité, l'URL d'un
+                    dépôt, un chemin de fichier ou un identifiant de CVE sont le
+                    cas courant, pas l'exception. break-all est écarté : il
+                    couperait aussi les mots ordinaires en plein milieu. */}
+                <div className="px-3.5 py-2.5 text-[13.5px] leading-relaxed [overflow-wrap:anywhere]"
                   style={{
                     borderRadius: aDroite ? '14px 14px 3px 14px' : '14px 14px 14px 3px',
                     background: aDroite ? '#1F5C99' : '#fff',
