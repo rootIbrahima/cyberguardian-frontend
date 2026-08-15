@@ -37,11 +37,15 @@ function ToolLine({ tool, status }) {
   return (
     <div className="flex items-center gap-3 py-[5px]">
       {icons[status]}
-      <span className="font-mono text-[12px] transition-colors duration-300" style={{ color: textColor[status] }}>
+      <span className="font-mono text-[12px] flex-shrink-0 transition-colors duration-300" style={{ color: textColor[status] }}>
         {tool.name}
       </span>
       {status !== 'pending' && status !== 'skip' && (
-        <span className="text-[11px] flex-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        /* Tronqué plutôt que replié : sans min-w-0 la description s'étale sur
+           trois niveaux dès 360 px, la fenêtre du journal n'affiche plus que
+           six outils sur neuf, et le rendu terminal se perd. Mesuré. */
+        <span className="text-[11px] flex-1 min-w-0 truncate" style={{ color: 'rgba(255,255,255,0.4)' }}
+          title={tool.label}>
           {tool.label}
         </span>
       )}
