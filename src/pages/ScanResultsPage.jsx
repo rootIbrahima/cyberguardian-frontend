@@ -857,7 +857,18 @@ export default function ScanResultsPage() {
                               <SeverityBadge level={iss.severity} />
                             </div>
                             <div className="text-xs text-slate-600 leading-relaxed">{iss.desc}</div>
-                            <div className="text-[10.5px] text-slate-500 mt-1.5 font-mono">{iss.tool}</div>
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
+                              <span className="text-[10.5px] text-slate-500 font-mono">{iss.tool}</span>
+                              {/* La categorie OWASP rattache le constat a un referentiel
+                                  public : elle parle a un auditeur la ou l'intitule
+                                  technique ne parle qu'a un ingenieur. */}
+                              {iss.owasp && (
+                                <span className="text-[10.5px] px-1.5 py-0.5 rounded font-medium"
+                                  style={{ background: '#F1F5F9', color: '#475569' }}>
+                                  {iss.owasp}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         )
                       })}
@@ -932,6 +943,87 @@ export default function ScanResultsPage() {
                 </div>
               ))}
             </div>
+          </Card>
+        )
+      })()}
+
+      {/* Surface exposée : sous-domaines et protocoles TLS acceptés */}
+      {!isGithub && (() => {
+        const sd  = scan?.results?.subdomains
+        const tls = scan?.results?.ssl?.protocoles ?? []
+        const obs = scan?.results?.ssl?.protocoles_obsoletes ?? []
+        if (!sd?.total && tls.length === 0) return null
+        return (
+          <Card className="p-4 sm:p-[22px_24px] mb-5">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <div className="text-sm font-semibold">Surface exposée</div>
+              {sd?.source && (
+                <span className="text-[11px] text-slate-500">
+                  Sous-domaines lus dans les journaux de transparence des certificats ({sd.source})
+                </span>
+              )}
+            </div>
+            <p className="text-[12.5px] text-slate-500 mb-4 leading-relaxed">
+              Aucun paquet n&apos;a été envoyé vers ces hôtes : la source est publique et
+              déclarative. Cette liste montre ce que votre organisation a elle-même rendu
+              visible en demandant un certificat.
+            </p>
+
+            {tls.length > 0 && (
+              <div className="mb-4">
+                <div className="text-[12px] font-semibold text-slate-700 mb-2">
+                  Protocoles TLS acceptés par le serveur
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {tls.map((p) => {
+                    const vieux = obs.includes(p)
+                    return (
+                      <span key={p} className="text-[11.5px] px-2 py-1 rounded-md font-mono font-medium"
+                        style={vieux
+                          ? { background: '#FEF2F2', color: '#991B1B', border: '1px solid #FECACA' }
+                          : { background: '#F0FDF4', color: '#1A7A4A', border: '1px solid #D1FAE5' }}>
+                        {p}{vieux ? ' · déprécié' : ''}
+                      </span>
+                    )
+                  })}
+                </div>
+                {obs.length === 0 && (
+                  <div className="text-[11.5px] text-slate-500 mt-2">
+                    Aucun protocole déprécié accepté.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {sd?.total > 0 && (
+              <div>
+                <div className="text-[12px] font-semibold text-slate-700 mb-2">
+                  {sd.total} sous-domaine{sd.total > 1 ? 's' : ''} découvert{sd.total > 1 ? 's' : ''}
+                  {sd.sensibles?.length > 0 && (
+                    <span style={{ color: '#854F0B' }}>
+                      {' '}· {sd.sensibles.length} hors production
+                    </span>
+                  )}
+                </div>
+                <div className="max-h-[220px] overflow-auto rounded-[9px] border border-gray-200">
+                  {sd.subdomains.map((hote) => {
+                    const sensible = sd.sensibles?.find((x) => x.hote === hote)
+                    return (
+                      <div key={hote}
+                        className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 px-3 py-1.5 border-b border-gray-100 last:border-b-0"
+                        style={sensible ? { background: '#FFFBEB' } : undefined}>
+                        <span className="font-mono text-[12px] text-slate-800 [overflow-wrap:anywhere]">{hote}</span>
+                        {sensible && (
+                          <span className="text-[10.5px]" style={{ color: '#854F0B' }}>
+                            {sensible.motif}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </Card>
         )
       })()}
