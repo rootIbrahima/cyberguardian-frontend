@@ -1,7 +1,11 @@
 export const ASSET_TYPES = [
   { key: 'domain', label: 'Domaine', placeholder: 'ex: ec2lt.sn' },
   { key: 'ip',     label: 'Adresse IP', placeholder: 'ex: 196.1.95.1' },
-  { key: 'url',    label: 'URL', placeholder: 'ex: https://orange.sn' },
+  // Le chemin de l'URL est transmis au contrôle des en-têtes, qui peut donner
+  // un résultat différent de la racine lorsque l'application les règle par
+  // page. Les autres contrôles portent sur l'hôte : un certificat, des ports
+  // ou un enregistrement DNS ne dépendent pas de la page demandée.
+  { key: 'url',    label: 'URL', placeholder: 'ex: https://orange.sn/espace-client' },
   { key: 'github', label: 'GitHub', placeholder: 'ex: github.com/user/repo' },
 ]
 
