@@ -699,10 +699,11 @@ export default function ScanResultsPage() {
           <div className="text-[13px] text-slate-500 mt-1">
             Analysé <RelativeTime date={scan?.date} className="whitespace-nowrap" /> · {isGithub
               ? 'Bandit · Safety · TruffleHog'
-              : ['DNS', 'SSL/TLS', 'Headers', 'Ports', 'Réputation']
+              : ['DNS', 'SSL/TLS', 'Headers', 'Ports', 'Réputation', 'Sous-domaines']
                   .filter((_, i) => [scan?.results?.dns, scan?.results?.ssl, scan?.results?.headers,
                                      scan?.results?.ports?.score != null,
-                                     scan?.results?.reputation?.score != null][i])
+                                     scan?.results?.reputation?.score != null,
+                                     scan?.results?.subdomains?.total > 0][i])
                   .join(' · ')}
           </div>
           <div className="flex gap-6 mt-3.5 text-xs flex-wrap">

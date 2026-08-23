@@ -8,12 +8,13 @@ export const ASSET_TYPES = [
 /* Outils MCP, groupes : easm | github | score | report */
 export const MCP_TOOLS = [
   // EASM (domaine / IP / URL)
-  { name: 'check_ssl()',        label: 'Certificat SSL/TLS : validité, grade, expiration',   types: ['domain', 'url', 'ip'], group: 'easm'   },
+  { name: 'check_ssl()',        label: 'SSL/TLS : certificat, grade, protocoles acceptés',   types: ['domain', 'url', 'ip'], group: 'easm'   },
   { name: 'check_dns()',        label: 'DNS : SPF, DMARC, DKIM, MX, enregistrements',        types: ['domain', 'url'],       group: 'easm'   },
   { name: 'check_whois()',      label: 'WHOIS : registrar, expiration du domaine',            types: ['domain'],              group: 'easm'   },
   { name: 'scan_headers()',     label: 'En-têtes HTTP : HSTS, CSP, X-Frame-Options',         types: ['domain', 'url'],       group: 'easm'   },
   { name: 'scan_ports()',       label: 'Ports ouverts : services exposés sur internet',       types: ['domain', 'url', 'ip'], group: 'easm'   },
   { name: 'scan_virustotal()',  label: 'Réputation : VirusTotal, listes noires',              types: ['domain', 'url', 'ip'], group: 'easm'   },
+  { name: 'check_subdomains()', label: 'Sous-domaines : journaux de transparence des certificats', types: ['domain', 'url'],   group: 'easm'   },
 
   // GitHub
   { name: 'github_info()',      label: 'Métadonnées : visibilité, branches, contributeurs',  types: ['github'],              group: 'github' },
