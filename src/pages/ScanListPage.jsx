@@ -140,7 +140,12 @@ export default function ScanListPage() {
       toast.info('Relancement en cours…')
       const res = await scanAPI.rerun(scan.id)
       const newScan = res.data
-      navigate(`/scan-results/${newScan.id}`)
+      // Vers la progression, comme un scan neuf : la relance rend un scan « en
+      // cours », sans score. La page de résultats affichait donc 0 sur 100
+      // pendant la minute d'analyse, ce qui se lit comme un échec.
+      navigate(`/scan-progress/${newScan.id}`, {
+        state: { target: newScan.target, assetType: newScan.type },
+      })
     } catch {
       toast.error('Impossible de relancer le scan')
       setRerunningId(null)

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { Navigate, useNavigate, useParams, useLocation } from 'react-router-dom'
 import { Card, Badge, Button, PageHeader, SeverityBadge, Skeleton, RelativeTime, CopyValue, toast } from '../components/ui'
 import { Square } from 'lucide-react'
 import { cloneIcon, Icons } from '../components/Icons'
@@ -650,6 +650,35 @@ export default function ScanResultsPage() {
         </div>
         <Button variant="primary" onClick={() => navigate('/dashboard')} className="mt-1">
           Aller au dashboard
+        </Button>
+      </div>
+    )
+  }
+
+  /* Un scan « en cours » n'a pas encore de score : la page affichait donc 0 sur
+     100 et des sections vides, ce qui se lit comme un échec. On renvoie vers la
+     page de progression, qui est faite pour cette attente. */
+  if (scan.status === 'running') {
+    return <Navigate to={`/scan-progress/${scan.id}`} replace
+                     state={{ target: scan.target, assetType: scan.type }} />
+  }
+
+  if (scan.status === 'failed') {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <div className="w-12 h-12 rounded-[var(--cg-radius)] flex items-center justify-center"
+          style={{ background: '#FEF2F2' }}>
+          {cloneIcon(Icons.alertCircle, { size: 24, color: '#991B1B' })}
+        </div>
+        <div className="text-slate-700 font-semibold">L'analyse n'a pas abouti</div>
+        <div className="text-[13px] text-slate-500 text-center max-w-sm leading-relaxed">
+          Un outil s'est interrompu sur {scan.target}. La cible était peut-être
+          injoignable au moment de l'analyse. Aucun résultat partiel n'est
+          conservé, relancez pour obtenir un rapport complet.
+        </div>
+        <Button variant="primary" icon={Icons.refresh} className="mt-1"
+          onClick={() => navigate('/scan-results')}>
+          Retour à mes scans
         </Button>
       </div>
     )
