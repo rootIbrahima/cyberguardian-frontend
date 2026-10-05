@@ -311,13 +311,28 @@ export default function AdminPage() {
      quitter la plateforme au milieu de la validation d'une candidature. */
   const [piece, setPiece] = useState(null)
 
+  /* Le type annoncé par le serveur ne suffit pas : un document déposé avec une
+     extension inexacte arrive en application/octet-stream et le navigateur
+     refuse alors de l'afficher. On le déduit des premiers octets du fichier. */
+  const typeReel = (octets, defaut) => {
+    const debute = (...signature) => signature.every((o, i) => octets[i] === o)
+    if (debute(0x25, 0x50, 0x44, 0x46)) return 'application/pdf'
+    if (debute(0xff, 0xd8, 0xff))       return 'image/jpeg'
+    if (debute(0x89, 0x50, 0x4e, 0x47)) return 'image/png'
+    if (debute(0x47, 0x49, 0x46, 0x38)) return 'image/gif'
+    if (debute(0x52, 0x49, 0x46, 0x46)) return 'image/webp'
+    return defaut || 'application/octet-stream'
+  }
+
   const viewDocument = async (id, kind, nom) => {
     try {
-      const res  = await adminAPI.document(id, kind)
-      const type = res.data.type || ''
+      const res     = await adminAPI.document(id, kind)
+      const donnees = await res.data.arrayBuffer()
+      const type    = typeReel(new Uint8Array(donnees.slice(0, 8)), res.data.type)
+      if (piece) URL.revokeObjectURL(piece.url)   // aperçu précédent encore ouvert
       setPiece({
-        url:   URL.createObjectURL(res.data),
-        pdf:   type.includes('pdf'),
+        url:   URL.createObjectURL(new Blob([donnees], { type })),
+        pdf:   type === 'application/pdf',
         titre: `${kind === 'cni' ? 'Pièce d\'identité' : 'Diplôme'} — ${nom}`,
       })
     } catch {
@@ -638,17 +653,40 @@ export default function AdminPage() {
 
             <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center p-2 sm:p-4">
               {piece.pdf ? (
-                <iframe
-                  src={piece.url}
-                  title={piece.titre}
-                  className="w-full h-[60vh] sm:h-[70vh] border-0 bg-white"
-                />
+                /* <object> plutôt qu'une <iframe> : quand le navigateur est réglé
+                   pour télécharger les PDF au lieu de les afficher, l'iframe reste
+                   blanche alors que le contenu de repli ci-dessous s'affiche. */
+                <object
+                  data={piece.url}
+                  type="application/pdf"
+                  aria-label={piece.titre}
+                  className="w-full h-[60vh] sm:h-[70vh] bg-white"
+                >
+                  <div className="p-6 text-center text-[12.5px] text-slate-600">
+                    Ce navigateur n'affiche pas les PDF dans la page.
+                    <a
+                      href={piece.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ml-1 font-semibold text-blue-700 hover:underline"
+                    >
+                      Ouvrir la pièce dans un onglet
+                    </a>
+                  </div>
+                </object>
               ) : (
                 <img
                   src={piece.url}
                   alt={piece.titre}
-                  className="max-w-full max-h-[60vh] sm:max-h-[70vh] object-contain"
+                  onError={() => setPiece((prev) => (prev ? { ...prev, illisible: true } : prev))}
+                  className={`max-w-full max-h-[60vh] sm:max-h-[70vh] object-contain${piece.illisible ? ' hidden' : ''}`}
                 />
+              )}
+              {piece.illisible && (
+                <div className="p-6 text-center text-[12.5px] text-slate-600">
+                  Format non reconnu par le navigateur : la pièce doit être téléchargée
+                  pour être consultée.
+                </div>
               )}
             </div>
 
